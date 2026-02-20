@@ -358,6 +358,7 @@ def managed_request():
     name = (data.get("name") or "").strip()
     email = (data.get("email") or "").strip().lower()
     company = (data.get("company") or "").strip()
+    instances = (data.get("instances") or "").strip()
     use_case = (data.get("use_case") or "").strip()
 
     if not name or not email:
@@ -409,6 +410,7 @@ def managed_request():
         <p style="font-size:16px;margin:8px 0;"><strong>👤 Name:</strong> {name}</p>
         <p style="font-size:16px;margin:8px 0;"><strong>📧 Email:</strong> {email}</p>
         <p style="font-size:16px;margin:8px 0;"><strong>🏢 Company:</strong> {company or '(not provided)'}</p>
+        <p style="font-size:16px;margin:8px 0;"><strong>🖥️ Instances:</strong> {instances or '(not provided)'}</p>
         <p style="font-size:16px;margin:8px 0;"><strong>📍 Location:</strong> {visitor['location']}</p>
         </div>
         {"<div style='background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:16px;margin:16px 0;text-align:left;'><strong>💡 Use Case:</strong><br>" + use_case + "</div>" if use_case else ""}
