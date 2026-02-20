@@ -845,14 +845,25 @@ document.getElementById('subscribe-form').addEventListener('submit',function(e){
   var payload={email:email};
   var utm=getUtmParams();
   if(Object.keys(utm).length>1)payload.utm=utm;
+  btn.textContent='Submitting...';
   _encPost('/api/subscribe',payload).then(function(r){return r.json();}).then(function(d){
-    msg.textContent=d.ok?'Thanks! We\'ll keep you posted. \u{1F99E}':'Something went wrong. Try again.';
-    msg.style.color=d.ok?'#28c840':'#E5443A';
-    if(d.ok){_setIdentity('',email);document.getElementById('sub-email').value='';}
+    if(d.ok){
+      _setIdentity('',email);
+      document.getElementById('subscribe-form').style.display='none';
+      msg.textContent='You\'re subscribed! We\'ll keep you posted. \u{1F99E}';
+      msg.style.color='#28c840';
+      msg.style.fontSize='16px';
+      msg.style.fontWeight='600';
+    } else {
+      msg.textContent='Something went wrong. Try again.';
+      msg.style.color='#E5443A';
+      btn.disabled=false; btn.textContent='Subscribe';
+    }
   }).catch(function(){
     msg.textContent='Something went wrong. Try again.';
     msg.style.color='#E5443A';
-  }).finally(function(){btn.disabled=false;});
+    btn.disabled=false; btn.textContent='Subscribe';
+  });
 });
 </script>
 
