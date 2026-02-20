@@ -333,14 +333,15 @@ def subscribe():
         db.commit(); db.close()
 
         notify_vivek(
-            f"🦞 New ClawMetry subscriber: {email} [{source}]",
-            f"""<div style="font-family:sans-serif;max-width:500px;">
-            <h2>New Subscriber!</h2>
-            <p><strong>Email:</strong> {email}</p>
-            <p style="font-size:18px;color:#E5443A;"><strong>Source:</strong> {source}</p>
-            <p><strong>Location:</strong> {visitor['location']}</p>
-            <p><strong>IP:</strong> {visitor['ip']}</p>
-            <p><strong>Browser:</strong> {visitor['user_agent'][:120]}</p>
+            f"🎉 NEW SUBSCRIBER — {email}!",
+            f"""<div style="font-family:sans-serif;max-width:500px;text-align:center;">
+            <div style="font-size:64px;margin:20px 0;">🎉</div>
+            <h1 style="color:#E5443A;font-size:28px;margin:0 0 8px;">New ClawMetry Subscriber!</h1>
+            <div style="background:#f8f9fa;border-radius:12px;padding:20px;text-align:left;margin:16px 0;">
+            <p style="font-size:16px;margin:8px 0;"><strong>📧 Email:</strong> {email}</p>
+            <p style="font-size:16px;margin:8px 0;"><strong>🔗 Source:</strong> {source}</p>
+            <p style="font-size:16px;margin:8px 0;"><strong>📍 Location:</strong> {visitor['location']}</p>
+            </div>
             {_utm_html(utm)}
             </div>"""
         )
@@ -397,19 +398,21 @@ def managed_request():
     except Exception as e:
         log.error(f"[managed-request] JSON backup error: {e}")
 
-    # Notify Vivek
+    # Notify Vivek — celebratory!
     notify_vivek(
-        f"🦞 Managed instance request: {name} <{email}>",
-        f"""<div style="font-family:sans-serif;max-width:500px;">
-        <h2 style="color:#E5443A;">🦞 New Managed Instance Request</h2>
-        <p><strong>Name:</strong> {name}</p>
-        <p><strong>Email:</strong> {email}</p>
-        <p><strong>Company:</strong> {company or '(not provided)'}</p>
-        <p><strong>Use Case:</strong></p>
-        <div style="background:#f4f4f4;padding:12px;border-radius:8px;margin:8px 0;">{use_case or '(not provided)'}</div>
-        <p><strong>Location:</strong> {visitor['location']}</p>
-        <p><strong>IP:</strong> {visitor['ip']}</p>
-        <p><strong>Browser:</strong> {visitor['user_agent'][:120]}</p>
+        f"🎉 NEW SIGNUP — Managed Instance Request from {name}!",
+        f"""<div style="font-family:sans-serif;max-width:500px;text-align:center;">
+        <div style="font-size:64px;margin:20px 0;">🎉</div>
+        <h1 style="color:#E5443A;font-size:28px;margin:0 0 8px;">New Managed Instance Signup!</h1>
+        <p style="font-size:18px;color:#333;margin:0 0 24px;">Someone wants ClawMetry hosted for them</p>
+        <div style="background:#f8f9fa;border-radius:12px;padding:20px;text-align:left;margin:16px 0;">
+        <p style="font-size:16px;margin:8px 0;"><strong>👤 Name:</strong> {name}</p>
+        <p style="font-size:16px;margin:8px 0;"><strong>📧 Email:</strong> {email}</p>
+        <p style="font-size:16px;margin:8px 0;"><strong>🏢 Company:</strong> {company or '(not provided)'}</p>
+        <p style="font-size:16px;margin:8px 0;"><strong>📍 Location:</strong> {visitor['location']}</p>
+        </div>
+        {"<div style='background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:16px;margin:16px 0;text-align:left;'><strong>💡 Use Case:</strong><br>" + use_case + "</div>" if use_case else ""}
+        <p style="color:#666;font-size:13px;margin-top:20px;">Reply to them within 24h! → {email}</p>
         </div>"""
     )
 
@@ -451,18 +454,7 @@ def managed_click():
         db.commit(); db.close()
     except Exception as e:
         log.error(f"[managed-click] db error: {e}")
-    notify_vivek(
-        f"🦞 Managed instance interest! [{source}]",
-        f"""<div style="font-family:sans-serif;max-width:500px;">
-        <h2 style="color:#E5443A;">🦞 Someone wants a managed instance!</h2>
-        <p>A visitor clicked <strong>"Request a managed instance"</strong> on clawmetry.com.</p>
-        <p><strong>Source:</strong> {source}</p>
-        <p><strong>Location:</strong> {visitor['location']}</p>
-        <p><strong>IP:</strong> {visitor['ip']}</p>
-        <p><strong>Browser:</strong> {visitor['user_agent'][:120]}</p>
-        <p style="color:#9ca3af;font-size:13px;">They'll see the form next. Watch for a submission notification.</p>
-        </div>"""
-    )
+    # Silent tracking only — no email for clicks. Email only on actual form submission.
     return jsonify({"ok": True})
 
 
