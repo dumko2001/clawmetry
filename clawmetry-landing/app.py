@@ -690,14 +690,7 @@ def support_request():
         }, json={
             "from": FROM_EMAIL, "to": email,
             "subject": "Got your request! Setting up your ClawMetry support 🤝",
-            "html": f"""<div style="font-family:system-ui,-apple-system,sans-serif;max-width:560px;margin:0 auto;color:#e2e8f0;">
-<div style="background:#0f172a;border-radius:12px;padding:32px;border:1px solid #1e293b;">
-<p style="font-size:18px;margin:0 0 16px;">Hey {display_name},</p>
-<p style="margin:0 0 12px;line-height:1.6;">Thanks for reaching out! I got your request and will personally get back to you shortly to help you get ClawMetry up and running.</p>
-<p style="margin:0 0 12px;line-height:1.6;">No catch, no upsell. Just want to make sure you succeed.</p>
-<p style="margin:24px 0 0;line-height:1.6;">Talk soon,<br><strong>Vivek</strong><br><span style="color:#94a3b8;font-size:13px;">Founder, ClawMetry</span></p>
-</div>
-</div>"""
+            "text": f"Hey {display_name},\n\nThanks for reaching out! I got your request and will personally get back to you shortly to help you get ClawMetry up and running.\n\nClawMetry is open source and I want to make sure you get the most out of it.\n\nTalk soon,\nVivek\nFounder, ClawMetry"
         }, timeout=10)
     except Exception as e:
         log.error(f"[support-request] confirmation email error: {e}")
