@@ -559,8 +559,10 @@ function copyActiveCmd() {
   </div>
 </div>
 <script>
-function _getIdentity(){try{return JSON.parse(localStorage.getItem('_clm_id')||'{}');}catch(e){return {};}}
-function _setIdentity(name,email){try{localStorage.setItem('_clm_id',JSON.stringify({name:name||'',email:email||'',ts:Date.now()}));}catch(e){}}
+function _clmEnc(s){var k='clm2026';var r='';for(var i=0;i<s.length;i++){r+=String.fromCharCode(s.charCodeAt(i)^k.charCodeAt(i%k.length));}return btoa(r);}
+function _clmDec(s){try{var d=atob(s);var k='clm2026';var r='';for(var i=0;i<d.length;i++){r+=String.fromCharCode(d.charCodeAt(i)^k.charCodeAt(i%k.length));}return r;}catch(e){return '';}}
+function _getIdentity(){try{var e=localStorage.getItem('_clm_id');if(!e)return {};return JSON.parse(_clmDec(e));}catch(e){return {};}}
+function _setIdentity(name,email){try{localStorage.setItem('_clm_id',_clmEnc(JSON.stringify({name:name||'',email:email||'',ts:Date.now()})));}catch(e){}}
 function openManagedModal() {
   document.getElementById('managed-modal').style.display='flex';
   var id=_getIdentity();
