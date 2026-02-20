@@ -455,7 +455,7 @@ def managed_click():
     except Exception as e:
         log.error(f"[managed-click] db error: {e}")
     notify_vivek(
-        f"👀 Someone's checking out Managed Instance",
+        f"👀 [Click] Managed Instance — someone opened the form",
         f"""<div style="font-family:sans-serif;max-width:500px;text-align:center;">
         <div style="font-size:48px;margin:16px 0;">👀</div>
         <h2 style="color:#666;font-size:20px;">Managed Instance CTA Clicked</h2>
