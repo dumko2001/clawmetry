@@ -454,7 +454,19 @@ def managed_click():
         db.commit(); db.close()
     except Exception as e:
         log.error(f"[managed-click] db error: {e}")
-    # Silent tracking only — no email for clicks. Email only on actual form submission.
+    notify_vivek(
+        f"👀 Someone's checking out Managed Instance",
+        f"""<div style="font-family:sans-serif;max-width:500px;text-align:center;">
+        <div style="font-size:48px;margin:16px 0;">👀</div>
+        <h2 style="color:#666;font-size:20px;">Managed Instance CTA Clicked</h2>
+        <p style="color:#999;">A visitor opened the managed instance form on clawmetry.com</p>
+        <div style="background:#f8f9fa;border-radius:8px;padding:14px;text-align:left;margin:12px 0;">
+        <p style="margin:4px 0;"><strong>Source:</strong> {source}</p>
+        <p style="margin:4px 0;"><strong>Location:</strong> {visitor['location']}</p>
+        </div>
+        <p style="color:#aaa;font-size:12px;">Watch for a 🎉 NEW SIGNUP email if they submit the form.</p>
+        </div>"""
+    )
     return jsonify({"ok": True})
 
 
