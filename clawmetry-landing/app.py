@@ -17,8 +17,7 @@ from functools import wraps
 import requests
 from flask import Flask, request, jsonify, send_from_directory, make_response, redirect, url_for, session, render_template_string
 
-_APP_DIR = os.path.dirname(os.path.abspath(__file__))
-app = Flask(__name__, static_folder=_APP_DIR, static_url_path="")
+app = Flask(__name__, static_folder=".", static_url_path="")
 app.secret_key = os.environ.get("SECRET_KEY", "clawmetry-secret-key-2026-xk9m")
 
 # Force logs to stdout for Cloud Run
@@ -1343,34 +1342,7 @@ def admin_managed():
 
 @app.route("/")
 def index():
-    return send_from_directory(_APP_DIR, "index.html")
-
-
-@app.route("/favicon.ico")
-def favicon_ico():
-    return send_from_directory(_APP_DIR, "favicon.png", mimetype="image/png")
-
-
-@app.route("/docs")
-def docs_redirect():
-    return redirect("/docs.html", code=301)
-
-
-# SEO: redirect common dead URLs to home instead of 404
-@app.route("/pricing")
-@app.route("/about")
-@app.route("/blog")
-@app.route("/install")
-@app.route("/privacy")
-@app.route("/terms")
-@app.route("/contact")
-def seo_redirects():
-    return redirect("/", code=301)
-
-
-@app.errorhandler(404)
-def page_not_found(e):
-    return send_from_directory(_APP_DIR, "404.html"), 404
+    return send_from_directory(".", "index.html")
 
 
 @app.route("/<path:path>")
@@ -1378,10 +1350,7 @@ def static_files(path):
     # Don't serve admin routes as static
     if path.startswith("admin"):
         return "Not found", 404
-    try:
-        return send_from_directory(_APP_DIR, path)
-    except Exception:
-        return send_from_directory(_APP_DIR, "404.html"), 404
+    return send_from_directory(".", path)
 
 
 if __name__ == "__main__":
