@@ -29,7 +29,7 @@ DB_PATH = "/tmp/clawmetry.db"
 
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "re_jWLL59fj_PBctxiwxDLFiWjBZ9MiJ4ems")
 RESEND_AUDIENCE_ID = os.environ.get("RESEND_AUDIENCE_ID", "48212e72-0d6c-489c-90c3-85a03a52d54c")
-FROM_EMAIL = "ClawMetry <hello@clawmetry.com>"
+FROM_EMAIL = "ClawMetry <hello@aivira.co>"  # TEMP: clawmetry.com DNS pending fix, switch back when verified
 UPDATES_EMAIL = "ClawMetry Updates <updates@clawmetry.com>"
 NOTIFY_SECRET = os.environ.get("NOTIFY_SECRET", "clawmetry-notify-2026")
 
@@ -496,7 +496,9 @@ def _utm_html(utm):
 
 def notify_vivek(subject, body_html):
     try:
-        _resend_post("/emails", {"from": FROM_EMAIL, "to": [VIVEK_EMAIL], "subject": subject, "html": body_html})
+        ok, resp = _resend_post("/emails", {"from": FROM_EMAIL, "to": [VIVEK_EMAIL], "subject": subject, "html": body_html})
+        if not ok:
+            log.error(f"[notify_vivek] Resend failed: {resp}")
     except Exception as e:
         log.info(f"[notify_vivek] {e}")
 
@@ -801,6 +803,59 @@ def copy_track():
     )
     return jsonify({"ok": True})
 
+
+
+@app.route("/api/social-click", methods=["POST"])
+def social_click():
+    """Track when someone clicks a testimonial/social link."""
+    data = _decrypt_payload(request)
+    visitor = _get_visitor_info(request)
+    utm = data.get("utm", {})
+    source = _format_source(utm, visitor['referer'])
+    url = data.get("url", "unknown")
+    author = data.get("author", "unknown")
+    platform = data.get("platform", "unknown")
+
+    evt = {
+        "tab": "social-click", "command": f"{platform}: {author}",
+        "source": source, "utm_data": json.dumps(utm),
+        "location": visitor['location'], "ip": visitor['ip'],
+        "browser": visitor['user_agent'][:200], "created_at": _now_iso(),
+    }
+    if not _fs_add("copy_events", evt):
+        try:
+            db = get_db()
+            db.execute("INSERT INTO copy_events (tab, command, source, utm_data, location, ip, browser) VALUES (?,?,?,?,?,?,?)",
+                       ("social-click", f"{platform}: {author}", source, json.dumps(utm), visitor['location'], visitor['ip'], visitor['user_agent'][:200]))
+            db.commit(); db.close()
+        except Exception as e:
+            log.error(f"[social-click] db error: {e}")
+
+    identity = data.get("identity", {})
+    id_email = identity.get("email", "")
+    id_name = identity.get("name", "")
+    who_line = f"<p style='margin:4px 0;'><strong>Known as:</strong> {id_name} &lt;{id_email}&gt;</p>" if id_email else "<p style='margin:4px 0;color:#999;'>Anonymous visitor</p>"
+
+    platform_emoji = {"twitter": "🐦", "producthunt": "🏆", "medium": "📝", "linkedin": "💼", "instagram": "📸"}.get(platform, "🔗")
+
+    notify_vivek(
+        f"{platform_emoji} [Social Click] {author} [{source}]",
+        f"""<div style="font-family:sans-serif;max-width:500px;text-align:center;">
+        <div style="font-size:48px;margin:16px 0;">{platform_emoji}</div>
+        <h2 style="color:#666;font-size:20px;">Testimonial Card Clicked</h2>
+        <p style="color:#999;">A visitor clicked a social proof card on clawmetry.com</p>
+        <div style="background:#f8f9fa;border-radius:8px;padding:14px;text-align:left;margin:12px 0;">
+        {who_line}
+        <p style="margin:4px 0;"><strong>Author:</strong> {author}</p>
+        <p style="margin:4px 0;"><strong>Platform:</strong> {platform}</p>
+        <p style="margin:4px 0;"><strong>Link:</strong> <a href="{url}">{url[:80]}</a></p>
+        <p style="margin:4px 0;"><strong>Source:</strong> {source}</p>
+        <p style="margin:4px 0;"><strong>Location:</strong> {visitor['location']}</p>
+        </div>
+        <p style="color:#aaa;font-size:12px;">Track social proof engagement to see which testimonials drive conversions.</p>
+        </div>"""
+    )
+    return jsonify({"ok": True})
 
 @app.route("/api/notify", methods=["POST"])
 def notify():
@@ -1340,6 +1395,11 @@ def admin_managed():
 
 # ─── Static Routes ───────────────────────────────────────────────────────────
 
+
+@app.route("/showcase")
+def showcase():
+    return send_from_directory(".", "showcase.html")
+
 @app.route("/")
 def index():
     return send_from_directory(".", "index.html")
@@ -1432,6 +1492,7 @@ def traction_page():
     data = _fetch_traction_data()
     with open(os.path.join(os.path.dirname(__file__), "traction.html")) as f:
         html = f.read()
+    data["days_since_launch"] = str((datetime.now() - datetime(2026, 2, 17)).days)
     for key, val in data.items():
         html = html.replace("{{" + key + "}}", val)
     return html

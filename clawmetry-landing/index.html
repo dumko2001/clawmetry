@@ -150,10 +150,13 @@
   <meta property="og:description" content="Free, open-source dashboard to monitor AI agents. Track token costs, cron jobs, sub-agents, memory. pip install clawmetry.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://clawmetry.com">
-  <meta property="og:image" content="https://clawmetry.com/dashboard-flow.png?v=3">
+  <meta property="og:image" content="https://clawmetry.com/dashboard-overview-og.png">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:image" content="https://clawmetry.com/dashboard-flow.png?v=3">
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
+  <meta name="twitter:image" content="https://clawmetry.com/dashboard-overview-og.png">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
+  <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -460,9 +463,12 @@
 
 <!-- WHAT PEOPLE SAY -->
 <section style="padding:60px 24px 60px;overflow:hidden;">
-  <h2 class="section-title" style="display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:8px;">
-    <span style="color:#E5443A;">&#10095;</span> What People Say
-  </h2>
+  <div style="max-width:1200px;margin:0 auto 8px;display:flex;align-items:center;justify-content:space-between;">
+    <h2 class="section-title" style="display:flex;align-items:center;gap:8px;">
+      <span style="color:#E5443A;">&#10095;</span> What People Say
+    </h2>
+    <a href="/showcase" style="font-size:14px;color:#E5443A;font-weight:500;white-space:nowrap;text-decoration:none;">View all &#8594;</a>
+  </div>
   <p style="text-align:center;color:#666;font-size:14px;margin-bottom:36px;">What the community is saying about ClawMetry</p>
   <style>
     .tt-track { display:flex; gap:20px; animation: tt-scroll 75s linear infinite; width:max-content; }
@@ -556,7 +562,7 @@
         </div>
         <div class="tt-quote">"Ask OpenClaw to do something. It starts working. And you just... wait. Hoping. Is it searching? Which websites? Where is it stuck right now? Zero visibility. ClawMetry fixes that."</div>
       </a>
-      <a href="https://x.com/backboardioclip/status/2025703625306382542" target="_blank" rel="noopener" class="tt-card">
+      <a href="https://x.com/backboardioclip" target="_blank" rel="noopener" class="tt-card">
         <div class="tt-head">
           <img src="https://unavatar.io/x/backboardioclip" alt="" class="tt-avatar" loading="lazy" onerror="this.src='https://ui-avatars.com/api/?name=MB&background=E5443A&color=fff&size=88'">
           <div>
@@ -565,9 +571,9 @@
         </div>
         <div class="tt-quote">"This is such a cool idea! Love seeing people build real things with their agents."</div>
       </a>
-      <a href="https://www.producthunt.com/posts/clawmetry#comment-4311191" target="_blank" rel="noopener" class="tt-card">
+      <a href="https://www.producthunt.com/products/clawmetry?comment=5158089" target="_blank" rel="noopener" class="tt-card">
         <div class="tt-head">
-          <img src="https://ui-avatars.com/api/?name=MK&background=E5443A&color=fff&size=88" alt="" class="tt-avatar" loading="lazy">
+          <img src="https://ph-avatars.imgix.net/8377500/6d09d7fb-1ad7-401b-928f-208b751aa04f.jpeg?auto=compress&w=88&h=88&fit=crop" alt="Mykola Kondratiuk" class="tt-avatar" loading="lazy">
           <div>
             <div class="tt-author">Mykola Kondratiuk</div>
           </div>
@@ -575,9 +581,9 @@
         </div>
         <div class="tt-quote">"Oh this is exactly what I needed. The biggest pain point has been figuring out where my tokens are going. Especially with sub-agents spawning other sub-agents, costs spiral fast and you have zero visibility."</div>
       </a>
-      <a href="https://www.producthunt.com/posts/clawmetry#comment-4311192" target="_blank" rel="noopener" class="tt-card">
+      <a href="https://www.producthunt.com/products/clawmetry?comment=5158871" target="_blank" rel="noopener" class="tt-card">
         <div class="tt-head">
-          <img src="https://ui-avatars.com/api/?name=DS&background=E5443A&color=fff&size=88" alt="" class="tt-avatar" loading="lazy">
+          <img src="https://ph-avatars.imgix.net/9466916/7918b239-ff26-4e31-8ddb-1e4d4a5a8e3d.jpeg?auto=compress&w=88&h=88&fit=crop" alt="Damian Saez" class="tt-avatar" loading="lazy">
           <div>
             <div class="tt-author">Damian Saez</div>
           </div>
@@ -585,7 +591,7 @@
         </div>
         <div class="tt-quote">"Observability for AI agents is something most builders overlook until things break in production. Love that you're tackling this early."</div>
       </a>
-      <a href="https://www.producthunt.com/posts/clawmetry#comment-4311193" target="_blank" rel="noopener" class="tt-card">
+      <a href="https://www.producthunt.com/products/clawmetry?comment=5163665" target="_blank" rel="noopener" class="tt-card">
         <div class="tt-head">
           <img src="https://ui-avatars.com/api/?name=M&background=E5443A&color=fff&size=88" alt="" class="tt-avatar" loading="lazy">
           <div>
@@ -595,7 +601,7 @@
         </div>
         <div class="tt-quote">"This is exactly the kind of tooling the AI agent ecosystem needs right now. The per-session cost breakdown is a smart move. Most teams have no idea what their agents actually cost until the invoice hits."</div>
       </a>
-      <a href="https://www.producthunt.com/posts/clawmetry#comment-4311194" target="_blank" rel="noopener" class="tt-card">
+      <a href="https://www.producthunt.com/products/clawmetry?comment=5161049" target="_blank" rel="noopener" class="tt-card">
         <div class="tt-head">
           <img src="https://ui-avatars.com/api/?name=HU&background=E5443A&color=fff&size=88" alt="" class="tt-avatar" loading="lazy">
           <div>
@@ -617,7 +623,7 @@
       </a>
       <a href="https://medium.com/@oadiaz/clawmetry-finally-seeing-what-my-ai-agents-are-actually-doing-3866505bcf96" target="_blank" rel="noopener" class="tt-card">
         <div class="tt-head">
-          <img src="https://ui-avatars.com/api/?name=OD&background=1a8917&color=fff&size=88" alt="" class="tt-avatar" loading="lazy" style="border-radius:8px;">
+          <img src="https://miro.medium.com/v2/resize:fill:176:176/1*_EoHFUW95XqPiPD6CFrxow.jpeg" alt="Omar Diaz" class="tt-avatar" loading="lazy">
           <div>
             <div class="tt-author">@oadiaz</div>
           </div>

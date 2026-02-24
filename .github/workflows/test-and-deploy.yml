@@ -1,0 +1,118 @@
+name: Test & Deploy — ClawMetry Landing
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "clawmetry-landing/**"
+      - ".github/workflows/test-and-deploy.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "clawmetry-landing/**"
+  workflow_dispatch:
+
+jobs:
+  # ── Unit + content tests (no network needed) ──────────────────────────────
+  test-unit:
+    name: Unit & Content Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: clawmetry-landing
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: clawmetry-landing/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+
+      - name: Run unit + content tests
+        env:
+          TESTING: "true"
+          SKIP_INTEGRATION: "1"
+        run: |
+          pytest tests/test_pages.py tests/test_api.py -v --tb=short \
+            --cov=app --cov-report=term-missing
+
+  # ── Integration tests (Resend + live site) ─────────────────────────────────
+  test-integration:
+    name: Integration Tests (Resend + Live)
+    runs-on: ubuntu-latest
+    # Don't block PRs on integration tests, only block main deploys
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    defaults:
+      run:
+        working-directory: clawmetry-landing
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: clawmetry-landing/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt pytest requests
+
+      - name: Run integration tests
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          LIVE_URL: "https://clawmetry.com"
+          SKIP_INTEGRATION: "0"
+          TESTING: "true"
+        run: |
+          pytest tests/test_integration.py -v --tb=short
+
+  # ── Deploy (only if both test jobs pass, only on main) ─────────────────────
+  deploy:
+    name: Deploy to Cloud Run
+    needs: [test-unit, test-integration]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy to Cloud Run
+        working-directory: clawmetry-landing
+        run: |
+          gcloud run deploy clawmetry-landing \
+            --source . \
+            --region europe-west1 \
+            --project openclaw-mc \
+            --allow-unauthenticated \
+            --quiet
+
+      - name: Smoke test after deploy
+        run: |
+          sleep 10
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://clawmetry.com)
+          echo "Homepage status: $STATUS"
+          [ "$STATUS" = "200" ] || (echo "Deploy smoke check FAILED" && exit 1)
+
+          SHOWCASE=$(curl -s -o /dev/null -w "%{http_code}" https://clawmetry.com/showcase)
+          echo "Showcase status: $SHOWCASE"
+          [ "$SHOWCASE" = "200" ] || (echo "Showcase smoke check FAILED" && exit 1)
+
+          echo "✅ Smoke checks passed"
