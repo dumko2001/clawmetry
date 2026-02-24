@@ -29,7 +29,8 @@ DB_PATH = "/tmp/clawmetry.db"
 
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "re_jWLL59fj_PBctxiwxDLFiWjBZ9MiJ4ems")
 RESEND_AUDIENCE_ID = os.environ.get("RESEND_AUDIENCE_ID", "48212e72-0d6c-489c-90c3-85a03a52d54c")
-FROM_EMAIL = "ClawMetry <hello@aivira.co>"  # TEMP: clawmetry.com DNS pending fix, switch back when verified
+FROM_EMAIL = "ClawMetry <vivek@aivira.co>"  # TEMP: clawmetry.com DNS pending fix, switch back when verified
+REPLY_TO_EMAIL = "hello@clawmetry.com"  # replies forwarded to clawmetry.com while aivira.co is used as sender
 UPDATES_EMAIL = "ClawMetry Updates <updates@clawmetry.com>"
 NOTIFY_SECRET = os.environ.get("NOTIFY_SECRET", "clawmetry-notify-2026")
 
@@ -406,6 +407,8 @@ WELCOME_HTML = """\
 
 
 def _resend_post(path, payload, retries=3):
+    if path == "/emails" and "reply_to" not in payload:
+        payload = {**payload, "reply_to": [REPLY_TO_EMAIL]}
     for attempt in range(retries):
         try:
             r = requests.post(f"https://api.resend.com{path}", headers=RESEND_HEADERS, json=payload, timeout=10)
