@@ -154,3 +154,90 @@ class TestShowcaseContent:
         r = client.get("/showcase")
         assert b"showcase" in r.data.lower()
         assert b"Share" in r.data or b"Built something" in r.data
+
+
+# ── /docs redirect ─────────────────────────────────────────────────────────
+
+class TestDocsRedirect:
+    def test_docs_slash_redirects(self, client):
+        """GET /docs must 301 redirect to /docs.html."""
+        r = client.get("/docs")
+        assert r.status_code == 301, f"Expected 301, got {r.status_code}"
+        loc = r.headers.get("Location", "")
+        assert loc.endswith("/docs.html"), f"Expected redirect to /docs.html, got {loc}"
+
+    def test_docs_html_loads(self, client):
+        """GET /docs.html must return 200 with content."""
+        r = client.get("/docs.html")
+        assert r.status_code == 200
+        assert b"ClawMetry" in r.data or b"clawmetry" in r.data.lower()
+
+
+# ── Traction page integrity ─────────────────────────────────────────────────
+
+class TestTractionIntegrity:
+    def test_traction_loads(self, client):
+        r = client.get("/traction")
+        assert r.status_code == 200
+
+    def test_traction_no_ellipsis_on_cold_start(self, client):
+        """PyPI stats must never show bare ... seeded fallbacks must kick in."""
+        r = client.get("/traction")
+        html = r.data.decode()
+        assert '<div class="metric-number">...</div>' not in html,             "PyPI metric showing raw ... cold-start fallback not working"
+        assert '<div class="metric-number accent">...</div>' not in html,             "PyPI 30-day metric showing raw ... cold-start fallback not working"
+
+    def test_traction_has_timeline(self, client):
+        r = client.get("/traction")
+        assert b"Timeline" in r.data
+
+    def test_traction_karpathy_entry(self, client):
+        """Feb 20 Karpathy timeline entry must be present."""
+        r = client.get("/traction")
+        html = r.data.decode()
+        assert "Feb 20" in html, "Feb 20 Karpathy entry missing from timeline"
+        assert "Karpathy" in html, "Karpathy name missing from timeline"
+
+    def test_traction_ph_launch_entry(self, client):
+        """Feb 18 entry must say ClawMetry Product Hunt launch."""
+        r = client.get("/traction")
+        assert b"ClawMetry Product Hunt launch" in r.data
+
+
+# ── robots.txt enforcement ──────────────────────────────────────────────────
+
+class TestRobotsTxt:
+    def test_robots_disallows_api(self, client):
+        """robots.txt must block /api/ to prevent 404s in Google Search Console."""
+        r = client.get("/robots.txt")
+        assert r.status_code == 200
+        assert b"Disallow: /api/" in r.data, "robots.txt must disallow /api/"
+
+    def test_robots_disallows_admin(self, client):
+        r = client.get("/robots.txt")
+        assert b"Disallow: /admin/" in r.data, "robots.txt must disallow /admin/"
+
+    def test_robots_has_sitemap(self, client):
+        r = client.get("/robots.txt")
+        assert b"sitemap.xml" in r.data.lower()
+
+
+# ── Sitemap completeness ────────────────────────────────────────────────────
+
+class TestSitemap:
+    def test_sitemap_includes_traction(self, client):
+        r = client.get("/sitemap.xml")
+        assert b"/traction" in r.data, "Sitemap missing /traction"
+
+    def test_sitemap_includes_showcase(self, client):
+        r = client.get("/sitemap.xml")
+        assert b"/showcase" in r.data, "Sitemap missing /showcase"
+
+    def test_sitemap_valid_xml(self, client):
+        import xml.etree.ElementTree as ET
+        r = client.get("/sitemap.xml")
+        assert r.status_code == 200
+        try:
+            ET.fromstring(r.data)
+        except ET.ParseError as e:
+            pytest.fail(f"sitemap.xml is not valid XML: {e}")
