@@ -718,12 +718,12 @@ def support_request():
         }, json={
             "from": FROM_EMAIL, "to": email, "bcc": ["hello@clawmetry.com"],
             "reply_to": ["vivek@clawmetry.com"],
-            "subject": "Quick question before I set you up — ClawMetry",
+            "subject": "Quick question before I set you up",
             "html": (
                 f'<div style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;max-width:520px;margin:0 auto;">' +
                 f'<p style="font-size:15px;color:#111;line-height:1.7;">Hey {display_name},</p>' +
                 f'<p style="font-size:15px;color:#111;line-height:1.7;">Really glad you reached out, happy to help you get set up.</p>' +
-                f'<p style="font-size:15px;color:#111;line-height:1.7;">Quick question first: where are you running OpenClaw? For example: Mac mini, old laptop, a VPS like Hostinger or Railway, or still planning to try it?</p>' +
+                f'<p style="font-size:15px;color:#111;line-height:1.7;">Quick question first: where are you running OpenClaw? Mac mini, old laptop, a VPS like Hostinger or Railway, or still planning to try it?</p>' +
                 f'<p style="font-size:15px;color:#111;line-height:1.7;">Either way I can help, just want to make sure the setup guide I send actually fits your situation.</p>' +
                 f'<p style="font-size:15px;color:#111;margin-top:20px;">Vivek<br><span style="color:#888;font-size:13px;">Founder, ClawMetry &middot; <a href=&quot;https://clawmetry.com&quot; style=&quot;color:#E5443A;text-decoration:none;&quot;>clawmetry.com</a></span></p>' +
                 f'</div>'
