@@ -827,7 +827,7 @@ document.addEventListener('click', function(e) {
 
 <!-- MANAGED MODAL -->
 <div id="managed-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)this.style.display='none'">
-  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:32px;max-width:480px;width:100%;position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:32px;max-width:480px;width:100%;position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.5);max-height:90vh;overflow-y:auto;">
     <button onclick="document.getElementById('managed-modal').style.display='none'" style="position:absolute;top:12px;right:16px;background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;padding:4px;">&times;</button>
     <div style="text-align:center;margin-bottom:24px;">
       <div style="font-size:32px;margin-bottom:8px;">🦞</div>
@@ -868,7 +868,7 @@ document.addEventListener('click', function(e) {
 
 <!-- SUPPORT MODAL -->
 <div id="support-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)this.style.display='none'">
-  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:32px;max-width:480px;width:100%;position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:32px;max-width:480px;width:100%;position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.5);max-height:90vh;overflow-y:auto;">
     <button onclick="document.getElementById('support-modal').style.display='none'" style="position:absolute;top:12px;right:16px;background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;padding:4px;">&times;</button>
     <div style="text-align:center;margin-bottom:24px;">
       <div style="font-size:32px;margin-bottom:8px;">🤝</div>
