@@ -45,10 +45,12 @@ def _ai_personalize_reply(name: str, message: str, help_type: str) -> str:
             f"You are Vivek, founder of ClawMetry. A user named {name or 'someone'} submitted a {req_type}. "
             f"ClawMetry context: {clawmetry_context} "
             f"Their message: \"{message.strip()}\". "
-            f"Write ONE short, warm follow-up question (max 30 words) directly relevant to their message. "
-            f"Use the ClawMetry context to ask something intelligent and specific to their situation. "
-            f"No em dashes. Sound like a founder who genuinely wants to help. "
-            f"Start naturally — Quick question: or just ask directly."
+            f"Write ONE short follow-up question (max 20 words) directly relevant to their message. "
+            f"Rules: sound exactly like a real person texting, not a company email. "
+            f"No em dashes. No exclamation marks. No filler words like certainly, absolutely, great. "
+            f"No AI tells. No formal language. Just a natural, curious question a founder would ask. "
+            f"Do NOT start with Quick question: — just ask it directly, like a human would in a message. "
+            f"Output only the question itself, nothing else."
         )
         resp = requests.post(
             "https://api.anthropic.com/v1/messages",
