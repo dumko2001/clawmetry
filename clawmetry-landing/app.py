@@ -38,7 +38,7 @@ def _ai_personalize_reply(name: str, message: str, help_type: str) -> str:
         resp = requests.post(
             "https://api.anthropic.com/v1/messages",
             headers={"x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"},
-            json={"model": "claude-haiku-4-5", "max_tokens": 80, "messages": [{"role": "user", "content": prompt}]},
+            json={"model": "claude-sonnet-4-6", "max_tokens": 80, "messages": [{"role": "user", "content": prompt}]},
             timeout=8,
         )
         if resp.status_code == 200:
