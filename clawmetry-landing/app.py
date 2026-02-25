@@ -802,15 +802,17 @@ def support_request():
         except Exception as e:
             log.error(f"[support-request] DB error: {e}")
 
-    # Notify Vivek
-    try:
+    # Fire emails in background so form returns in <200ms
+    def _send_support_emails():
         help_label = help_type.replace("-", " ").replace("_", " ").title() if help_type else "General"
-        requests.post("https://api.resend.com/emails", headers={
-            "Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json"
-        }, json={
-            "from": FROM_EMAIL, "to": VIVEK_EMAIL,
-            "subject": f"🤝 [Setup Help] {name or email} — {help_label}",
-            "html": f"""<div style="font-family:sans-serif;max-width:600px;">
+        # Notify Vivek
+        try:
+            requests.post("https://api.resend.com/emails", headers={
+                "Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json"
+            }, json={
+                "from": FROM_EMAIL, "to": VIVEK_EMAIL,
+                "subject": f"🤝 [Setup Help] {name or email} — {help_label}",
+                "html": f"""<div style="font-family:sans-serif;max-width:600px;">
 <h2>🤝 New Support Request</h2>
 <table style="border-collapse:collapse;width:100%;">
 <tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee;">Name</td><td style="padding:8px;border-bottom:1px solid #eee;">{name or '—'}</td></tr>
@@ -821,36 +823,37 @@ def support_request():
 </table>
 <p style="margin-top:16px;color:#666;">Reply directly to help them get set up.</p>
 </div>"""
-        }, timeout=10)
-    except Exception as e:
-        log.error(f"[support-request] notification email error: {e}")
+            }, timeout=10)
+        except Exception as e:
+            log.error(f"[support-request] notification email error: {e}")
 
-    _ai_result = _ai_personalize_reply(name, message, help_type)
-    ai_question = _ai_result.get("question") if _ai_result else None
-    ai_subject = _ai_result.get("subject") if _ai_result else None
-    # Send confirmation email to requester
-    try:
-        display_name = name or "there"
-        requests.post("https://api.resend.com/emails", headers={
-            "Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json"
-        }, json={
-            "from": FROM_EMAIL, "to": email, "bcc": ["vivek@clawmetry.com"],
-            "reply_to": ["vivek@clawmetry.com"],
-            "subject": ai_subject or "Quick question before I set up ClawMetry for you",
-            "html": (
-                f'<div style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;max-width:520px;margin:0 auto;">' +
-                f'<p style="font-size:15px;color:#111;line-height:1.7;">Hi {display_name},</p>' +
-                f'<p style="font-size:15px;color:#111;line-height:1.7;">Thanks for reaching out! I got your request and will personally get back to you shortly to help you get ClawMetry set up.</p>' +
-                (f'<div style="background:#f5f5f5;border-left:3px solid #ccc;padding:10px 14px;margin:12px 0;font-size:14px;color:#555;font-style:italic;">You said: {message}</div>' if message else '') +
-                f'<p style="font-size:15px;color:#111;line-height:1.7;">{ai_question or "Quick question first: where are you running OpenClaw? Mac mini, old laptop, a VPS like Hostinger or Railway, or still planning to try it?"}</p>' +
-                f'<p style="font-size:15px;color:#111;line-height:1.7;">Either way I can help, just want to make sure the setup guide I send actually fits your situation.</p>' +
-                f'<p style="font-size:15px;color:#111;margin-top:20px;">Vivek<br><span style="color:#888;font-size:13px;">Founder, ClawMetry &middot; <a href=&quot;https://clawmetry.com&quot; style=&quot;color:#E5443A;text-decoration:none;&quot;>clawmetry.com</a></span></p>' +
-                f'</div>'
-            )
-        }, timeout=10)
-    except Exception as e:
-        log.error(f"[support-request] confirmation email error: {e}")
+        _ai_result = _ai_personalize_reply(name, message, help_type)
+        ai_question = _ai_result.get("question") if _ai_result else None
+        ai_subject = _ai_result.get("subject") if _ai_result else None
+        # Send confirmation email to requester
+        try:
+            display_name = name or "there"
+            requests.post("https://api.resend.com/emails", headers={
+                "Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json"
+            }, json={
+                "from": FROM_EMAIL, "to": email, "bcc": ["vivek@clawmetry.com"],
+                "reply_to": ["vivek@clawmetry.com"],
+                "subject": ai_subject or "Quick question before I set up ClawMetry for you",
+                "html": (
+                    f'<div style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;max-width:520px;margin:0 auto;">' +
+                    f'<p style="font-size:15px;color:#111;line-height:1.7;">Hi {display_name},</p>' +
+                    f'<p style="font-size:15px;color:#111;line-height:1.7;">Thanks for reaching out! I got your request and will personally get back to you shortly to help you get ClawMetry set up.</p>' +
+                    (f'<div style="background:#f5f5f5;border-left:3px solid #ccc;padding:10px 14px;margin:12px 0;font-size:14px;color:#555;font-style:italic;">You said: {message}</div>' if message else '') +
+                    f'<p style="font-size:15px;color:#111;line-height:1.7;">{ai_question or "Quick question first: where are you running OpenClaw? Mac mini, old laptop, a VPS like Hostinger or Railway, or still planning to try it?"}</p>' +
+                    f'<p style="font-size:15px;color:#111;line-height:1.7;">Either way I can help, just want to make sure the setup guide I send actually fits your situation.</p>' +
+                    f'<p style="font-size:15px;color:#111;margin-top:20px;">Vivek<br><span style="color:#888;font-size:13px;">Founder, ClawMetry &middot; <a href=&quot;https://clawmetry.com&quot; style=&quot;color:#E5443A;text-decoration:none;&quot;>clawmetry.com</a></span></p>' +
+                    f'</div>'
+                )
+            }, timeout=10)
+        except Exception as e:
+            log.error(f"[support-request] confirmation email error: {e}")
 
+    threading.Thread(target=_send_support_emails, daemon=True).start()
     return jsonify({"ok": True, "message": "We'll be in touch!"})
 
 
