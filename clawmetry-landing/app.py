@@ -22,9 +22,9 @@ app = Flask(__name__, static_folder=".", static_url_path="")
 
 
 
-def _ai_personalize_reply(name: str, message: str, help_type: str) -> str:
-    """Generate a personalised follow-up question using Claude based on what the user said.
-    Returns a single sentence or None on failure/empty message."""
+def _ai_personalize_reply(name: str, message: str, help_type: str) -> dict:
+    """Generate a personalised subject + follow-up question using Claude.
+    Returns dict with subject and question keys, or None on failure/empty message."""
     if not ANTHROPIC_API_KEY or not message or not message.strip():
         return None
     try:
@@ -45,12 +45,14 @@ def _ai_personalize_reply(name: str, message: str, help_type: str) -> str:
             f"You are Vivek, founder of ClawMetry. A user named {name or 'someone'} submitted a {req_type}. "
             f"ClawMetry context: {clawmetry_context} "
             f"Their message: \"{message.strip()}\". "
-            f"Write ONE short follow-up question (max 20 words) directly relevant to their message. "
-            f"Rules: sound exactly like a real person texting, not a company email. "
-            f"No em dashes. No exclamation marks. No filler words like certainly, absolutely, great. "
-            f"No AI tells. No formal language. Just a natural, curious question a founder would ask. "
-            f"Do NOT start with Quick question: — just ask it directly, like a human would in a message. "
-            f"Output only the question itself, nothing else."
+            f"Return ONLY a JSON object with two keys: subject and question. "
+            f"subject: a short punchy email subject (max 8 words) that feels personal and premium, "
+            f"makes the recipient want to open it, references their context, never generic. "
+            f"question: ONE follow-up question (max 20 words) directly relevant to their message. "
+            f"Rules for both: sound like a real person, not a company. "
+            f"No em dashes. No exclamation marks. No filler words. No AI tells. "
+            f"question: ask directly, no preamble like Quick question. "
+            f"Output only the raw JSON, nothing else. Example: {{\"subject\": \"your OpenClaw setup\", \"question\": \"which model are you running?\"}}"
         )
         resp = requests.post(
             "https://api.anthropic.com/v1/messages",
@@ -59,7 +61,10 @@ def _ai_personalize_reply(name: str, message: str, help_type: str) -> str:
             timeout=8,
         )
         if resp.status_code == 200:
-            return resp.json()["content"][0]["text"].strip()
+            import json as _json
+            text = resp.json()["content"][0]["text"].strip()
+            parsed = _json.loads(text)
+            return {"subject": parsed.get("subject", ""), "question": parsed.get("question", "")}
     except Exception as e:
         log.warning(f"[ai-email] failed: {e}")
     return None
@@ -675,14 +680,16 @@ def managed_request():
         </div>"""
     )
 
-    ai_question_managed = _ai_personalize_reply(name, use_case, "managed")
+    _ai_result_managed = _ai_personalize_reply(name, use_case, "managed")
+    ai_question_managed = _ai_result_managed.get("question") if _ai_result_managed else None
+    ai_subject_managed = _ai_result_managed.get("subject") if _ai_result_managed else None
     use_case_block = (f'<div style="background:#1a1a2e;border-left:3px solid #555;padding:10px 14px;margin:12px 0;font-size:14px;color:#9ca3af;font-style:italic;">You mentioned: {use_case}</div>' if use_case else '')
     # Send confirmation to requester
     try:
         _resend_post("/emails", {
             "from": FROM_EMAIL, "to": [email], "bcc": ["vivek@clawmetry.com"],
             "reply_to": ["vivek@clawmetry.com"],
-            "subject": "Quick question about your OpenClaw setup",
+            "subject": ai_subject_managed or "Quick question about your OpenClaw setup",
             "html": f"""<div style="font-family:sans-serif;max-width:500px;margin:0 auto;background:#0d0d14;color:#e0e0e0;border-radius:12px;overflow:hidden;">
               <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);padding:32px 28px;text-align:center;">
                 <div style="font-size:28px;margin-bottom:8px;">🦞</div>
@@ -759,7 +766,9 @@ def support_request():
     except Exception as e:
         log.error(f"[support-request] notification email error: {e}")
 
-    ai_question = _ai_personalize_reply(name, message, help_type)
+    _ai_result = _ai_personalize_reply(name, message, help_type)
+    ai_question = _ai_result.get("question") if _ai_result else None
+    ai_subject = _ai_result.get("subject") if _ai_result else None
     # Send confirmation email to requester
     try:
         display_name = name or "there"
@@ -768,7 +777,7 @@ def support_request():
         }, json={
             "from": FROM_EMAIL, "to": email, "bcc": ["vivek@clawmetry.com"],
             "reply_to": ["vivek@clawmetry.com"],
-            "subject": "Quick question before I set up ClawMetry for you",
+            "subject": ai_subject or "Quick question before I set up ClawMetry for you",
             "html": (
                 f'<div style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;max-width:520px;margin:0 auto;">' +
                 f'<p style="font-size:15px;color:#111;line-height:1.7;">Hi {display_name},</p>' +
