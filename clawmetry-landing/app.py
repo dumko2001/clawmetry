@@ -724,8 +724,8 @@ def support_request():
             "subject": "Quick question before I set up ClawMetry for you",
             "html": (
                 f'<div style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;max-width:520px;margin:0 auto;">' +
-                f'<p style="font-size:15px;color:#111;line-height:1.7;">Hey {display_name},</p>' +
-                f'<p style="font-size:15px;color:#111;line-height:1.7;">Really glad you reached out, happy to help you get ClawMetry set up.</p>' +
+                f'<p style="font-size:15px;color:#111;line-height:1.7;">Hi {display_name},</p>' +
+                f'<p style="font-size:15px;color:#111;line-height:1.7;">Thanks for reaching out! I got your request and will personally get back to you shortly to help you get ClawMetry set up.</p>' +
                 (f'<div style="background:#f5f5f5;border-left:3px solid #ccc;padding:10px 14px;margin:12px 0;font-size:14px;color:#555;font-style:italic;">You said: {message}</div>' if message else '') +
                 f'<p style="font-size:15px;color:#111;line-height:1.7;">Quick question first: where are you running OpenClaw? Mac mini, old laptop, a VPS like Hostinger or Railway, or still planning to try it?</p>' +
                 f'<p style="font-size:15px;color:#111;line-height:1.7;">Either way I can help, just want to make sure the setup guide I send actually fits your situation.</p>' +
