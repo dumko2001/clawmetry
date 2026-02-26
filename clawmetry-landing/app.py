@@ -505,6 +505,17 @@ WELCOME_HTML = """\
       <p style="font-size:13px;color:#9ca3af;margin:0 0 12px;">Help other OpenClaw users discover ClawMetry.</p>
       <a href="https://github.com/vivekchand/clawmetry" style="display:inline-block;background:#238636;color:#fff;font-weight:700;font-size:13px;padding:10px 24px;border-radius:8px;text-decoration:none;">Star on GitHub →</a>
     </div>
+    <div style="background:#1a1a2e;border:1px solid #2d2d44;border-radius:10px;padding:20px;margin:20px 0;">
+      <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:4px;">&#x1F6E3; What we are building next</div>
+      <p style="font-size:13px;color:#9ca3af;margin:0 0 14px;">Cloud dashboard, alerting, iOS/Android app, human-in-the-loop controls. Vote on what ships first.</p>
+      <div style="margin-bottom:14px;">
+        <span style="display:inline-block;background:#1e293b;border:1px solid #334155;border-radius:6px;padding:5px 12px;font-size:12px;color:#94a3b8;margin:3px;">&#x2601; Cloud dashboard</span>
+        <span style="display:inline-block;background:#1e293b;border:1px solid #334155;border-radius:6px;padding:5px 12px;font-size:12px;color:#94a3b8;margin:3px;">&#x1F514; Alerting</span>
+        <span style="display:inline-block;background:#1e293b;border:1px solid #334155;border-radius:6px;padding:5px 12px;font-size:12px;color:#94a3b8;margin:3px;">&#x1F4F1; iOS/Android</span>
+        <span style="display:inline-block;background:#1e293b;border:1px solid #334155;border-radius:6px;padding:5px 12px;font-size:12px;color:#94a3b8;margin:3px;">&#x1F9D1;&#x200D;&#x1F4BB; Human-in-the-loop</span>
+      </div>
+      <a href="https://clawmetry.com/roadmap" style="display:inline-block;background:#E5443A;color:#fff;font-weight:700;font-size:13px;padding:10px 24px;border-radius:8px;text-decoration:none;">Vote on what ships next &#x2192;</a>
+    </div>
     <div style="background:linear-gradient(135deg,#1e3a5f,#1a2744);border:1px solid #3b82f6;border-radius:10px;padding:20px;margin:24px 0;text-align:center;">
       <div style="font-size:24px;margin-bottom:8px;">🎁</div>
       <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:8px;">Get a $10 Amazon Gift Card</div>
