@@ -423,7 +423,9 @@
       .mobile-subnav a:last-child { border-right: none; }
       .mobile-subnav a:hover { color: var(--text); }
     }
+    .help-boxes { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px; max-width:520px; margin-left:auto; margin-right:auto; }
     @media (max-width: 480px) {
+      .help-boxes { grid-template-columns:1fr; }
       .hero h1 { font-size: 2rem; }
       .section-title { font-size: 1.5rem; }
     }
@@ -775,7 +777,16 @@
       </div>
     </div>
     <p style="text-align:center;color:var(--text-dim);font-size:13px;margin-top:16px;">macOS, Linux, Windows. The installer figures it out.</p>
-    <p style="text-align:center;font-size:13px;color:rgba(255,255,255,0.3);margin-top:10px;">Need help? <a href="#" onclick="openSupportModal();return false;" style="color:rgba(255,255,255,0.5);text-decoration:underline;">Get free onboarding help</a> &middot; <a href="#" onclick="openManagedModal();return false;" style="color:rgba(255,255,255,0.5);text-decoration:underline;">Request managed instance</a></p>
+    <div class="help-boxes">
+      <a href="#" onclick="openSupportModal();return false;" style="display:block;padding:16px 18px;border:1px solid var(--border);border-radius:10px;background:var(--bg-card);text-decoration:none;transition:border-color 0.2s,background 0.2s;" onmouseenter="this.style.borderColor='var(--border-hover)';this.style.background='var(--bg-card-hover)'" onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg-card)'">
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">Need help setting up?</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);">Get free onboarding help &rarr;</div>
+      </a>
+      <a href="#" onclick="openManagedModal();return false;" style="display:block;padding:16px 18px;border:1px solid var(--border);border-radius:10px;background:var(--bg-card);text-decoration:none;transition:border-color 0.2s,background 0.2s;" onmouseenter="this.style.borderColor='var(--border-hover)';this.style.background='var(--bg-card-hover)'" onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg-card)'">
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">Don't want to self-host?</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);">Request managed instance &rarr;</div>
+      </a>
+    </div>
   </div>
 </section>
 <script>
