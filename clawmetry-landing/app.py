@@ -678,6 +678,38 @@ def roadmap_vote():
             log.warning(f"[roadmap-vote] sqlite error: {e}")
 
     log.info(f"[roadmap-vote] feature={feature} ip_hash={ip_hash}")
+
+    # Notify Vivek in background
+    visitor = _get_visitor_info(request)
+    def _notify_vote(feat, v):
+        try:
+            feature_labels = {
+                "cloud": "Cloud version", "alerting": "Alerting",
+                "hitl": "Human-in-the-loop", "mac-app": "Mac app",
+                "ios-app": "iOS & Android", "frameworks": "More Claws support",
+                "team": "Team features", "cost": "Cost analytics",
+            }
+            label = feature_labels.get(feat, feat)
+            _resend_post("/emails", {
+                "from": FROM_EMAIL,
+                "to": [VIVEK_EMAIL],
+                "subject": f"Roadmap vote: {label}",
+                "html": (
+                    f"<p style='font-size:15px;'><strong>{label}</strong> just got an upvote on the roadmap.</p>"
+                    f"<table style='font-size:14px;border-collapse:collapse;'>"
+                    f"<tr><td style='padding:4px 12px 4px 0;color:#666;'>Location</td><td>{v.get('location','Unknown')}</td></tr>"
+                    f"<tr><td style='padding:4px 12px 4px 0;color:#666;'>Referrer</td><td>{v.get('referer','Direct')}</td></tr>"
+                    f"<tr><td style='padding:4px 12px 4px 0;color:#666;'>IP</td><td>{v.get('ip','')}</td></tr>"
+                    f"<tr><td style='padding:4px 12px 4px 0;color:#666;'>Browser</td>"
+                    f"<td style='font-size:12px;color:#888;'>{v.get('user_agent','')[:120]}</td></tr>"
+                    f"</table>"
+                ),
+            })
+        except Exception as ex:
+            log.warning(f"[roadmap-vote] notify error: {ex}")
+    import threading
+    threading.Thread(target=_notify_vote, args=(feature, visitor), daemon=True).start()
+
     return jsonify({"ok": True})
 
 
