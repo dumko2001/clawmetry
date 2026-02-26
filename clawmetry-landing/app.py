@@ -444,6 +444,7 @@ label{display:block;color:var(--muted);font-size:13px;margin-bottom:4px;margin-t
   <a href="/admin" class="{{ 'active' if active=='dash' }}">Dashboard</a>
   <a href="/admin/inbox" class="{{ 'active' if active=='inbox' }}">Inbox</a>
   <a href="/admin/compose" class="{{ 'active' if active=='compose' }}">Compose</a>
+  <a href="/admin/blast" class="{{ 'active' if active=='blast' }}">Blast</a>
   <a href="/admin/sent" class="{{ 'active' if active=='sent' }}">Sent</a>
   <a href="/admin/subscribers" class="{{ 'active' if active=='subs' }}">Subscribers</a>
   <a href="/admin/events" class="{{ 'active' if active=='events' }}">Events</a>
@@ -1537,6 +1538,128 @@ def admin_compose():
     </div>
     """
     return _render_admin("Compose", html, "compose")
+
+
+
+BLAST_EMAIL_HTML = """<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <div style="max-width:520px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+    <div style="background:#0B0F1A;padding:28px 32px 20px;">
+      <div style="font-size:22px;font-weight:800;color:#fff;letter-spacing:-0.02em;">Claw<span style="color:#E5443A;">metry</span> &#x1F99E;</div>
+      <p style="font-size:13px;color:#94a3b8;margin:4px 0 0;">Real-time observability for your AI agents</p>
+    </div>
+    <div style="padding:32px;">
+      <p style="font-size:15px;color:#111;line-height:1.7;margin:0 0 16px;">Hey &#x1F44B;</p>
+      <p style="font-size:15px;color:#111;line-height:1.7;margin:0 0 16px;">
+        Thanks for being an early ClawMetry user. Since you signed up, a lot has shipped:
+        the <strong>cloud version</strong> (connect any OpenClaw instance with one command),
+        a redesigned dashboard, and 7-day history for agents and sub-agents.
+      </p>
+      <p style="font-size:15px;color:#111;line-height:1.7;margin:0 0 24px;">
+        Want to see how it all fits together:
+      </p>
+      <div style="text-align:center;margin:0 0 28px;">
+        <a href="https://clawmetry.com/how-it-works" style="display:inline-block;background:#E5443A;color:#fff;font-weight:700;font-size:14px;padding:13px 28px;border-radius:10px;text-decoration:none;">See how it works</a>
+      </div>
+      <p style="font-size:15px;color:#111;line-height:1.7;margin:0 0 12px;font-weight:600;">What we are building next:</p>
+      <ul style="margin:0 0 24px;padding-left:20px;color:#374151;font-size:14px;line-height:2.1;">
+        <li><strong>Alerting</strong> - PagerDuty, Slack, Telegram when an agent loops or goes silent</li>
+        <li><strong>Human-in-the-loop</strong> - pause, inspect, and approve actions before they run</li>
+        <li><strong>Mobile apps</strong> - iOS and Android, manage agents from your phone</li>
+        <li><strong>Team features</strong> - shared dashboards, audit logs, role-based access</li>
+      </ul>
+      <a href="https://clawmetry.com/roadmap" style="display:block;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 18px;text-decoration:none;margin-bottom:28px;">
+        <span style="font-size:14px;color:#111;font-weight:600;">Full roadmap + vote on what ships next</span>
+        <span style="font-size:13px;color:#E5443A;display:block;margin-top:2px;">clawmetry.com/roadmap &#x2192;</span>
+      </a>
+      <div style="background:#fff7f7;border:1px solid #ffd5d5;border-radius:10px;padding:20px;margin-bottom:28px;">
+        <p style="font-size:15px;font-weight:700;color:#111;margin:0 0 8px;">&#x1F4AC; Had a chance to use ClawMetry?</p>
+        <p style="font-size:13px;color:#555;margin:0 0 14px;line-height:1.6;">A quick review on Product Hunt helps other OpenClaw users find us. Takes about 2 minutes.</p>
+        <a href="https://www.producthunt.com/products/clawmetry/reviews/new" style="display:inline-block;background:#ff6154;color:#fff;font-weight:700;font-size:13px;padding:10px 22px;border-radius:8px;text-decoration:none;">Write a review &#x2192;</a>
+      </div>
+      <p style="font-size:14px;color:#374151;margin:0 0 4px;">Vivek</p>
+      <p style="font-size:13px;color:#94a3b8;margin:0;">Founder, ClawMetry</p>
+    </div>
+    <div style="border-top:1px solid #f1f5f9;padding:16px 32px;text-align:center;">
+      <p style="font-size:12px;color:#94a3b8;margin:0;">
+        You are receiving this because you subscribed at clawmetry.com.
+        <a href="{{unsubscribe_url}}" style="color:#94a3b8;">Unsubscribe</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>"""
+
+
+@app.route("/admin/blast", methods=["GET", "POST"])
+@login_required
+def admin_blast():
+    from flask import flash
+    import html as html_lib
+    contacts = get_all_contacts() or []
+    count = len(contacts)
+
+    if request.method == "POST":
+        subject = request.form.get("subject", "").strip()
+        html_body = request.form.get("html_body", "").strip()
+        confirm = request.form.get("confirm", "")
+
+        if confirm != "SEND":
+            flash("Type SEND in the confirmation box to proceed.", "error")
+        elif not subject or not html_body:
+            flash("Subject and body required.", "error")
+        else:
+            ok1, bc = _resend_post("/broadcasts", {
+                "audience_id": RESEND_AUDIENCE_ID,
+                "from": FROM_EMAIL,
+                "name": "Blast: " + subject,
+                "subject": subject,
+                "html": html_body,
+            })
+            if not ok1:
+                flash("Failed to create broadcast: " + str(bc), "error")
+            else:
+                bc_id = (bc.get("data") or {}).get("id") or bc.get("id")
+                if not bc_id:
+                    flash("No broadcast ID returned: " + str(bc), "error")
+                else:
+                    ok2, resp2 = _resend_post("/broadcasts/" + bc_id + "/send", {})
+                    if ok2:
+                        _fs_add("emails_sent", {
+                            "to_email": "[BLAST to " + str(count) + " subscribers]",
+                            "subject": subject,
+                            "body_html": html_body[:500],
+                            "sent_at": _now_iso(),
+                            "in_reply_to": "",
+                        })
+                        flash("Blast sent to " + str(count) + " subscribers! Broadcast ID: " + bc_id, "success")
+                        return redirect("/admin/blast")
+                    else:
+                        flash("Broadcast created (" + bc_id + ") but send failed: " + str(resp2), "error")
+
+    escaped_template = html_lib.escape(BLAST_EMAIL_HTML.strip())
+    page_html = (
+        '''<div class="card" style="max-width:740px;">'''
+        '''<h2 style="margin-bottom:4px">Email Blast</h2>'''
+        '''<p style="color:var(--muted);font-size:13px;margin-bottom:20px;">Sends to all <strong>'''
+        + str(count) +
+        '''</strong> subscribed contacts via Resend Broadcasts.</p>'''
+        '''<form method="POST">'''
+        '''<label>Subject</label>'''
+        '''<input type="text" name="subject" value="What&apos;s new in ClawMetry" required style="margin-bottom:14px;">'''
+        '''<label>HTML Body</label>'''
+        '''<textarea name="html_body" rows="22" required style="font-family:monospace;font-size:12px;">'''
+        + escaped_template +
+        '''</textarea>'''
+        '''<label style="margin-top:14px;">Type <strong>SEND</strong> to confirm</label>'''
+        '''<input type="text" name="confirm" placeholder="SEND" required style="max-width:120px;margin-bottom:16px;">'''
+        '''<div><button type="submit" class="btn btn-danger">Send blast to '''
+        + str(count) +
+        ''' subscribers</button></div></form></div>'''
+    )
+    return _render_admin("Email Blast", page_html, "blast")
 
 
 @app.route("/admin/sent")
