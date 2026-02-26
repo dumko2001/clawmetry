@@ -53,6 +53,77 @@ except ImportError:
 
 __version__ = "0.9.16"
 
+# ── Supabase Cloud Sync (optional) ─────────────────────────────────────
+try:
+    import requests as _requests_mod
+except ImportError:
+    _requests_mod = None
+
+SUPABASE_URL = os.environ.get('SUPABASE_URL', '')
+SUPABASE_KEY = os.environ.get('SUPABASE_ANON_KEY', '')
+
+if not SUPABASE_URL:
+    try:
+        _cfg_path = os.path.expanduser('~/.clawmetry/config.json')
+        if os.path.exists(_cfg_path):
+            with open(_cfg_path) as _f:
+                _cfg = json.load(_f)
+            SUPABASE_URL = _cfg.get('supabase_url', '')
+            SUPABASE_KEY = _cfg.get('supabase_anon_key', '')
+    except Exception:
+        pass
+
+_sb_enabled = bool(SUPABASE_URL and SUPABASE_KEY and _requests_mod)
+_sb_queue = []
+_sb_queue_lock = threading.Lock()
+_sb_last_sync = 0
+
+def _sb_upsert(table, rows, on_conflict=None):
+    if not _sb_enabled or not rows:
+        return
+    try:
+        hdrs = {
+            'apikey': SUPABASE_KEY,
+            'Authorization': f'Bearer {SUPABASE_KEY}',
+            'Content-Type': 'application/json',
+            'Prefer': 'resolution=merge-duplicates,return=minimal'
+        }
+        if on_conflict:
+            hdrs['Prefer'] = f'resolution=merge-duplicates,return=minimal,on_conflict={on_conflict}'
+        url = f'{SUPABASE_URL.rstrip("/")}/rest/v1/{table}'
+        _requests_mod.post(url, json=rows if isinstance(rows, list) else [rows], headers=hdrs, timeout=5)
+    except Exception:
+        pass  # never block on sync failures
+
+def _sb_queue_event(table, data):
+    if not _sb_enabled:
+        return
+    with _sb_queue_lock:
+        _sb_queue.append((table, data))
+
+def _sb_flush():
+    global _sb_last_sync
+    while True:
+        time.sleep(2)
+        if not _sb_enabled:
+            continue
+        with _sb_queue_lock:
+            batch = _sb_queue[:]
+            _sb_queue.clear()
+        if not batch:
+            continue
+        by_table = {}
+        for table, row in batch:
+            by_table.setdefault(table, []).append(row)
+        for table, rows in by_table.items():
+            _sb_upsert(table, rows)
+        _sb_last_sync = time.time()
+
+# Start flush thread
+if _sb_enabled:
+    _t = threading.Thread(target=_sb_flush, daemon=True)
+    _t.start()
+
 app = Flask(__name__)
 
 # ── Configuration (auto-detected, overridable via CLI/env) ──────────────
@@ -2156,8 +2227,8 @@ function clawmetryLogout(){
     <div class="nav-tab" onclick="switchTab('memory')">Memory</div>
     <!-- History tab hidden until mature -->
     <!-- <div class="nav-tab" onclick="switchTab('history')">History</div> -->
-    <div class="nav-tab" onclick="switchTab('memory-history')">Brain</div>
-    <div class="nav-tab" onclick="switchTab('tasks-history')">Tasks</div>
+    <div class="nav-tab" onclick="switchTab('memory-history')">Main Agent</div>
+    <div class="nav-tab" onclick="switchTab('tasks-history')">Sub Agents</div>
   </div>
 </div>
 
@@ -2589,22 +2660,24 @@ function clawmetryLogout(){
 
 <!-- MEMORY HISTORY -->
 <div class="page" id="page-memory-history">
-  <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;flex-wrap:wrap;">
-    <h2 style="font-size:18px;font-weight:700;color:var(--text-primary);margin:0;">&#129488; Brain History</h2>
-    <div style="display:flex;gap:4px;">
-      <button class="time-btn active" id="mh-btn-1" onclick="loadMemoryHistory(1)">Today</button>
-      <button class="time-btn" id="mh-btn-3" onclick="loadMemoryHistory(3)">3 days</button>
-      <button class="time-btn" id="mh-btn-7" onclick="loadMemoryHistory(7)">7 days</button>
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+    <h2 style="font-size:18px;font-weight:700;color:var(--text-primary);margin:0;">&#129504; Main Agent</h2>
+    <div style="display:flex;align-items:center;gap:6px;background:var(--bg-secondary);border:1px solid var(--border-primary);border-radius:20px;padding:4px 12px;">
+      <span id="ma-page-dot" style="width:8px;height:8px;border-radius:50%;background:#888;display:inline-block;flex-shrink:0;"></span>
+      <span id="ma-page-model" style="font-size:12px;color:var(--text-secondary);">Loading...</span>
+      <span id="ma-page-status" style="font-size:11px;font-weight:600;color:#888;margin-left:2px;"></span>
     </div>
-    <button class="refresh-btn" onclick="loadMemoryHistory(_mhDays)" style="margin-left:auto;">&#8635; Refresh</button>
+    <button class="refresh-btn" onclick="loadMainAgentPage()" style="margin-left:auto;">&#8635; Refresh</button>
   </div>
-  <div id="memory-history-list" class="card" style="padding:16px;">Loading...</div>
+  <div id="ma-page-list" class="card" style="padding:0;overflow:hidden;">
+    <div style="padding:20px;text-align:center;color:var(--text-muted);font-size:13px;">Loading...</div>
+  </div>
 </div>
 
 <!-- TASKS HISTORY -->
 <div class="page" id="page-tasks-history">
   <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;flex-wrap:wrap;">
-    <h2 style="font-size:18px;font-weight:700;color:var(--text-primary);margin:0;">&#129302; Tasks History</h2>
+    <h2 style="font-size:18px;font-weight:700;color:var(--text-primary);margin:0;">&#129302; Sub Agents</h2>
     <div style="display:flex;gap:4px;">
       <button class="time-btn active" id="th-btn-1" onclick="loadTasksHistory(1)">Today</button>
       <button class="time-btn" id="th-btn-3" onclick="loadTasksHistory(3)">3 days</button>
@@ -3053,8 +3126,8 @@ function switchTab(name) {
   if (name === 'transcripts') loadTranscripts();
   if (name === 'flow') initFlow();
   if (name === 'history') loadHistory();
-  if (name === 'memory-history') loadMemoryHistory();
-  if (name === 'tasks-history') loadTasksHistory(1);
+  if (name === 'memory-history') { loadMainAgentPage(); if (!window._maPageTimer) window._maPageTimer = setInterval(loadMainAgentPage, 5000); }
+  if (name === 'tasks-history') { if (window._maPageTimer) { clearInterval(window._maPageTimer); window._maPageTimer = null; } loadTasksHistory(1); }
 }
 
 function exportUsageData() {
@@ -6901,6 +6974,143 @@ function finishBootOverlay() {
   }
 }
 
+// ── Main Agent Activity Page ────────────────────────────────────────────
+var _maPageTimer = null;
+function loadMainAgentPage() {
+  var el = document.getElementById('ma-page-list');
+  var dot = document.getElementById('ma-page-dot');
+  var modelEl = document.getElementById('ma-page-model');
+  var statusEl = document.getElementById('ma-page-status');
+  if (!el) return;
+  fetch('/api/main-activity')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var calls = data.calls || [];
+      var now = Date.now() / 1000;
+      var idle = !data.lastModified || (now - data.lastModified) > 60;
+      var model = data.model || 'Claude';
+      var shortModel = model.replace('anthropic/','').replace('claude-','Claude ').replace(/-/g,' ');
+      if (modelEl) modelEl.textContent = shortModel;
+      if (dot) { dot.style.background = idle ? '#f39c12' : '#2ecc71'; dot.style.animation = idle ? 'none' : 'pulse-dot 1.5s ease-in-out infinite'; }
+      if (statusEl) { statusEl.textContent = idle ? 'Idle' : 'Active'; statusEl.style.color = idle ? '#f39c12' : '#2ecc71'; }
+      if (calls.length === 0) {
+        el.innerHTML = '<div style="padding:32px;text-align:center;color:var(--text-muted);font-size:13px;">No recent activity</div>';
+        return;
+      }
+      var toolLabels = {exec:'Shell',Read:'Read',read:'Read',Edit:'Edit',edit:'Edit',Write:'Write',write:'Write',
+        web_search:'Search',web_fetch:'Fetch',browser:'Browser',message:'Msg',tts:'TTS',process:'Proc',
+        sessions_spawn:'Spawn',sessions_send:'Send',cron:'Cron',gateway:'GW',session_status:'Status',
+        image:'Vision',canvas:'Canvas',memory_search:'Memory',memory_get:'Memory'};
+      var html = '';
+      for (var i = calls.length - 1; i >= 0; i--) {
+        var c = calls[i];
+        var ts = '';
+        if (c.ts) {
+          try {
+            var d = typeof c.ts === 'number' ? new Date(c.ts > 1e12 ? c.ts : c.ts * 1000) : new Date(c.ts);
+            ts = d.toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+          } catch(e) {}
+        }
+        var summary = (c.summary || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        var toolLabel = toolLabels[c.name] || c.name || '?';
+        var isFirst = (i === calls.length - 1);
+        html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border-secondary);' + (isFirst ? 'background:rgba(46,204,113,0.04);' : '') + '">';
+        html += '<span style="font-size:11px;color:var(--text-faint);min-width:58px;font-family:monospace;">' + ts + '</span>';
+        html += '<span style="font-size:14px;min-width:20px;text-align:center;">' + (c.icon || '⚙️') + '</span>';
+        html += '<span style="font-size:11px;font-weight:700;color:#8b6fc0;min-width:46px;text-transform:uppercase;letter-spacing:0.4px;">' + toolLabel + '</span>';
+        html += '<span style="font-size:12px;color:var(--text-secondary);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + summary + '">' + summary + '</span>';
+        html += '</div>';
+      }
+      el.innerHTML = html;
+    })
+    .catch(function(e) {
+      if (el) el.innerHTML = '<div style="padding:20px;color:var(--text-error);font-size:12px;">Error: ' + e + '</div>';
+    });
+}
+
+// ── Sub Agents History ──────────────────────────────────────────────────
+var _thDays = 1;
+function loadTasksHistory(days) {
+  _thDays = days || _thDays;
+  ['1','3','7'].forEach(function(d) {
+    var b = document.getElementById('th-btn-' + d);
+    if (b) b.className = 'time-btn' + (String(_thDays) === d ? ' active' : '');
+  });
+  var el = document.getElementById('tasks-history-list');
+  if (!el) return;
+  el.innerHTML = '<div style="padding:20px;color:var(--text-muted);font-size:13px;">Loading...</div>';
+  fetch('/api/subagents')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var cutoff = Date.now() - (_thDays * 86400 * 1000);
+      var agents = (data.subagents || []).filter(function(a) {
+        return a.updatedAt && a.updatedAt >= cutoff;
+      });
+      if (agents.length === 0) {
+        el.innerHTML = '<div style="padding:32px;text-align:center;color:var(--text-muted);font-size:13px;">No sub-agent tasks in this period.</div>';
+        return;
+      }
+      // Group by day
+      var groups = {};
+      agents.forEach(function(a) {
+        var d = a.updatedAt ? new Date(a.updatedAt) : null;
+        var label = 'Unknown';
+        if (d) {
+          var now2 = new Date(); var diff = Math.floor((now2 - d) / 86400000);
+          if (diff === 0) label = 'Today';
+          else if (diff === 1) label = 'Yesterday';
+          else label = d.toLocaleDateString([], {weekday:'long', month:'short', day:'numeric'});
+        }
+        if (!groups[label]) groups[label] = [];
+        groups[label].push(a);
+      });
+      var dayOrder = ['Today','Yesterday'];
+      var otherDays = Object.keys(groups).filter(function(k) { return dayOrder.indexOf(k) === -1; }).sort().reverse();
+      var orderedDays = dayOrder.filter(function(d) { return groups[d]; }).concat(otherDays);
+      var html = '';
+      orderedDays.forEach(function(day) {
+        var grp = groups[day];
+        html += '<div style="margin-bottom:24px;">';
+        html += '<div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border-secondary);">' + day + ' &nbsp;<span style="font-weight:400;opacity:0.7;">(' + grp.length + ')</span></div>';
+        html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;">';
+        grp.forEach(function(a) {
+          var taskName = (a.displayName || a.uuid || 'Worker').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+          // Truncate long names
+          if (taskName.length > 80) taskName = taskName.substring(0, 77) + '...';
+          var statusClass = a.status === 'active' ? 'running' : (a.status === 'idle' ? 'running' : 'complete');
+          var statusColor = a.status === 'active' ? '#22c55e' : (a.status === 'idle' ? '#f59e0b' : '#6b7280');
+          var statusLabel = a.status === 'active' ? 'Active' : (a.status === 'idle' ? 'Idle' : 'Done');
+          var timeStr = a.updatedAt ? new Date(a.updatedAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
+          var model = (a.model || '').replace('anthropic/','').replace('claude-','').replace(/-/g,' ');
+          var tools = (a.recentTools || []).slice(0,3).map(function(t){ return t.name || t; }).join(', ');
+          var sid = (a.sessionId || '').replace(/'/g, "\\'");
+          var keyEsc = (a.key || a.sessionId || '').replace(/'/g, "\\'");
+          html += '<div class="task-card ' + statusClass + '" style="cursor:pointer;" onclick="openTaskModal(\'' + sid + '\',\'' + taskName.replace(/'/g,"\\'") + '\',\'' + keyEsc + '\')">';
+          html += '<div class="task-card-header">';
+          html += '<div class="task-card-name" style="font-size:13px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + taskName + '</div>';
+          html += '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:' + statusColor + '22;color:' + statusColor + ';font-weight:700;border:1px solid ' + statusColor + '44;">' + statusLabel + '</span>';
+          html += '</div>';
+          html += '<div style="display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap;">';
+          if (model) html += '<span style="font-size:10px;color:var(--text-muted);background:var(--bg-secondary);padding:1px 6px;border-radius:6px;">' + model + '</span>';
+          html += '<span style="font-size:10px;color:var(--text-faint);margin-left:auto;">' + timeStr + '</span>';
+          html += '</div>';
+          if (tools) {
+            html += '<div style="margin-top:6px;font-size:11px;color:var(--text-muted);">🔧 ' + tools.replace(/</g,'&lt;') + '</div>';
+          }
+          if (a.lastText) {
+            var snippet = a.lastText.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            if (snippet.length > 100) snippet = snippet.substring(0,97) + '...';
+            html += '<div style="margin-top:6px;font-size:11px;color:var(--text-secondary);line-height:1.4;">' + snippet + '</div>';
+          }
+          html += '</div>';
+        });
+        html += '</div></div>';
+      });
+      el.innerHTML = html;
+    })
+    .catch(function(e) { el.innerHTML = '<div style="padding:20px;color:var(--text-error);font-size:12px;">Error: ' + e + '</div>'; });
+}
+
 async function bootDashboard() {
   setBootStep('overview', 'loading', 'Loading overview + model context');
   var okOverview = await loadAll();
@@ -6919,166 +7129,7 @@ async function bootDashboard() {
   try { startHealthStream(); } catch (e) {}
   setBootStep('streams', 'done', 'Live streams connected');
 
-  // ── Memory History ─────────────────────────────────────────────────────
-var _mhDays = 1;
-function loadMemoryHistory(days) {
-  _mhDays = days || _mhDays;
-  ['1','3','7'].forEach(function(d) {
-    var b = document.getElementById('mh-btn-' + d);
-    if (b) b.className = 'time-btn' + (String(_mhDays) === d ? ' active' : '');
-  });
-  var el = document.getElementById('memory-history-list');
-  if (!el) return;
-  el.innerHTML = '<span style="color:var(--text-muted)">Loading...</span>';
-  fetch('/api/memory-history?days=' + _mhDays)
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      if (!data.files || data.files.length === 0) {
-        el.innerHTML = '<span style="color:var(--text-muted)">No memory files modified in this period.</span>';
-        return;
-      }
-      var groups = {};
-      data.files.forEach(function(f) {
-        var d = f.day || 'Unknown';
-        if (!groups[d]) groups[d] = [];
-        groups[d].push(f);
-      });
-      var html = '';
-      Object.keys(groups).sort().reverse().forEach(function(day) {
-        html += '<div style="margin-bottom:20px;">';
-        html += '<div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border-secondary);">' + day + '</div>';
-        groups[day].forEach(function(f) {
-          var sizeStr = f.size > 1024 ? (f.size/1024).toFixed(1) + ' KB' : f.size + ' B';
-          var timeStr = f.mtime ? new Date(f.mtime * 1000).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
-          var fid = 'mhf-' + f.path.replace(/[^a-z0-9]/gi, '-');
-          html += '<div style="border:1px solid var(--border-primary);border-radius:8px;margin-bottom:8px;overflow:hidden;">';
-          html += '<div onclick="toggleMHFile('' + fid + '','' + f.path + '')" style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;background:var(--bg-secondary);">';
-          html += '<span style="font-size:15px;">&#128196;</span>';
-          html += '<span style="font-size:13px;font-weight:600;color:var(--text-primary);flex:1;">' + f.path + '</span>';
-          html += '<span style="font-size:11px;color:var(--text-muted);margin-right:8px;">' + sizeStr + '</span>';
-          html += '<span style="font-size:11px;color:var(--text-muted);">' + timeStr + '</span>';
-          html += '<span style="font-size:11px;color:var(--accent-red);margin-left:8px;">&#9660;</span>';
-          html += '</div>';
-          html += '<div id="' + fid + '" style="display:none;padding:12px 14px;font-size:12px;font-family:monospace;white-space:pre-wrap;color:var(--text-secondary);background:var(--bg-primary);max-height:300px;overflow-y:auto;border-top:1px solid var(--border-primary);">Loading...</div>';
-          html += '</div>';
-        });
-        html += '</div>';
-      });
-      el.innerHTML = html;
-    })
-    .catch(function(e) { el.innerHTML = '<span style="color:var(--text-error)">Error: ' + e + '</span>'; });
-}
-function toggleMHFile(fid, path) {
-  var el = document.getElementById(fid);
-  if (!el) return;
-  if (el.style.display === 'none') {
-    el.style.display = 'block';
-    if (el.textContent === 'Loading...') {
-      fetch('/api/file?path=' + encodeURIComponent(path))
-        .then(function(r) { return r.json(); })
-        .then(function(d) { el.textContent = d.content || '(empty)'; })
-        .catch(function() { el.textContent = 'Could not load file.'; });
-    }
-  } else {
-    el.style.display = 'none';
-  }
-}
-
-// ── Tasks History ───────────────────────────────────────────────────────
-var _thDays = 1;
-function loadTasksHistory(days) {
-  _thDays = days || _thDays;
-  ['1','3','7'].forEach(function(d) {
-    var b = document.getElementById('th-btn-' + d);
-    if (b) b.className = 'time-btn' + (String(_thDays) === d ? ' active' : '');
-  });
-  var el = document.getElementById('tasks-history-list');
-  if (!el) return;
-  el.innerHTML = '<span style="color:var(--text-muted)">Loading...</span>';
-  fetch('/api/subagents?days=' + _thDays)
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      var agents = (data.subagents || []).filter(function(a) {
-        if (!a.updatedAt) return false;
-        var cutoff = Date.now() - (_thDays * 86400 * 1000);
-        return a.updatedAt >= cutoff;
-      });
-      if (agents.length === 0) {
-        el.innerHTML = '<span style="color:var(--text-muted)">No tasks in this period.</span>';
-        return;
-      }
-      var groups = {};
-      agents.forEach(function(a) {
-        var d = a.updatedAt ? new Date(a.updatedAt) : null;
-        var label = 'Unknown';
-        if (d) {
-          var now = new Date(); var diff = Math.floor((now - d) / 86400000);
-          if (diff === 0) label = 'Today';
-          else if (diff === 1) label = 'Yesterday';
-          else label = d.toLocaleDateString([], {weekday:'long', month:'short', day:'numeric'});
-        }
-        if (!groups[label]) groups[label] = [];
-        groups[label].push(a);
-      });
-      var html = '';
-      var dayOrder = ['Today','Yesterday'];
-      var otherDays = Object.keys(groups).filter(function(k) { return !dayOrder.includes(k); }).sort().reverse();
-      var orderedDays = dayOrder.filter(function(d) { return groups[d]; }).concat(otherDays);
-      orderedDays.forEach(function(day) {
-        html += '<div style="margin-bottom:20px;">';
-        html += '<div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border-secondary);">' + day + ' <span style="font-weight:400;">(' + groups[day].length + ' tasks)</span></div>';
-        groups[day].forEach(function(a) {
-          var statusColor = a.status === 'active' ? '#22c55e' : a.status === 'idle' ? '#f59e0b' : '#6b7280';
-          var tid = 'th-' + (a.uuid || Math.random().toString(36).substr(2,8));
-          var tools = (a.recentTools || []).slice(0,4).join(', ') || '';
-          var timeStr = a.updatedAt ? new Date(a.updatedAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
-          html += '<div style="border:1px solid var(--border-primary);border-radius:8px;margin-bottom:8px;overflow:hidden;">';
-          html += '<div onclick="toggleTaskActivity('' + tid + '','' + (a.sessionId||'') + '')" style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;background:var(--bg-secondary);">';
-          html += '<span style="width:8px;height:8px;border-radius:50%;background:' + statusColor + ';flex-shrink:0;"></span>';
-          html += '<span style="font-size:13px;font-weight:600;color:var(--text-primary);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (a.displayName || a.uuid || 'Unknown') + '</span>';
-          if (tools) html += '<span style="font-size:11px;color:var(--text-muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + tools + '</span>';
-          html += '<span style="font-size:11px;color:var(--text-muted);margin-left:8px;flex-shrink:0;">' + timeStr + '</span>';
-          html += '<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:' + statusColor + '22;color:' + statusColor + ';margin-left:6px;flex-shrink:0;">' + a.status + '</span>';
-          html += '</div>';
-          if (a.lastText) {
-            html += '<div style="padding:8px 14px;font-size:12px;color:var(--text-secondary);background:var(--bg-primary);border-top:1px solid var(--border-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + a.lastText.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>';
-          }
-          html += '<div id="' + tid + '" style="display:none;padding:12px 14px;background:var(--bg-primary);border-top:1px solid var(--border-primary);max-height:280px;overflow-y:auto;"><span style="color:var(--text-muted);font-size:12px;">Loading activity...</span></div>';
-          html += '</div>';
-        });
-        html += '</div>';
-      });
-      el.innerHTML = html;
-    })
-    .catch(function(e) { el.innerHTML = '<span style="color:var(--text-error)">Error: ' + e + '</span>'; });
-}
-function toggleTaskActivity(tid, sessionId) {
-  var el = document.getElementById(tid);
-  if (!el) return;
-  if (el.style.display === 'none') {
-    el.style.display = 'block';
-    if (el.querySelector('span')) {
-      fetch('/api/subagent/' + sessionId + '/activity?limit=30')
-        .then(function(r) { return r.json(); })
-        .then(function(d) {
-          var msgs = d.messages || d.activity || [];
-          if (!msgs.length) { el.innerHTML = '<span style="color:var(--text-muted);font-size:12px;">No activity recorded.</span>'; return; }
-          var h = '';
-          msgs.slice(-20).forEach(function(m) {
-            var role = m.role || 'system'; var color = role === 'user' ? 'var(--accent-red)' : 'var(--text-muted)';
-            var text = (m.text || m.content || '').toString().replace(/</g,'&lt;').replace(/>/g,'&gt;').substr(0,200);
-            h += '<div style="margin-bottom:6px;font-size:12px;"><span style="color:' + color + ';font-weight:600;margin-right:6px;">' + role + '</span><span style="color:var(--text-secondary);">' + text + '</span></div>';
-          });
-          el.innerHTML = h;
-        })
-        .catch(function() { el.innerHTML = '<span style="color:var(--text-muted);font-size:12px;">Could not load activity.</span>'; });
-    }
-  } else {
-    el.style.display = 'none';
-  }
-}
-
-// Pre-fetch crons and memory so they're ready when tabs are clicked
+  // Pre-fetch crons and memory so they're ready when tabs are clicked
   try { await loadCrons(); } catch (e) { console.warn('Crons prefetch failed:', e); }
   try { await loadMemory(); } catch (e) { console.warn('Memory prefetch failed:', e); }
 
@@ -7909,6 +7960,13 @@ def index():
     return resp
 
 
+@app.route('/favicon.ico')
+def favicon():
+    import os
+    from flask import send_file
+    ico = os.path.join(os.path.dirname(__file__), 'clawmetry-landing', 'favicon.ico')
+    return send_file(ico, mimetype='image/x-icon')
+
 @app.route('/api/channels')
 def api_channels():
     """Return list of configured channel names (telegram, signal, whatsapp, discord, webchat, etc.)."""
@@ -8199,7 +8257,18 @@ def api_main_activity():
             calls.append({'ts': ts, 'name': name, 'icon': icon, 'summary': summary})
     # Return last 20
     calls = calls[-20:]
-    return jsonify({'calls': calls, 'sessionFile': os.path.basename(best), 'lastModified': best_mt})
+    # Try to get current model from config
+    model = None
+    try:
+        cfg_path = os.path.expanduser('~/.openclaw/openclaw.json')
+        if os.path.exists(cfg_path):
+            with open(cfg_path) as _f:
+                _cfg = json.load(_f)
+            model = (_cfg.get('agents', {}) or {}).get('main', {}).get('model') or \
+                    _cfg.get('model') or _cfg.get('defaultModel')
+    except Exception:
+        pass
+    return jsonify({'calls': calls, 'sessionFile': os.path.basename(best), 'lastModified': best_mt, 'model': model})
 
 
 @app.route('/api/sessions')
@@ -8584,6 +8653,19 @@ def api_otel_status():
     })
 
 
+@app.route('/api/cloud-status')
+def api_cloud_status():
+    with _sb_queue_lock:
+        qd = len(_sb_queue)
+    return jsonify({
+        'enabled': _sb_enabled,
+        'supabase_url': (SUPABASE_URL[:30] + '...') if SUPABASE_URL else '',
+        'byos': bool(SUPABASE_URL),
+        'last_sync': _sb_last_sync,
+        'queue_depth': qd,
+    })
+
+
 # ── Multi-Node Fleet API Routes ──────────────────────────────────────────
 
 FLEET_HTML = r"""
@@ -8737,6 +8819,12 @@ def api_nodes_register():
         db.commit()
         db.close()
 
+    _sb_queue_event('nodes', {
+        'node_id': node_id, 'name': name, 'hostname': hostname,
+        'version': version, 'tags': json.loads(tags), 'status': 'online',
+        'last_seen_at': datetime.utcnow().isoformat() + 'Z'
+    })
+
     return jsonify({'ok': True, 'node_id': node_id})
 
 
@@ -8763,6 +8851,11 @@ def api_nodes_push_metrics(node_id):
         )
         db.commit()
         db.close()
+
+    _sb_queue_event('metrics', {
+        'node_id': node_id, 'metric_name': 'snapshot',
+        'value': 1.0, 'attributes': data
+    })
 
     return jsonify({'ok': True, 'received_at': now})
 
@@ -11738,6 +11831,62 @@ BANNER = r"""
 """
 
 
+def _run_setup_wizard():
+    """Interactive setup wizard for Supabase cloud sync."""
+    print()
+    print("  ╔══════════════════════════════════════╗")
+    print("  ║   🦞 ClawMetry Cloud Setup           ║")
+    print("  ╚══════════════════════════════════════╝")
+    print()
+    url = input("  Supabase URL: ").strip()
+    if not url:
+        print("  ❌ No URL provided. Aborting.")
+        sys.exit(1)
+    key = input("  Supabase anon key: ").strip()
+    if not key:
+        print("  ❌ No key provided. Aborting.")
+        sys.exit(1)
+
+    # Test connection
+    print("  Testing connection...", end=" ", flush=True)
+    try:
+        if not _requests_mod:
+            print("❌ 'requests' library not installed (pip install requests)")
+            sys.exit(1)
+        resp = _requests_mod.head(
+            f'{url.rstrip("/")}/rest/v1/',
+            headers={'apikey': key, 'Authorization': f'Bearer {key}'},
+            timeout=10
+        )
+        if resp.status_code < 400:
+            print("✅ Connected!")
+        else:
+            print(f"⚠️  Got HTTP {resp.status_code} (may still work)")
+    except Exception as e:
+        print(f"⚠️  Could not reach Supabase: {e}")
+        print("  Saving config anyway — you can fix the URL later.")
+
+    # Save config
+    cfg_dir = os.path.expanduser('~/.clawmetry')
+    os.makedirs(cfg_dir, exist_ok=True)
+    cfg_path = os.path.join(cfg_dir, 'config.json')
+    cfg = {}
+    if os.path.exists(cfg_path):
+        try:
+            with open(cfg_path) as f:
+                cfg = json.load(f)
+        except Exception:
+            pass
+    cfg['supabase_url'] = url
+    cfg['supabase_anon_key'] = key
+    with open(cfg_path, 'w') as f:
+        json.dump(cfg, f, indent=2)
+    print(f"  ✅ Saved to {cfg_path}")
+    print()
+    print("  Run 'clawmetry' to start with cloud sync enabled.")
+    print()
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="ClawMetry - Real-time observability for your AI agent",
@@ -11770,8 +11919,16 @@ def main():
     parser.add_argument('--version', '-v', action='version', version=f'clawmetry {__version__}')
     parser.add_argument('--base-path', type=str, default='',
                         help='Base URL path prefix for reverse proxy (e.g. /clawmetry). Also via CLAWMETRY_BASE_PATH env.')
+    parser.add_argument('setup', nargs='?', default=None,
+                        help='Run "clawmetry setup" to configure Supabase cloud sync.')
 
     args = parser.parse_args()
+
+    # Handle setup subcommand
+    if args.setup == 'setup':
+        _run_setup_wizard()
+        sys.exit(0)
+
     detect_config(args)
 
     # Sub-path support for reverse proxy deployments (e.g. Railway, nginx)
@@ -11854,6 +12011,7 @@ def main():
     print(f"  Logs:       {LOG_DIR}")
     print(f"  Metrics:    {_metrics_file_path()}")
     print(f"  OTLP:       {'✅ Ready (opentelemetry-proto installed)' if _HAS_OTEL_PROTO else '❌ Not available (pip install clawmetry[otel])'}")
+    print(f'  Supabase:   {"✓ Connected (" + SUPABASE_URL[:25] + "...)" if _sb_enabled else "❌ Not configured (set SUPABASE_URL + SUPABASE_ANON_KEY)"}')
     print(f"  User:       {USER_NAME}")
     print(f"  Mode:       {'🛠️  Dev (auto-reload ON)' if args.debug else '🚀 Prod (auto-reload OFF)'}")
     print(f"  SSE Limits: {SSE_MAX_SECONDS}s max duration · logs {MAX_LOG_STREAM_CLIENTS} clients · health {MAX_HEALTH_STREAM_CLIENTS} clients")
