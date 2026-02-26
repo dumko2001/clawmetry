@@ -212,6 +212,25 @@
     @media (max-width: 600px) {
       .roadmap-grid { grid-template-columns: 1fr; }
     }
+
+    /* Vote button */
+    .vote-btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      margin-top: 20px; padding: 8px 16px;
+      border-radius: 8px; border: 1px solid var(--border);
+      background: transparent; color: var(--text-dim);
+      font-size: 13px; font-weight: 500; cursor: pointer;
+      transition: all 0.2s; font-family: inherit;
+    }
+    .vote-btn:hover:not(:disabled) {
+      border-color: rgba(229,68,58,0.35); color: var(--text-muted);
+      background: rgba(229,68,58,0.05);
+    }
+    .vote-btn.voted {
+      border-color: rgba(34,197,94,0.3); color: #22c55e;
+      background: rgba(34,197,94,0.06); cursor: default;
+    }
+    .vote-btn svg { flex-shrink: 0; }
   </style>
 </head>
 <body>
@@ -272,6 +291,10 @@
           <div class="rcard-feat"><div class="rcard-feat-dot dot-red"></div>Multi-node fleet view across all your agents</div>
           <div class="rcard-feat"><div class="rcard-feat-dot dot-red"></div>7-day data retention, zero config</div>
         </div>
+        <button class="vote-btn" data-feature="cloud" onclick="castVote(this)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+          I want this
+        </button>
       </div>
 
       <!-- Alerting - Coming soon -->
@@ -289,6 +312,10 @@
           <div class="rcard-feat"><div class="rcard-feat-dot dot-orange"></div>Custom webhooks to any endpoint</div>
           <div class="rcard-feat"><div class="rcard-feat-dot dot-orange"></div>Configurable: silence > N min, failure rate, cost spike</div>
         </div>
+        <button class="vote-btn" data-feature="alerting" onclick="castVote(this)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+          I want this
+        </button>
       </div>
 
       <!-- Human-in-the-loop - Coming soon -->
@@ -305,6 +332,10 @@
           <div class="rcard-feat"><div class="rcard-feat-dot dot-orange"></div>Agents wait, you decide, they continue</div>
           <div class="rcard-feat"><div class="rcard-feat-dot dot-orange"></div>Full context: what the agent was doing and why</div>
         </div>
+        <button class="vote-btn" data-feature="hitl" onclick="castVote(this)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+          I want this
+        </button>
       </div>
 
       <!-- Mac App - Planned -->
@@ -321,6 +352,10 @@
           <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>Click to expand: full dashboard in a popover</div>
           <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>Works with local and cloud ClawMetry</div>
         </div>
+        <button class="vote-btn" data-feature="mac-app" onclick="castVote(this)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+          I want this
+        </button>
       </div>
 
       <!-- iOS app - Planned -->
@@ -337,6 +372,10 @@
           <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>Approve or deny HITL requests from your lock screen</div>
           <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>Session history and cost breakdown on the go</div>
         </div>
+        <button class="vote-btn" data-feature="ios-app" onclick="castVote(this)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+          I want this
+        </button>
       </div>
 
       <!-- Android app - Planned -->
@@ -353,6 +392,10 @@
           <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>Approve human-in-the-loop requests</div>
           <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>Widget support - agent status at a glance</div>
         </div>
+        <button class="vote-btn" data-feature="android-app" onclick="castVote(this)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+          I want this
+        </button>
       </div>
 
       <!-- More agent frameworks - Planned -->
@@ -370,6 +413,10 @@
           <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>OpenTelemetry bridge - any instrumented agent</div>
           <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>Python SDK - <code style="font-family:monospace;font-size:12px">clawmetry.trace()</code> for custom agents</div>
         </div>
+        <button class="vote-btn" data-feature="frameworks" onclick="castVote(this)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+          I want this
+        </button>
       </div>
 
       <!-- Team features - Planned -->
@@ -386,6 +433,10 @@
           <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>Audit log - who approved what, when</div>
           <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>Role-based access: viewer, operator, admin</div>
         </div>
+        <button class="vote-btn" data-feature="team" onclick="castVote(this)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+          I want this
+        </button>
       </div>
 
       <!-- Cost analytics - Planned -->
@@ -402,6 +453,10 @@
           <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>Per-tool breakdown to see where money goes</div>
           <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>Anomaly detection to catch runaway loops before the invoice</div>
         </div>
+        <button class="vote-btn" data-feature="cost" onclick="castVote(this)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+          I want this
+        </button>
       </div>
 
     </div>
@@ -464,6 +519,43 @@ function subscribeRoadmap2() {
     document.getElementById('roadmap-email-2').value = '';
     document.getElementById('sub-confirm').style.display = 'block';
   }).catch(() => {});
+}
+</script>
+
+
+<script>
+(function() {
+  var voted = JSON.parse(localStorage.getItem('cm_roadmap_votes') || '{}');
+  // Restore voted state on load
+  document.querySelectorAll('.vote-btn').forEach(function(btn) {
+    var feature = btn.dataset.feature;
+    if (voted[feature]) {
+      btn.classList.add('voted');
+      btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Noted, thanks';
+      btn.disabled = true;
+    }
+  });
+})();
+
+function castVote(btn) {
+  var feature = btn.dataset.feature;
+  if (!feature || btn.disabled) return;
+
+  btn.disabled = true;
+  btn.classList.add('voted');
+  btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Noted, thanks';
+
+  // Persist locally
+  var voted = JSON.parse(localStorage.getItem('cm_roadmap_votes') || '{}');
+  voted[feature] = true;
+  localStorage.setItem('cm_roadmap_votes', JSON.stringify(voted));
+
+  // Send to server (best-effort, no error shown to user)
+  fetch('/api/roadmap-vote', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({feature: feature})
+  }).catch(function(){});
 }
 </script>
 

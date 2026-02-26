@@ -225,6 +225,12 @@ def init_db():
             tab TEXT, command TEXT, source TEXT, utm_data TEXT, location TEXT, ip TEXT, browser TEXT,
             created_at TEXT DEFAULT (datetime('now'))
         );
+        CREATE TABLE IF NOT EXISTS roadmap_votes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            feature TEXT NOT NULL,
+            ip_hash TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
         CREATE TABLE IF NOT EXISTS managed_requests (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT, email TEXT, company TEXT, use_case TEXT,
@@ -634,6 +640,81 @@ def _render_admin(title, content_html, active=""):
 
 
 # ─── Public API Routes ──────────────────────────────────────────────────────
+
+VALID_FEATURES = {
+    'cloud', 'alerting', 'hitl', 'mac-app',
+    'ios-app', 'android-app', 'frameworks', 'team', 'cost'
+}
+
+@app.route("/api/roadmap-vote", methods=["POST"])
+def roadmap_vote():
+    import hashlib
+    data = request.get_json(silent=True) or {}
+    feature = str(data.get("feature", "")).strip().lower()
+    if feature not in VALID_FEATURES:
+        return jsonify({"error": "invalid feature"}), 400
+
+    ip = request.headers.get("X-Forwarded-For", request.remote_addr or "").split(",")[0].strip()
+    ip_hash = hashlib.sha256(ip.encode()).hexdigest()[:16] if ip else None
+
+    fs = _fs()
+    if fs:
+        try:
+            fs.collection("roadmap_votes").add({
+                "feature": feature,
+                "ip_hash": ip_hash,
+                "created_at": _firestore_mod.SERVER_TIMESTAMP,
+            })
+        except Exception as e:
+            log.warning(f"[roadmap-vote] firestore error: {e}")
+    else:
+        try:
+            with _db() as db:
+                db.execute(
+                    "INSERT INTO roadmap_votes (feature, ip_hash) VALUES (?, ?)",
+                    (feature, ip_hash)
+                )
+        except Exception as e:
+            log.warning(f"[roadmap-vote] sqlite error: {e}")
+
+    log.info(f"[roadmap-vote] feature={feature} ip_hash={ip_hash}")
+    return jsonify({"ok": True})
+
+
+@app.route("/api/roadmap-votes", methods=["GET"])
+def roadmap_votes_admin():
+    """Admin endpoint to see vote tallies."""
+    secret = request.args.get("secret", "")
+    if secret != os.environ.get("ADMIN_SECRET", "clawmetry-admin"):
+        return jsonify({"error": "unauthorized"}), 403
+
+    fs = _fs()
+    tallies = {f: 0 for f in VALID_FEATURES}
+    if fs:
+        try:
+            docs = fs.collection("roadmap_votes").stream()
+            for doc in docs:
+                d = doc.to_dict()
+                f = d.get("feature")
+                if f in tallies:
+                    tallies[f] += 1
+        except Exception as e:
+            log.warning(f"[roadmap-votes] firestore error: {e}")
+    else:
+        try:
+            with _db() as db:
+                rows = db.execute(
+                    "SELECT feature, COUNT(*) as cnt FROM roadmap_votes GROUP BY feature"
+                ).fetchall()
+                for row in rows:
+                    if row["feature"] in tallies:
+                        tallies[row["feature"]] = row["cnt"]
+        except Exception as e:
+            log.warning(f"[roadmap-votes] sqlite error: {e}")
+
+    sorted_tallies = dict(sorted(tallies.items(), key=lambda x: x[1], reverse=True))
+    return jsonify({"votes": sorted_tallies})
+
 
 @app.route("/api/subscribe", methods=["POST"])
 def subscribe():
