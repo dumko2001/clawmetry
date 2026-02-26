@@ -20,6 +20,12 @@
   </url>
   <url>
     <loc>https://clawmetry.com/how-it-works-v2</loc>
+  </url>
+  <url>
+    <loc>https://clawmetry.com/roadmap</loc>
+    <lastmod>2026-02-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
     <lastmod>2026-02-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
