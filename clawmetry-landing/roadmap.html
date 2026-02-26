@@ -165,19 +165,6 @@
 
     .rcard h3 { font-size: 18px; font-weight: 700; margin-bottom: 10px; line-height: 1.2; }
     .rcard p { font-size: 14px; color: var(--text-muted); line-height: 1.65; margin-bottom: 18px; }
-    .rcard-features { display: flex; flex-direction: column; gap: 7px; margin-top: auto; }
-    .rcard-feat {
-      display: flex; align-items: center; gap: 9px;
-      font-size: 13px; color: var(--text-muted);
-    }
-    .rcard-feat-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
-    .dot-red { background: var(--accent); }
-    .dot-orange { background: var(--orange); }
-    .dot-blue { background: var(--blue); }
-    .dot-green { background: var(--green); }
-    .dot-purple { background: var(--purple); }
-    .dot-yellow { background: var(--yellow); }
-    .dot-dim { background: var(--text-dim); }
 
     /* ── Subscribe banner ── */
     .sub-section { padding: 0 24px 80px; }
@@ -257,7 +244,7 @@
 <div class="hero">
   <div class="hero-badge">Roadmap</div>
   <h1>What's <span>coming next</span></h1>
-  <p>ClawMetry is just getting started. Here's what we're building - cloud hosting, alerting, mobile apps, and full human-in-the-loop control.</p>
+  <p>Cloud dashboard, alerting, mobile apps, human-in-the-loop. Here is what we are building next.</p>
   <div class="subscribe-row" id="roadmap-row">
     <input class="subscribe-input" type="email" placeholder="your@email.com" id="roadmap-email">
     <button class="btn-primary" id="roadmap-btn" onclick="subscribeRoadmap()">Get notified</button>
@@ -281,17 +268,11 @@
       <!-- Cloud Version - In Progress -->
       <div class="rcard inprogress">
         <div class="rcard-header">
-          <div class="rcard-icon">☁️</div>
+          <div class="rcard-icon">&#x2601;&#xFE0F;</div>
           <span class="status-badge badge-inprogress">In progress</span>
         </div>
         <h3>Cloud version</h3>
-        <p>See your agents from anywhere. No self-hosting required. Connect any OpenClaw instance to the ClawMetry cloud with one command.</p>
-        <div class="rcard-features">
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-red"></div>app.clawmetry.com, your dashboard from any browser</div>
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-red"></div>One-command connect: <code style="font-family:monospace;color:var(--accent);font-size:12px">clawmetry connect</code></div>
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-red"></div>Multi-node fleet view across all your agents</div>
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-red"></div>7-day data retention, zero config</div>
-        </div>
+        <p>See your agents from anywhere. Connect any OpenClaw instance with one command: <code style="font-family:monospace;color:var(--accent);font-size:12px">clawmetry connect</code></p>
         <button class="vote-btn" data-feature="cloud" onclick="castVote(this)">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
           I want this
@@ -301,18 +282,11 @@
       <!-- Alerting - Coming soon -->
       <div class="rcard soon">
         <div class="rcard-header">
-          <div class="rcard-icon">🔔</div>
+          <div class="rcard-icon">&#x1F514;</div>
           <span class="status-badge badge-soon">Coming soon</span>
         </div>
-        <h3>Alerting integrations</h3>
-        <p>When your agent is stuck, looping, or silent, you get paged. Not an email you see 3 hours later.</p>
-        <div class="rcard-features">
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-orange"></div>PagerDuty and OpsGenie: page your on-call</div>
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-orange"></div>Slack and Discord: post to any channel</div>
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-orange"></div>Telegram: native via OpenClaw</div>
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-orange"></div>Custom webhooks to any endpoint</div>
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-orange"></div>Configurable: silence > N min, failure rate, cost spike</div>
-        </div>
+        <h3>Alerting</h3>
+        <p>Get paged when your agent is stuck, looping, or silent. PagerDuty, OpsGenie, Slack, Telegram, webhooks.</p>
         <button class="vote-btn" data-feature="alerting" onclick="castVote(this)">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
           I want this
@@ -322,17 +296,11 @@
       <!-- Human-in-the-loop - Coming soon -->
       <div class="rcard soon">
         <div class="rcard-header">
-          <div class="rcard-icon">✋</div>
+          <div class="rcard-icon">&#x270B;</div>
           <span class="status-badge badge-soon">Coming soon</span>
         </div>
         <h3>Human-in-the-loop</h3>
-        <p>Pause an agent mid-task, inspect exactly what it's about to do, then approve or deny from the dashboard or your phone.</p>
-        <div class="rcard-features">
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-orange"></div>Pause any running agent instantly</div>
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-orange"></div>Flag sensitive tools that need approval (exec, email, delete)</div>
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-orange"></div>Agents wait, you decide, they continue</div>
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-orange"></div>Full context: what the agent was doing and why</div>
-        </div>
+        <p>Pause an agent mid-task, see what it is about to do, then approve or deny from your dashboard or phone.</p>
         <button class="vote-btn" data-feature="hitl" onclick="castVote(this)">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
           I want this
@@ -342,58 +310,26 @@
       <!-- Mac App - Planned -->
       <div class="rcard planned">
         <div class="rcard-header">
-          <div class="rcard-icon">🍎</div>
+          <div class="rcard-icon">&#x1F34E;</div>
           <span class="status-badge badge-planned">Planned</span>
         </div>
         <h3>Mac app</h3>
-        <p>ClawMetry lives in your menu bar. Glance at agent activity without opening a browser. Get notified natively when something needs your attention.</p>
-        <div class="rcard-features">
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>Menu bar app, always there, never in the way</div>
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>Native macOS notifications for alerts</div>
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>Click to expand: full dashboard in a popover</div>
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>Works with local and cloud ClawMetry</div>
-        </div>
+        <p>ClawMetry in your menu bar. Native notifications, always visible, never in the way.</p>
         <button class="vote-btn" data-feature="mac-app" onclick="castVote(this)">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
           I want this
         </button>
       </div>
 
-      <!-- iOS app - Planned -->
+      <!-- iOS & Android - Planned -->
       <div class="rcard planned">
         <div class="rcard-header">
-          <div class="rcard-icon">📱</div>
+          <div class="rcard-icon">&#x1F4F1;</div>
           <span class="status-badge badge-planned">Planned</span>
         </div>
-        <h3>iOS app</h3>
-        <p>Your agents work 24/7. Now you can check in on them from anywhere and approve actions directly from your phone.</p>
-        <div class="rcard-features">
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>Push notifications for agent failures and alerts</div>
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>Live activity - see what each agent is doing right now</div>
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>Approve or deny HITL requests from your lock screen</div>
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>Session history and cost breakdown on the go</div>
-        </div>
+        <h3>iOS &amp; Android</h3>
+        <p>Check in on your agents from anywhere. Approve human-in-the-loop requests straight from your lock screen.</p>
         <button class="vote-btn" data-feature="ios-app" onclick="castVote(this)">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
-          I want this
-        </button>
-      </div>
-
-      <!-- Android app - Planned -->
-      <div class="rcard planned">
-        <div class="rcard-header">
-          <div class="rcard-icon">🤖</div>
-          <span class="status-badge badge-planned">Planned</span>
-        </div>
-        <h3>Android app</h3>
-        <p>Everything the iOS app does, for Android. Same real-time visibility, same approval controls, same push notifications.</p>
-        <div class="rcard-features">
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>Push notifications for failures and cost spikes</div>
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>Full dashboard view from your phone</div>
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>Approve human-in-the-loop requests</div>
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>Widget support - agent status at a glance</div>
-        </div>
-        <button class="vote-btn" data-feature="android-app" onclick="castVote(this)">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
           I want this
         </button>
@@ -402,47 +338,25 @@
       <!-- More agent frameworks - Planned -->
       <div class="rcard planned">
         <div class="rcard-header">
-          <div class="rcard-icon">🦀</div>
+          <div class="rcard-icon">&#x1F980;</div>
           <span class="status-badge badge-planned">Planned</span>
         </div>
         <h3>More Claws support</h3>
-        <p>Built for OpenClaw today. PicoClaw and NanoClaw support is coming, plus a lightweight SDK for any agentic framework you already use.</p>
-        <div class="rcard-features">
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>PicoClaw: full observability for the lightweight runtime</div>
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>NanoClaw: monitoring for embedded and edge deployments</div>
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>CrewAI, LangGraph, AutoGen via SDK</div>
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>OpenTelemetry bridge for any instrumented agent</div>
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>Python SDK: <code style="font-family:monospace;font-size:12px">clawmetry.trace()</code> for custom setups</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:10px;margin-top:20px;flex-wrap:wrap;">
-          <button class="vote-btn" style="margin-top:0" data-feature="frameworks" onclick="castVote(this)">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
-            I want this
-          </button>
-          <a href="https://github.com/vivekchand/clawmetry" target="_blank" rel="noopener"
-            style="display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);color:var(--text-muted);font-size:13px;font-weight:500;text-decoration:none;transition:all 0.2s;"
-            onmouseover="this.style.borderColor='rgba(229,68,58,0.35)';this.style.color='var(--text)'"
-            onmouseout="this.style.borderColor='rgba(255,255,255,0.12)';this.style.color='var(--text-muted)'">
-            <svg viewBox="0 0 16 16" fill="currentColor" width="13" height="13"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-            Contribute
-          </a>
-        </div>
+        <p>PicoClaw, NanoClaw, plus a lightweight SDK for CrewAI, LangGraph, AutoGen, and any OpenTelemetry-instrumented agent.</p>
+        <button class="vote-btn" data-feature="frameworks" onclick="castVote(this)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+          I want this
+        </button>
       </div>
 
       <!-- Team features - Planned -->
       <div class="rcard planned">
         <div class="rcard-header">
-          <div class="rcard-icon">👥</div>
+          <div class="rcard-icon">&#x1F465;</div>
           <span class="status-badge badge-planned">Planned</span>
         </div>
         <h3>Team features</h3>
-        <p>Share dashboards with your team. Assign who gets paged for what. Audit logs for every agent action.</p>
-        <div class="rcard-features">
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>Shared dashboards: everyone sees the same view</div>
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>Alert routing: send failures to the right person</div>
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>Audit log - who approved what, when</div>
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>Role-based access: viewer, operator, admin</div>
-        </div>
+        <p>Shared dashboards, alert routing, role-based access, and a full audit log of every agent action.</p>
         <button class="vote-btn" data-feature="team" onclick="castVote(this)">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
           I want this
@@ -452,17 +366,11 @@
       <!-- Cost analytics - Planned -->
       <div class="rcard planned">
         <div class="rcard-header">
-          <div class="rcard-icon">💰</div>
+          <div class="rcard-icon">&#x1F4B0;</div>
           <span class="status-badge badge-planned">Planned</span>
         </div>
         <h3>Cost analytics</h3>
-        <p>Go deeper on spending. Set budgets per agent or project, get alerted before you overspend, and see exactly where tokens are going.</p>
-        <div class="rcard-features">
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>Budget alerts when a session hits your threshold</div>
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>Cost trends: daily and weekly spend over time</div>
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>Per-tool breakdown to see where money goes</div>
-          <div class="rcard-feat"><div class="rcard-feat-dot dot-dim"></div>Anomaly detection to catch runaway loops before the invoice</div>
-        </div>
+        <p>Set budgets per agent, get alerted before you overspend, and see exactly where every token is going.</p>
         <button class="vote-btn" data-feature="cost" onclick="castVote(this)">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
           I want this
