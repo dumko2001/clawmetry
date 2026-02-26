@@ -1178,6 +1178,41 @@ def webhook_email():
     event_type = data.get("type", "")
     payload = data.get("data", data)
 
+    # Handle click / open tracking events
+    if event_type in ("email.clicked", "email.opened"):
+        click = payload.get("click", {})
+        link = click.get("link", payload.get("link", ""))
+        ip = click.get("ip_address", payload.get("ip_address", ""))
+        ua = click.get("user_agent", payload.get("user_agent", ""))
+        to = payload.get("to", [])
+        to_addr = to[0] if isinstance(to, list) and to else str(to)
+        # Geo lookup
+        location = "Unknown"
+        try:
+            if ip:
+                geo = requests.get(f"https://ipapi.co/{ip}/json/", timeout=2).json()
+                loc = ", ".join(filter(None, [geo.get("city",""), geo.get("region",""), geo.get("country_name","")]))
+                if loc: location = loc
+        except Exception:
+            pass
+        action = "clicked a link in" if event_type == "email.clicked" else "opened"
+        subject_line = f"Email {action.split()[0]}: {to_addr}"
+        body_html = (
+            f"<p style='font-size:15px;'><strong>{to_addr}</strong> {action} your email.</p>"
+            f"<table style='font-size:14px;border-collapse:collapse;'>"
+            + (f"<tr><td style='padding:4px 12px 4px 0;color:#666;'>Link</td><td><a href='{link}'>{link}</a></td></tr>" if link else "")
+            + f"<tr><td style='padding:4px 12px 4px 0;color:#666;'>Location</td><td>{location}</td></tr>"
+            f"<tr><td style='padding:4px 12px 4px 0;color:#666;'>IP</td><td>{ip}</td></tr>"
+            f"<tr><td style='padding:4px 12px 4px 0;color:#666;'>Browser</td><td style='font-size:12px;color:#888;'>{ua[:120]}</td></tr>"
+            f"</table>"
+        )
+        try:
+            _resend_post("/emails", {"from": FROM_EMAIL, "to": [VIVEK_EMAIL], "subject": subject_line, "html": body_html})
+        except Exception as ex:
+            log.warning(f"[webhook/click] notify error: {ex}")
+        log.info(f"[webhook/{event_type}] to={to_addr} link={link} location={location}")
+        return jsonify({"ok": True})
+
     from_email = payload.get("from", "")
     from_name = ""
     # Parse "Name <email>" format
