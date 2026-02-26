@@ -153,6 +153,11 @@ function verifyOtp() {
         _apiKey = d.api_key;
         document.getElementById('key-display').textContent = d.api_key;
         document.getElementById('key-inline').textContent = d.api_key;
+        // If coming from app.clawmetry.com, redirect back with token
+        if (getNext() === 'app') {
+          window.location.href = 'https://app.clawmetry.com/auth?token=' + encodeURIComponent(d.api_key);
+          return;
+        }
         showStep(3);
       } else {
         showErr('step2-err', d.error||'Invalid code. Try again.');
@@ -172,6 +177,11 @@ function copyKey() {
     var btn = document.getElementById('copy-btn');
     btn.textContent='Copied!'; setTimeout(function(){ btn.textContent='Copy'; }, 2000);
   });
+}
+
+function getNext() {
+  var p = new URLSearchParams(window.location.search);
+  return p.get('next') || '';
 }
 
 function startResendTimer() {
