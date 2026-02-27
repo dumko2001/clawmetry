@@ -87,13 +87,8 @@ def _bg_send_managed_email(name, email, use_case):
     <h1 style="color:#fff;font-size:20px;margin:0;">Thanks, {name}!</h1>
   </div>
   <div style="padding:28px;">
-    <p style="font-size:15px;line-height:1.7;color:#d1d5db;">Thanks for your interest in a managed ClawMetry setup, really appreciate it.</p>
+    <p style="font-size:15px;line-height:1.7;color:#d1d5db;">Thanks for your interest in a managed ClawMetry setup. I will keep you posted once we are ready with the cloud hosted version of ClawMetry.</p>
     {uc_block}
-    <p style="font-size:15px;line-height:1.7;color:#d1d5db;">We are currently building it out and want to make sure it solves the right problems.</p>
-    <div style="background:#111827;border-left:3px solid #E5443A;border-radius:4px;padding:14px 18px;margin:16px 0;">
-      {('<p style="margin:0;font-size:14px;color:#f3f4f6;">' + ai_q + '</p>') if ai_q else '<p style="margin:0 0 10px;font-size:14px;color:#f3f4f6;"><strong>1.</strong> How are you running OpenClaw right now? (Mac mini, old laptop, VPS?)</p><p style="margin:0;font-size:14px;color:#f3f4f6;"><strong>2.</strong> What is the biggest pain you face managing it?</p>'}
-    </div>
-    <p style="font-size:15px;line-height:1.7;color:#d1d5db;">Just reply here, takes 2 minutes.</p>
     <p style="font-size:15px;color:#d1d5db;">Vivek<br><span style="color:#9ca3af;font-size:13px;">Founder, ClawMetry</span></p>
   </div>
 </div>'''
@@ -873,20 +868,10 @@ def managed_request():
             f'<div style="background:#f5f5f5;border-left:3px solid #ccc;border-radius:4px;padding:10px 16px;margin:14px 0;font-size:14px;color:#555;font-style:italic;">You mentioned: {use_case}</div>'
             if use_case else ""
         )
-        if ai_question_managed:
-            q_html = f'<p style="font-size:15px;line-height:1.7;color:#111;">{ai_question_managed}</p>'
-        else:
-            q_html = (
-                '<p style="font-size:15px;line-height:1.6;color:#111;">A few quick questions:</p>' +
-                '<p style="font-size:14px;line-height:1.8;color:#333;margin:0;">' +
-                '<strong>1.</strong> How are you running OpenClaw right now? (Mac mini, old laptop, VPS?)<br>' +
-                '<strong>2.</strong> What is the biggest pain you face managing it?</p>'
-            )
         email_html = f"""<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;background:#ffffff;color:#111111;">
     <p style="font-size:15px;line-height:1.7;margin:0 0 12px;">Hi {name},</p>
-    <p style="font-size:15px;line-height:1.7;margin:0 0 12px;">Thanks for your interest in a managed ClawMetry setup.</p>
+    <p style="font-size:15px;line-height:1.7;margin:0 0 16px;">Thanks for your interest in a managed ClawMetry setup. I will keep you posted once we are ready with the cloud hosted version of ClawMetry.</p>
     {uc_block}
-    {q_html}
     <p style="font-size:15px;color:#111;margin-top:24px;line-height:1.7;">Vivek<br><span style="font-size:13px;color:#666;">Founder, ClawMetry &middot; <a href="https://clawmetry.com" style="color:#E5443A;text-decoration:none;">clawmetry.com</a></span></p>
 </div>"""
         try:
