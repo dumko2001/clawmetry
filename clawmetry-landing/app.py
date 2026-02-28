@@ -2053,7 +2053,7 @@ def admin_managed():
 
 @app.route("/globe")
 def globe_page():
-    return render_template("globe.html")
+    return send_from_directory(".", "globe.html")
 
 @app.route("/roadmap")
 def roadmap():
