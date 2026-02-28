@@ -2072,6 +2072,16 @@ def index():
     return send_from_directory(".", "index.html")
 
 
+
+@app.route("/install.sh")
+def install_sh():
+    import urllib.request
+    url = "https://raw.githubusercontent.com/vivekchand/clawmetry/main/install.sh"
+    with urllib.request.urlopen(url, timeout=10) as r:
+        script = r.read().decode("utf-8")
+    from flask import Response
+    return Response(script, mimetype="text/plain", headers={"Cache-Control": "no-cache, no-store"})
+
 @app.route("/<path:path>")
 def static_files(path):
     # Don't serve admin routes as static
