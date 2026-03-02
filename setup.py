@@ -23,6 +23,7 @@ setup(
     install_requires=[
         "flask>=2.0",
         "waitress>=2.0",
+        "cryptography>=3.0",
     ],
     extras_require={
         "otel": ["opentelemetry-proto>=1.20.0", "protobuf>=4.21.0"],
