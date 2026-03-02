@@ -2264,7 +2264,18 @@ def static_files(path):
     # Don't serve admin routes as static
     if path.startswith("admin"):
         return "Not found", 404
-    return send_from_directory(".", path)
+    # Explicit HTML page mappings (no extension in URL)
+    page_map = {
+        'pricing': 'pricing.html',
+        'roadmap': 'roadmap.html',
+        'showcase': 'showcase.html',
+        'how-it-works': 'how-it-works.html',
+        'docs': 'docs.html',
+        'globe': 'globe.html',
+    }
+    if path in page_map:
+        return send_from_directory('.', page_map[path])
+    return send_from_directory('.', path)
 
 
 
