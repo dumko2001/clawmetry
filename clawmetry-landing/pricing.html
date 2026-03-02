@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pricing - ClawMetry</title>
-  <meta name="description" content="ClawMetry pricing — free self-hosted dashboard or Cloud Pro for $5/node/month. Monitor your AI agents from anywhere.">
+  <meta name="description" content="ClawMetry is free and open source forever. Cloud Pro ($5/node/month) gets you remote access from anywhere — same features, no LAN required.">
   <link rel="canonical" href="https://clawmetry.com/pricing">
   <link rel="icon" href="/favicon.ico">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -26,29 +26,20 @@
     :root {
       --bg: #0B0F1A;
       --bg-card: #111827;
-      --bg-card-hover: #1a2236;
       --border: rgba(255,255,255,0.08);
-      --border-hover: rgba(229,68,58,0.3);
       --text: #F1F5F9;
       --text-muted: #94A3B8;
       --text-dim: #64748B;
       --accent: #E5443A;
-      --accent-glow: rgba(229,68,58,0.15);
+      --accent-glow: rgba(229,68,58,0.12);
       --green: #22c55e;
-      --blue: #3b82f6;
       --orange: #f97316;
-      --purple: #a855f7;
-      --yellow: #eab308;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: var(--bg); color: var(--text); min-height: 100vh;
-      -webkit-font-smoothing: antialiased;
-    }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
     a { color: inherit; text-decoration: none; }
 
-    /* ── Nav ── */
+    /* Nav */
     nav {
       position: sticky; top: 0; z-index: 100;
       display: flex; align-items: center; justify-content: space-between;
@@ -69,13 +60,10 @@
       padding: 6px 14px; display: flex; align-items: center; gap: 6px;
       color: var(--text-muted); font-size: 14px; font-weight: 500; transition: all 0.2s;
     }
-    .nav-gh:hover { border-color: var(--border-hover); color: var(--text); }
+    .nav-gh:hover { border-color: rgba(229,68,58,0.3); color: var(--text); }
 
-    /* ── Hero ── */
-    .hero {
-      text-align: center; padding: 80px 24px 48px;
-      position: relative; overflow: hidden;
-    }
+    /* Hero */
+    .hero { text-align: center; padding: 80px 24px 48px; position: relative; overflow: hidden; }
     .hero::before {
       content: ''; position: absolute; top: -80px; left: 50%; transform: translateX(-50%);
       width: 800px; height: 400px;
@@ -88,47 +76,24 @@
       border-radius: 100px; padding: 4px 14px; margin-bottom: 24px;
       font-size: 12px; font-weight: 600; color: var(--accent); letter-spacing: 0.04em; text-transform: uppercase;
     }
-    .hero h1 {
-      font-size: clamp(32px, 5vw, 52px); font-weight: 800;
-      letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 20px;
-    }
+    .hero h1 { font-size: clamp(32px, 5vw, 52px); font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 20px; }
     .hero h1 span { color: var(--accent); }
-    .hero p {
-      font-size: 18px; color: var(--text-muted); max-width: 560px;
-      margin: 0 auto; line-height: 1.6;
-    }
+    .hero p { font-size: 18px; color: var(--text-muted); max-width: 600px; margin: 0 auto; line-height: 1.6; }
 
-    /* ── Toggle ── */
-    .toggle-wrap {
-      display: flex; align-items: center; justify-content: center; gap: 14px;
-      margin: 36px auto 0; font-size: 15px; font-weight: 500;
+    /* Key differentiator banner */
+    .diff-banner {
+      max-width: 700px; margin: 40px auto 0;
+      background: rgba(34,197,94,0.06); border: 1px solid rgba(34,197,94,0.2);
+      border-radius: 12px; padding: 16px 24px;
+      font-size: 15px; color: var(--text-muted); line-height: 1.6; text-align: center;
     }
-    .toggle-label { color: var(--text-muted); transition: color 0.2s; cursor: pointer; }
-    .toggle-label.active { color: var(--text); }
-    .toggle-save {
-      font-size: 12px; font-weight: 600; color: var(--green);
-      background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2);
-      border-radius: 100px; padding: 2px 10px;
-    }
-    .toggle-track {
-      width: 44px; height: 24px; border-radius: 12px;
-      background: var(--bg-card); border: 1px solid var(--border);
-      position: relative; cursor: pointer; transition: background 0.2s;
-    }
-    .toggle-track.on { background: var(--accent); border-color: var(--accent); }
-    .toggle-knob {
-      width: 18px; height: 18px; border-radius: 50%; background: #fff;
-      position: absolute; top: 2px; left: 2px; transition: transform 0.2s;
-    }
-    .toggle-track.on .toggle-knob { transform: translateX(20px); }
+    .diff-banner strong { color: var(--text); }
 
-    /* ── Pricing cards ── */
-    .pricing-section { padding: 48px 24px 80px; }
-    .pricing-inner { max-width: 1100px; margin: 0 auto; }
-    .pricing-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
-      align-items: start;
-    }
+    /* Cards */
+    .pricing-section { padding: 56px 24px 80px; }
+    .pricing-inner { max-width: 1060px; margin: 0 auto; }
+    .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; align-items: start; }
+
     .pcard {
       background: var(--bg-card); border: 1px solid var(--border);
       border-radius: 18px; padding: 36px 28px; position: relative;
@@ -142,6 +107,7 @@
     .pcard.featured::before {
       content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
       background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      border-radius: 18px 18px 0 0;
     }
     .popular-badge {
       position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
@@ -150,20 +116,32 @@
       border-radius: 100px; white-space: nowrap;
     }
     .pcard-tier { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
-    .pcard-price { font-size: 48px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; margin-bottom: 6px; }
+    .pcard-price { font-size: 48px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; margin-bottom: 4px; }
+    .pcard-price .currency { font-size: 24px; vertical-align: super; }
     .pcard-price .period { font-size: 16px; font-weight: 500; color: var(--text-muted); }
-    .pcard-price .currency { font-size: 24px; font-weight: 600; vertical-align: super; }
-    .pcard-desc { font-size: 14px; color: var(--text-muted); line-height: 1.6; margin-bottom: 28px; }
+    .pcard-sub { font-size: 13px; color: var(--text-dim); margin-bottom: 6px; }
+    .pcard-desc { font-size: 14px; color: var(--text-muted); line-height: 1.6; margin-bottom: 28px; border-top: 1px solid var(--border); padding-top: 16px; margin-top: 16px; }
+
+    .features-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); margin-bottom: 12px; }
     .pcard-features { list-style: none; margin-bottom: 32px; flex: 1; }
     .pcard-features li {
-      font-size: 14px; color: var(--text-muted); padding: 8px 0;
+      font-size: 14px; color: var(--text-muted); padding: 7px 0;
       border-bottom: 1px solid rgba(255,255,255,0.04);
       display: flex; align-items: flex-start; gap: 10px;
     }
-    .pcard-features li::before {
-      content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; margin-top: 1px;
+    .pcard-features li .icon { flex-shrink: 0; margin-top: 1px; }
+    .icon-check { color: var(--green); font-weight: 700; }
+    .icon-soon { color: var(--orange); }
+    .icon-no { color: var(--text-dim); }
+
+    /* Cloud-only section */
+    .cloud-label {
+      font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--accent); margin: 16px 0 10px; display: flex; align-items: center; gap: 6px;
     }
-    .pcard-features li.coming::before { content: '◐'; color: var(--orange); }
+    .cloud-label::before { content: ''; flex: 1; height: 1px; background: rgba(229,68,58,0.2); }
+    .cloud-label::after { content: ''; flex: 1; height: 1px; background: rgba(229,68,58,0.2); }
+
     .btn-primary {
       display: inline-flex; align-items: center; justify-content: center; gap: 8px;
       background: var(--accent); color: #fff;
@@ -173,41 +151,30 @@
     }
     .btn-primary:hover { opacity: 0.88; }
     .btn-outline {
-      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      display: inline-flex; align-items: center; justify-content: center;
       background: transparent; color: var(--text);
       padding: 14px 24px; border-radius: 10px; width: 100%;
       font-size: 15px; font-weight: 600; transition: all 0.2s;
       border: 1px solid var(--border); cursor: pointer; font-family: inherit;
     }
-    .btn-outline:hover { border-color: var(--border-hover); background: rgba(229,68,58,0.04); }
+    .btn-outline:hover { border-color: rgba(229,68,58,0.3); background: rgba(229,68,58,0.04); }
 
-    /* ── FAQ ── */
+    /* FAQ */
     .faq-section { padding: 0 24px 80px; }
     .faq-inner { max-width: 700px; margin: 0 auto; }
     .faq-title { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; text-align: center; margin-bottom: 40px; }
-    .faq-item {
-      border-bottom: 1px solid var(--border); padding: 24px 0;
-    }
-    .faq-q {
-      font-size: 16px; font-weight: 600; cursor: pointer; display: flex;
-      align-items: center; justify-content: space-between; gap: 16px;
-    }
-    .faq-q::after { content: '+'; font-size: 20px; color: var(--text-dim); transition: transform 0.2s; flex-shrink: 0; }
+    .faq-item { border-bottom: 1px solid var(--border); padding: 22px 0; }
+    .faq-q { font-size: 15px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .faq-q::after { content: '+'; font-size: 20px; color: var(--text-dim); flex-shrink: 0; }
     .faq-item.open .faq-q::after { content: '−'; }
-    .faq-a {
-      font-size: 14px; color: var(--text-muted); line-height: 1.7;
-      max-height: 0; overflow: hidden; transition: max-height 0.3s, padding 0.3s;
-    }
-    .faq-item.open .faq-a { max-height: 200px; padding-top: 14px; }
+    .faq-a { font-size: 14px; color: var(--text-muted); line-height: 1.7; max-height: 0; overflow: hidden; transition: max-height 0.3s, padding 0.3s; }
+    .faq-item.open .faq-a { max-height: 300px; padding-top: 14px; }
 
-    /* ── Footer ── */
+    /* Footer */
     footer { border-top: 1px solid var(--border); padding: 24px; }
-    .footer-inner {
-      max-width: 1060px; margin: 0 auto;
-      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
-    }
+    .footer-inner { max-width: 1060px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
     .footer-text { font-size: 13px; color: var(--text-dim); }
-    .footer-text a { color: var(--text-muted); transition: color 0.2s; }
+    .footer-text a { color: var(--text-muted); }
     .footer-text a:hover { color: var(--accent); }
     .footer-links { display: flex; align-items: center; gap: 20px; }
     .footer-links a { font-size: 13px; color: var(--text-dim); transition: color 0.2s; display: flex; align-items: center; gap: 5px; }
@@ -217,11 +184,11 @@
       .pricing-grid { grid-template-columns: 1fr; max-width: 420px; margin: 0 auto; }
       .pcard.featured { order: -1; }
     }
+    @media (max-width: 640px) { .nav-links { display: none; } }
   </style>
 </head>
 <body>
 
-<!-- Nav -->
 <nav>
   <a href="/" class="nav-logo">
     <span class="nav-logo-emoji">🦞</span>
@@ -240,149 +207,171 @@
   </div>
 </nav>
 
-<!-- Hero -->
 <div class="hero">
   <div class="hero-badge">Pricing</div>
-  <h1>Simple, <span>honest</span> pricing</h1>
-  <p>Free forever — no account needed to self-host. Cloud Pro to monitor from anywhere.</p>
-
-  <div class="toggle-wrap">
-    <span class="toggle-label active" id="lbl-monthly" onclick="setBilling('monthly')">Monthly</span>
-    <div class="toggle-track" id="billing-toggle" onclick="toggleBilling()">
-      <div class="toggle-knob"></div>
-    </div>
-    <span class="toggle-label" id="lbl-annual" onclick="setBilling('annual')">Annual</span>
-    <span class="toggle-save">Save 17%</span>
+  <h1>All features, <span>everywhere</span></h1>
+  <p>We don't lock features behind a paywall. Self-host free forever, or pay $5/node/month to access your dashboard from anywhere in the world.</p>
+  <div class="diff-banner">
+    <strong>The only difference between Free and Cloud Pro is where you can access it from.</strong><br>
+    Free = your local network. Cloud Pro = any browser, anywhere, on any device.
   </div>
 </div>
 
-<!-- Pricing cards -->
 <div class="pricing-section">
   <div class="pricing-inner">
     <div class="pricing-grid">
 
       <!-- Free -->
       <div class="pcard">
-        <div class="pcard-tier">Free (Open Source)</div>
+        <div class="pcard-tier">Open Source</div>
         <div class="pcard-price">$0 <span class="period">forever</span></div>
-        <div class="pcard-desc">Self-hosted dashboard (MIT license) for your local machine. Everything you need to monitor one OpenClaw instance.</div>
+        <div class="pcard-sub">MIT license — no account needed</div>
+        <div class="pcard-desc">Install in 30 seconds. Run on your machine, access over your local network. Every feature, no limits, no telemetry.</div>
+
+        <div class="features-label">All features included</div>
         <ul class="pcard-features">
-          <li>Self-hosted dashboard</li>
-          <li>All tabs — Flow, Brain, Tokens, Memory, Crons, Logs</li>
-          <li>Unlimited local monitoring</li>
-          <li><code style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent)">pip install clawmetry</code></li>
+          <li><span class="icon icon-check">✓</span> Flow — real-time agent pipeline visualization</li>
+          <li><span class="icon icon-check">✓</span> Brain — full audit trail of every decision</li>
+          <li><span class="icon icon-check">✓</span> Tokens — cost tracking per model &amp; session</li>
+          <li><span class="icon icon-check">✓</span> Memory — view all workspace files</li>
+          <li><span class="icon icon-check">✓</span> Crons — scheduled jobs &amp; status</li>
+          <li><span class="icon icon-check">✓</span> Logs — live log streaming</li>
+          <li><span class="icon icon-check">✓</span> Alerting (Telegram, Slack, webhooks) <span class="icon icon-soon">◐</span></li>
+          <li><span class="icon icon-check">✓</span> Human-in-the-loop <span class="icon icon-soon">◐</span></li>
+          <li><span class="icon icon-check">✓</span> Cost analytics &amp; budgets <span class="icon icon-soon">◐</span></li>
+          <li><span class="icon icon-check">✓</span> Security threat detection <span class="icon icon-soon">◐</span></li>
         </ul>
-        <a href="https://github.com/vivekchand/clawmetry" target="_blank" class="btn-outline">Get Started</a>
+        <div class="cloud-label">Access</div>
+        <ul class="pcard-features" style="margin-bottom:32px;">
+          <li><span class="icon icon-check">✓</span> Local network (LAN)</li>
+          <li><span class="icon icon-no">✗</span> <span style="color:var(--text-dim)">Remote / cloud access</span></li>
+        </ul>
+        <a href="https://github.com/vivekchand/clawmetry" target="_blank" class="btn-outline">Get Started Free</a>
+        <p style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:10px;"><code style="font-family:'JetBrains Mono',monospace;">pip install clawmetry</code></p>
       </div>
 
-      <!-- Pro -->
+      <!-- Cloud Pro -->
       <div class="pcard featured">
         <div class="popular-badge">Most Popular</div>
         <div class="pcard-tier">Cloud Pro</div>
-        <div class="pcard-price"><span class="currency">$</span><span id="pro-price">19</span> <span class="period">/ <span id="pro-period">month</span></span></div>
-        <div class="pcard-desc">Everything in Free, plus cloud access. Monitor your agents from your phone, laptop, or office — anywhere in the world.</div>
+        <div class="pcard-price"><span class="currency">$</span>5 <span class="period">/ node / month</span></div>
+        <div class="pcard-sub">7-day free trial &middot; no credit card required</div>
+        <div class="pcard-desc">Every feature from the OSS version, plus a secure cloud relay so you can access your dashboard from your phone, a coffee shop, or anywhere else.</div>
+
+        <div class="features-label">Everything in Free, plus</div>
         <ul class="pcard-features">
-          <li>Everything in Free</li>
-          <li>7-day free trial, no credit card required (phone, laptop, office)</li>
-          <li>Real-time streaming across the globe</li>
-          <li>Fleet dashboard (multiple nodes)</li>
-          <li class="coming">Security threat detection (coming soon)</li>
-          <li>Push alerts (Telegram, Slack, email)</li>
-          <li>30-day data retention</li>
-          <li>E2E encrypted — server never sees your data</li>
+          <li><span class="icon icon-check">✓</span> All OSS features (full list above)</li>
+          <li><span class="icon icon-check">✓</span> E2E encrypted — server never sees plaintext</li>
+          <li><span class="icon icon-check">✓</span> 30-day cloud data retention</li>
         </ul>
-        <a href="/connect" class="btn-primary">Start Free Trial</a>
+        <div class="cloud-label">Access</div>
+        <ul class="pcard-features" style="margin-bottom:32px;">
+          <li><span class="icon icon-check">✓</span> Local network (LAN)</li>
+          <li><span class="icon icon-check">✓</span> <strong style="color:var(--text)">Anywhere — browser, phone, office</strong></li>
+          <li><span class="icon icon-check">✓</span> Real-time streaming from anywhere</li>
+          <li><span class="icon icon-check">✓</span> Fleet dashboard — all nodes in one view</li>
+          <li><span class="icon icon-check">✓</span> Push alerts anywhere (not just LAN)</li>
+        </ul>
+        <button class="btn-primary" onclick="startTrial()">Start Free Trial &rarr;</button>
+        <p style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:10px;">7 days free &middot; cancel anytime</p>
       </div>
 
       <!-- Enterprise -->
       <div class="pcard">
         <div class="pcard-tier">Enterprise</div>
-        <div class="pcard-price" style="font-size:36px;padding-top:6px;">Contact us</div>
-        <div class="pcard-desc">Everything in Pro, built for teams that need more control, retention, and support.</div>
+        <div class="pcard-price" style="font-size:34px;padding-top:6px;line-height:1.2;">Custom</div>
+        <div class="pcard-sub">For teams &amp; organizations</div>
+        <div class="pcard-desc">Everything in Cloud Pro, built for teams that need collaboration, compliance, and dedicated support.</div>
+
+        <div class="features-label">Everything in Cloud Pro, plus</div>
         <ul class="pcard-features">
-          <li>Everything in Pro</li>
-          <li>Unlimited data retention</li>
-          <li>Custom integrations</li>
-          <li>Priority support</li>
-          <li>SSO / SAML</li>
+          <li><span class="icon icon-check">✓</span> Team shared dashboards</li>
+          <li><span class="icon icon-check">✓</span> Role-based access control (RBAC)</li>
+          <li><span class="icon icon-check">✓</span> Full audit log of all agent actions</li>
+          <li><span class="icon icon-check">✓</span> SSO / SAML</li>
+          <li><span class="icon icon-check">✓</span> Unlimited data retention</li>
+          <li><span class="icon icon-check">✓</span> Priority support &amp; SLA</li>
+          <li><span class="icon icon-check">✓</span> Custom integrations</li>
         </ul>
         <a href="mailto:vivek@clawmetry.com" class="btn-outline">Contact Us</a>
       </div>
 
     </div>
+
+    <p style="text-align:center;font-size:13px;color:var(--text-dim);margin-top:28px;">
+      ◐ = coming soon &nbsp;&middot;&nbsp; 1 node = 1 OpenClaw machine &nbsp;&middot;&nbsp; All prices in USD
+    </p>
   </div>
 </div>
 
 <!-- FAQ -->
 <div class="faq-section">
   <div class="faq-inner">
-    <h2 class="faq-title">Frequently asked questions</h2>
+    <h2 class="faq-title">Common questions</h2>
 
     <div class="faq-item open">
-      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Is my data safe?</div>
-      <div class="faq-a">Yes. Cloud Pro uses end-to-end encryption — your data is encrypted on your machine before it leaves, and the server never sees the plaintext. We can't read your agent data even if we wanted to.</div>
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Why is the self-hosted version fully free?</div>
+      <div class="faq-a">Because we believe observability tooling shouldn't be a moat. ClawMetry is MIT licensed — fork it, modify it, run it forever. We make money from the cloud relay, not by locking features. This also means the OSS community helps us build better features for everyone.</div>
     </div>
 
     <div class="faq-item">
-      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Can I self-host?</div>
-      <div class="faq-a">Absolutely. The self-hosted version is free and open source — forever. <code style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--accent)">pip install clawmetry</code> and you're up in 30 seconds. Cloud Pro is for people who want remote access and fleet monitoring.</div>
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">What exactly does Cloud Pro unlock?</div>
+      <div class="faq-a">Remote access. That's it. When you run ClawMetry locally, it's accessible only on your LAN. Cloud Pro adds a secure relay so you can open app.clawmetry.com from your phone, another laptop, or anywhere — and see your agents working in real time. All features are identical.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Is my data safe in the cloud?</div>
+      <div class="faq-a">Yes. Your data is encrypted on your machine before it ever leaves — we use AES-256-GCM client-side encryption. The cloud server stores only ciphertext. We can't read your agent data even if we wanted to.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">What counts as a node?</div>
+      <div class="faq-a">One node = one machine running OpenClaw with the sync daemon. If you have a Mac, a home server, and a VPS all running OpenClaw, that's 3 nodes = $15/month. You can add or remove nodes anytime.</div>
     </div>
 
     <div class="faq-item">
       <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">What happens if I cancel?</div>
-      <div class="faq-a">Your cloud data is retained for 30 days after cancellation, then permanently deleted. Your local self-hosted dashboard keeps working — you never lose that.</div>
+      <div class="faq-a">Your cloud data is retained for 30 days after cancellation, then permanently deleted. Your local self-hosted dashboard keeps working forever — you never lose that access.</div>
     </div>
   </div>
 </div>
 
-<!-- Footer -->
 <footer>
   <div class="footer-inner">
-    <div class="footer-text">
-      &copy; 2026 ClawMetry &middot; Made with 🦞 by <a href="https://github.com/vivekchand" target="_blank">Vivek</a>
-    </div>
+    <div class="footer-text">&copy; 2026 ClawMetry &middot; Made with 🦞 by <a href="https://github.com/vivekchand" target="_blank">Vivek</a></div>
     <div class="footer-links">
       <a href="https://github.com/vivekchand/clawmetry" target="_blank" rel="noopener">
         <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
         GitHub
       </a>
-      <a href="https://pypi.org/project/clawmetry/" target="_blank" rel="noopener">PyPI</a>
+      <a href="https://pypi.org/project/clawmetry/" target="_blank">PyPI</a>
       <a href="/how-it-works">How it works</a>
       <a href="/showcase">Showcase</a>
-      <a href="/docs.html">Docs</a>
+      <a href="/roadmap">Roadmap</a>
     </div>
   </div>
 </footer>
 
 <script>
-var isAnnual = false;
-function setBilling(mode) {
-  isAnnual = mode === 'annual';
-  updateBilling();
-}
-function toggleBilling() {
-  isAnnual = !isAnnual;
-  updateBilling();
-}
-function updateBilling() {
-  var toggle = document.getElementById('billing-toggle');
-  var lblM = document.getElementById('lbl-monthly');
-  var lblA = document.getElementById('lbl-annual');
-  var price = document.getElementById('pro-price');
-  var period = document.getElementById('pro-period');
-  if (isAnnual) {
-    toggle.classList.add('on');
-    lblM.classList.remove('active');
-    lblA.classList.add('active');
-    price.textContent = '190';
-    period.textContent = 'year';
-  } else {
-    toggle.classList.remove('on');
-    lblM.classList.add('active');
-    lblA.classList.remove('active');
-    price.textContent = '19';
-    period.textContent = 'month';
-  }
+function startTrial() {
+  var nodeCount = 1;
+  var c = prompt('How many OpenClaw machines do you want to monitor?\n(You can change this later)', '1');
+  if (c === null) return;
+  nodeCount = Math.max(1, parseInt(c) || 1);
+  var email = prompt('Enter your email to start the free trial:');
+  if (!email || !email.includes('@')) { alert('Please enter a valid email.'); return; }
+
+  fetch('https://app.clawmetry.com/api/billing/checkout', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({email: email, plan: 'monthly', node_count: nodeCount, cm_key: ''})
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if (d.url) { window.location.href = d.url; }
+    else { alert('Something went wrong. Please try again or email vivek@clawmetry.com'); }
+  })
+  .catch(function(){ alert('Network error. Please try again.'); });
 }
 </script>
 
@@ -396,15 +385,8 @@ function updateBilling() {
   }
   function track(eventType, metadata) {
     try {
-      fetch("/api/track", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-          event_type: eventType,
-          visitor_id: getOrCreateVisitorId(),
-          page: window.location.pathname,
-          metadata: metadata || {}
-        })
+      fetch("/api/track", { method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ event_type: eventType, visitor_id: getOrCreateVisitorId(), page: window.location.pathname, metadata: metadata || {} })
       }).catch(function(){});
     } catch(e) {}
   }
