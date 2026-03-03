@@ -3,746 +3,341 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ClawMetry Globe - Global Reach</title>
-  <meta name="description" content="ClawMetry's global reach - PyPI installs, email subscribers, and live activity across 30+ countries." />
-  <meta property="og:title" content="ClawMetry Globe" />
-  <meta property="og:description" content="See where ClawMetry developers are - 4,710+ installs across 30 countries." />
-  <meta property="og:image" content="https://clawmetry.com/dashboard-overview-og.png" />
-
+  <title>ClawMetry — Global Installs</title>
+  <meta name="description" content="ClawMetry PyPI installs worldwide — powered by ClickHouse data." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
-    *, *::before, *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0B0F1A;
-      --red: #E5443A;
-      --blue: #4A9EFF;
-      --amber: #F5A623;
-      --text: #E8ECF4;
-      --muted: #6B7489;
-      --glass-bg: rgba(11, 15, 26, 0.8);
-      --glass-border: rgba(255, 255, 255, 0.08);
-      --nav-height: 56px;
+      --bg:       #0B0F1A;
+      --accent:   #E5443A;
+      --muted:    #94A3B8;
+      --card:     #111827;
+      --border:   rgba(255,255,255,0.08);
+      --text:     #F1F5F9;
     }
 
     html, body {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
+      width: 100%; height: 100%;
       background: var(--bg);
       color: var(--text);
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      font-family: 'Inter', -apple-system, sans-serif;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* NAV */
-    nav {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: var(--nav-height);
-      z-index: 100;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 24px;
-      background: rgba(11, 15, 26, 0.7);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--glass-border);
-    }
-
-    .nav-brand {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      text-decoration: none;
-      color: var(--text);
-    }
-
-    .nav-brand .lobster {
-      font-size: 20px;
-      line-height: 1;
-    }
-
-    .nav-brand .brand-text {
-      font-weight: 700;
-      font-size: 16px;
-      letter-spacing: -0.02em;
-    }
-
-    .nav-brand .brand-text span {
-      color: var(--red);
-    }
-
-    .nav-title {
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--muted);
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      pointer-events: none;
-    }
-
-    .nav-back {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      text-decoration: none;
-      color: var(--muted);
-      font-size: 13px;
-      font-weight: 500;
-      transition: color 0.2s;
-    }
-
-    .nav-back:hover {
-      color: var(--red);
-    }
-
-    .nav-back svg {
-      width: 14px;
-      height: 14px;
-    }
-
-    /* GLOBE CONTAINER */
+    /* ── Globe container fills viewport ── */
     #globe-container {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      cursor: grab;
+      inset: 0;
+      z-index: 0;
     }
 
-    #globe-container:active {
-      cursor: grabbing;
-    }
-
-    #globe-container canvas {
-      display: block;
-    }
-
-    /* TOOLTIP */
-    #tooltip {
+    /* ── Top nav bar ── */
+    nav {
       position: fixed;
-      z-index: 200;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.15s ease;
-      background: rgba(11, 15, 26, 0.92);
-      border: 1px solid var(--glass-border);
-      border-radius: 8px;
-      padding: 10px 14px;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      font-size: 13px;
-      line-height: 1.5;
-      max-width: 180px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-    }
-
-    #tooltip.visible {
-      opacity: 1;
-    }
-
-    #tooltip .tt-country {
-      font-weight: 600;
-      font-size: 13px;
-      color: var(--text);
-      margin-bottom: 2px;
-    }
-
-    #tooltip .tt-count {
-      font-size: 12px;
-      font-weight: 500;
-    }
-
-    #tooltip .tt-count.installs {
-      color: var(--blue);
-    }
-
-    #tooltip .tt-count.subs {
-      color: var(--amber);
-    }
-
-    /* HUD BAR */
-    #hud {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      z-index: 100;
-      background: var(--glass-bg);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border-top: 1px solid var(--glass-border);
-      padding: 0 24px;
-      height: 52px;
+      top: 0; left: 0; right: 0;
+      z-index: 10;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      padding: 0 28px;
+      height: 56px;
+      background: rgba(11,15,26,0.75);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
     }
-
-    .hud-stats {
-      display: flex;
-      align-items: center;
-      gap: 24px;
+    .nav-logo {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      text-decoration: none;
+      color: var(--text);
+    }
+    .nav-logo span { color: var(--accent); }
+    .nav-back {
       font-size: 13px;
       color: var(--muted);
-    }
-
-    .hud-stats .stat {
+      text-decoration: none;
       display: flex;
       align-items: center;
       gap: 6px;
+      transition: color 0.2s;
     }
+    .nav-back:hover { color: var(--text); }
 
-    .hud-stats .stat-value {
-      font-weight: 600;
-      color: var(--text);
-    }
-
-    .hud-stats .sep {
-      color: var(--glass-border);
-      font-size: 16px;
-    }
-
-    .hud-updated {
-      font-size: 11px;
-      color: var(--muted);
-      opacity: 0.6;
-    }
-
-    /* LEGEND */
-    #legend {
+    /* ── Stats pill bottom-center ── */
+    #stats-bar {
       position: fixed;
-      bottom: 68px;
-      right: 24px;
-      z-index: 100;
-      background: var(--glass-bg);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border: 1px solid var(--glass-border);
-      border-radius: 10px;
-      padding: 12px 16px;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
       display: flex;
-      flex-direction: column;
-      gap: 8px;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
     }
-
-    .legend-item {
-      display: flex;
+    .stat-pill {
+      display: inline-flex;
       align-items: center;
       gap: 8px;
-      font-size: 12px;
-      color: var(--muted);
+      background: rgba(17,24,39,0.85);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 8px 18px;
+      font-size: 14px;
       font-weight: 500;
+      backdrop-filter: blur(12px);
+      white-space: nowrap;
+    }
+    .stat-pill .val {
+      color: var(--accent);
+      font-weight: 700;
+    }
+    .stat-pill .lbl {
+      color: var(--muted);
     }
 
-    .legend-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      flex-shrink: 0;
+    /* ── Hover tooltip ── */
+    #tooltip {
+      position: fixed;
+      z-index: 20;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s;
+      background: rgba(10,12,22,0.9);
+      border: 1px solid rgba(229,68,58,0.35);
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 13px;
+      line-height: 1.5;
+      white-space: nowrap;
+      backdrop-filter: blur(8px);
     }
+    #tooltip.visible { opacity: 1; }
+    #tooltip .flag { font-size: 18px; margin-right: 4px; }
+    #tooltip .country { font-weight: 600; color: var(--text); }
+    #tooltip .count { color: var(--accent); font-weight: 700; }
+    #tooltip .label { color: var(--muted); }
 
-    .legend-dot.blue { background: var(--blue); }
-    .legend-dot.amber { background: var(--amber); }
-
-    .legend-arc {
-      width: 10px;
-      height: 3px;
-      border-radius: 2px;
-      flex-shrink: 0;
-      background: var(--red);
-      opacity: 0.8;
-    }
-
-    /* LIVE INDICATOR */
-    .live-dot {
-      display: inline-block;
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--red);
-      margin-right: 4px;
-      animation: pulse-live 1.5s ease-in-out infinite;
-      vertical-align: middle;
-    }
-
-    @keyframes pulse-live {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(0.8); }
-    }
-
-    /* LOADING OVERLAY */
+    /* ── Loading state ── */
     #loading {
       position: fixed;
       inset: 0;
-      z-index: 300;
-      background: var(--bg);
+      z-index: 5;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 20px;
-      transition: opacity 0.5s ease;
-    }
-
-    #loading.fade-out {
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    .loading-logo {
-      font-size: 32px;
-      font-weight: 700;
-      letter-spacing: -0.03em;
-      color: var(--text);
-    }
-
-    .loading-logo span {
-      color: var(--red);
-    }
-
-    .loading-spinner {
-      width: 32px;
-      height: 32px;
-      border: 2px solid var(--glass-border);
-      border-top-color: var(--blue);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-
-    .loading-text {
-      font-size: 12px;
+      background: var(--bg);
+      font-size: 14px;
       color: var(--muted);
-      letter-spacing: 0.05em;
+      gap: 10px;
+      transition: opacity 0.4s;
     }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
+    #loading.hidden { opacity: 0; pointer-events: none; }
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(229,68,58,0.2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
     }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* MOBILE */
-    @media (max-width: 640px) {
-      #legend {
-        display: none;
-      }
-
-      .hud-stats {
-        gap: 12px;
-        font-size: 12px;
-        flex-wrap: wrap;
-      }
-
-      .hud-updated {
-        display: none;
-      }
-
-      .nav-title {
-        display: none;
-      }
-
-      nav {
-        padding: 0 16px;
-      }
+    /* ── Legend ── */
+    #legend {
+      position: fixed;
+      top: 72px;
+      right: 20px;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .legend-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
     }
   </style>
 </head>
 <body>
 
-  <!-- LOADING OVERLAY -->
-  <div id="loading">
-    <div class="loading-logo">Claw<span>M</span>etry</div>
-    <div class="loading-spinner"></div>
-    <div class="loading-text">Loading globe...</div>
-  </div>
+  <!-- Globe -->
+  <div id="globe-container"></div>
 
-  <!-- NAV -->
+  <!-- Nav -->
   <nav>
-    <a href="/" class="nav-brand">
-      <span class="lobster">🦞</span>
-      <span class="brand-text">Claw<span>M</span>etry</span>
-    </a>
-    <div class="nav-title">Global Reach</div>
-    <a href="https://clawmetry.com" class="nav-back">
-      <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M8.5 2.5L3.5 7L8.5 11.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      clawmetry.com
+    <a href="/" class="nav-logo">Claw<span>Metry</span></a>
+    <a href="/" class="nav-back">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Back to site
     </a>
   </nav>
 
-  <!-- GLOBE -->
-  <div id="globe-container"></div>
-
-  <!-- TOOLTIP -->
-  <div id="tooltip">
-    <div class="tt-country" id="tt-country"></div>
-    <div class="tt-count" id="tt-count"></div>
-  </div>
-
-  <!-- HUD -->
-  <div id="hud">
-    <div class="hud-stats">
-      <div class="stat">
-        <span class="stat-value" id="stat-installs">4,710+</span>
-        <span>installs last month</span>
-      </div>
-      <span class="sep">|</span>
-      <div class="stat">
-        <span class="stat-value" id="stat-countries">30</span>
-        <span>countries</span>
-      </div>
-      <span class="sep">|</span>
-      <div class="stat">
-        <span class="stat-value" id="stat-visitors">200+</span>
-        <span>visitors</span>
-      </div>
+  <!-- Stats bar -->
+  <div id="stats-bar">
+    <div class="stat-pill">
+      <span>📦</span>
+      <span class="val" id="stat-total">—</span>
+      <span class="lbl">total downloads</span>
     </div>
-    <div class="hud-updated"><span class="live-dot"></span> Updated daily</div>
+    <div class="stat-pill">
+      <span>🌍</span>
+      <span class="val" id="stat-countries">—</span>
+      <span class="lbl">countries</span>
+    </div>
+    <div class="stat-pill">
+      <span style="color:#E5443A;">●</span>
+      <span class="lbl">top 10</span>
+      <span style="width:1px;height:12px;background:var(--border);margin:0 2px;"></span>
+      <span style="color:#4A9EFF;">●</span>
+      <span class="lbl">other</span>
+    </div>
   </div>
 
-  <!-- LEGEND -->
+  <!-- Tooltip -->
+  <div id="tooltip">
+    <span class="flag" id="tt-flag"></span><span class="country" id="tt-country"></span>
+    <br/>
+    <span class="count" id="tt-count"></span> <span class="label">downloads</span>
+  </div>
+
+  <!-- Legend -->
   <div id="legend">
     <div class="legend-item">
-      <div class="legend-dot blue"></div>
-      <span>PyPI Installs</span>
+      <div class="legend-dot" style="background:#E5443A;box-shadow:0 0 6px rgba(229,68,58,0.6);"></div>
+      Top 10 countries
     </div>
     <div class="legend-item">
-      <div class="legend-dot amber"></div>
-      <span>Email Subscribers</span>
-    </div>
-    <div class="legend-item">
-      <div class="legend-arc"></div>
-      <span>Live Activity</span>
+      <div class="legend-dot" style="background:#4A9EFF;box-shadow:0 0 6px rgba(74,158,255,0.4);"></div>
+      All other countries
     </div>
   </div>
 
-  <!-- GLOBE.GL CDN -->
-  <script src="https://unpkg.com/globe.gl@2.30.0/dist/globe.gl.min.js"></script>
+  <!-- Loading -->
+  <div id="loading">
+    <div class="spinner"></div>
+    Loading install data...
+  </div>
 
+  <script src="//unpkg.com/globe.gl"></script>
   <script>
-    // ── DATA ─────────────────────────────────────────────────────────────
-
-    // PyPI install data loaded async from /api/pypi-countries (real ClickHouse data)
-    let pypiData = [];
-    let _pypiMaxCount = 1;
-
-
-
-    // Real subscriber + copy event cities from Firestore
-    const subsData = [
-      { country: 'Netherlands',  city: 'Almere',       lat: 52.37,  lng: 5.22,    count: 7 },
-      { country: 'Pakistan',     city: 'Karachi',      lat: 24.86,  lng: 67.01,   count: 4 },
-      { country: 'Pakistan',     city: 'Lahore',       lat: 31.55,  lng: 74.34,   count: 4 },
-      { country: 'Bangladesh',   city: 'Dhaka',        lat: 23.81,  lng: 90.41,   count: 3 },
-      { country: 'Bangladesh',   city: 'Rajshahi',     lat: 24.37,  lng: 88.60,   count: 3 },
-      { country: 'India',        city: 'Hyderabad',    lat: 17.39,  lng: 78.49,   count: 5 },
-      { country: 'India',        city: 'Ahmedabad',    lat: 23.03,  lng: 72.59,   count: 4 },
-      { country: 'India',        city: 'Kolkata',      lat: 22.57,  lng: 88.36,   count: 3 },
-      { country: 'India',        city: 'Mumbai',       lat: 19.08,  lng: 72.88,   count: 3 },
-      { country: 'India',        city: 'Bengaluru',    lat: 12.97,  lng: 77.59,   count: 3 },
-      { country: 'India',        city: 'Bhopal',       lat: 23.25,  lng: 77.41,   count: 3 },
-      { country: 'India',        city: 'Delhi',        lat: 28.61,  lng: 77.21,   count: 2 },
-      { country: 'India',        city: 'Vadodara',     lat: 22.31,  lng: 73.18,   count: 3 },
-      { country: 'India',        city: 'Patna',        lat: 25.59,  lng: 85.14,   count: 2 },
-      { country: 'India',        city: 'Indore',       lat: 22.72,  lng: 75.86,   count: 2 },
-      { country: 'India',        city: 'Jamshedpur',   lat: 22.80,  lng: 86.18,   count: 2 },
-      { country: 'India',        city: 'Ranchi',       lat: 23.35,  lng: 85.33,   count: 2 },
-      { country: 'India',        city: 'Raipur',       lat: 21.25,  lng: 81.63,   count: 2 },
-      { country: 'India',        city: 'Srinagar',     lat: 34.08,  lng: 74.80,   count: 2 },
-      { country: 'India',        city: 'Aizawl',       lat: 23.73,  lng: 92.72,   count: 2 },
-      { country: 'United States', city: 'Chicago',     lat: 41.88,  lng: -87.63,  count: 2 },
-      { country: 'United States', city: 'Dallas',      lat: 32.78,  lng: -96.80,  count: 2 },
-      { country: 'United States', city: 'San Jose',    lat: 37.34,  lng: -121.89, count: 2 },
-      { country: 'Brazil',       city: 'Sao Paulo',    lat: -23.55, lng: -46.63,  count: 2 },
-      { country: 'Germany',      city: 'Munich',       lat: 48.14,  lng: 11.58,   count: 2 },
-      { country: 'France',       city: 'Pessac',       lat: 44.81,  lng: -0.63,   count: 2 },
-      { country: 'Iraq',         city: 'Baghdad',      lat: 33.34,  lng: 44.40,   count: 2 },
-      { country: 'Iraq',         city: 'Erbil',        lat: 36.19,  lng: 44.01,   count: 2 },
-      { country: 'Algeria',      city: 'Algiers',      lat: 36.74,  lng: 3.06,    count: 2 },
-      { country: 'Myanmar',      city: 'Pyu',          lat: 18.48,  lng: 96.44,   count: 2 },
-      { country: 'Sierra Leone', city: 'Freetown',     lat: 8.49,   lng: -13.23,  count: 2 },
-      { country: 'Ireland',      city: 'Cashel',       lat: 52.52,  lng: -7.89,   count: 2 },
-      { country: 'Netherlands',  city: 'Capelle',      lat: 51.93,  lng: 4.59,    count: 2 },
-    ];
-
-
-
-    // Arc city coords
-    const CITIES = {
-      'San Francisco': { lat: 37.77,  lng: -122.42 },
-      'New York':      { lat: 40.71,  lng: -74.01  },
-      'London':        { lat: 51.51,  lng: -0.13   },
-      'Berlin':        { lat: 52.52,  lng: 13.40   },
-      'Mumbai':        { lat: 19.08,  lng: 72.88   },
-      'Tokyo':         { lat: 35.68,  lng: 139.69  },
-      'Sydney':        { lat: -33.87, lng: 151.21  },
-      'Singapore':     { lat: 1.35,   lng: 103.82  },
-      'Amsterdam':     { lat: 52.37,  lng: 4.90    },
-      'Toronto':       { lat: 43.65,  lng: -79.38  },
-      'Tel Aviv':      { lat: 32.08,  lng: 34.78   },
-      'Seoul':         { lat: 37.57,  lng: 126.98  },
-      'Sao Paulo':     { lat: -23.55, lng: -46.63  },
-    };
-
-    const arcPairs = [
-      { src: 'San Francisco', dst: 'London'    },
-      { src: 'New York',      dst: 'Berlin'    },
-      { src: 'London',        dst: 'Mumbai'    },
-      { src: 'Tokyo',         dst: 'Sydney'    },
-      { src: 'Berlin',        dst: 'Singapore' },
-      { src: 'Mumbai',        dst: 'Amsterdam' },
-      { src: 'Sydney',        dst: 'Toronto'   },
-      { src: 'Toronto',       dst: 'Tel Aviv'  },
-      { src: 'Amsterdam',     dst: 'Seoul'     },
-      { src: 'Seoul',         dst: 'Sao Paulo' },
-    ];
-
-    const arcsData = arcPairs.map(({ src, dst }) => ({
-      startLat: CITIES[src].lat,
-      startLng: CITIES[src].lng,
-      endLat:   CITIES[dst].lat,
-      endLng:   CITIES[dst].lng,
-      label:    `${src} to ${dst}`,
-    }));
-
-    // ── SCALE HELPERS ────────────────────────────────────────────────────
-
-    function scaleAltitude(count, maxCount, minAlt, maxAlt) {
-      return minAlt + (count / maxCount) * (maxAlt - minAlt);
+    function countryFlag(code) {
+      if (!code || code.length !== 2) return '🌐';
+      return [...code.toUpperCase()]
+        .map(c => String.fromCodePoint(0x1F1E6 + c.charCodeAt(0) - 65))
+        .join('');
     }
 
-    function scaleRadius(count, maxCount, minR, maxR) {
-      return minR + (count / maxCount) * (maxR - minR);
+    function logScale(val, min, max, outMin, outMax) {
+      if (max <= min) return (outMin + outMax) / 2;
+      var t = (Math.log1p(val) - Math.log1p(min)) / (Math.log1p(max) - Math.log1p(min));
+      return outMin + t * (outMax - outMin);
     }
 
-    // maxPypi set dynamically after fetch
-    const maxSubs = Math.max(...subsData.map(d => d.count));
+    function fmt(n) { return Number(n).toLocaleString('en-US'); }
 
-    // Combine points for rendering (blue = installs, amber = subs)
-    const subsPoints = subsData.map(d => ({ ...d, type: 'sub' }));
-    const allPoints = [...subsPoints];  // pypi points added async below
+    var tooltip   = document.getElementById('tooltip');
+    var ttFlag    = document.getElementById('tt-flag');
+    var ttCountry = document.getElementById('tt-country');
+    var ttCount   = document.getElementById('tt-count');
+    var loading   = document.getElementById('loading');
 
-    // ── BUILD GLOBE ──────────────────────────────────────────────────────
-
-    const container = document.getElementById('globe-container');
-    const tooltip   = document.getElementById('tooltip');
-    const ttCountry = document.getElementById('tt-country');
-    const ttCount   = document.getElementById('tt-count');
-
-    const globe = Globe()(container)
-      .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-night.jpg')
-      .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
+    // Init globe (empty, points added after fetch)
+    var globe = Globe()(document.getElementById('globe-container'))
+      .globeImageUrl('//unpkg.com/three-globe/example/img/earth-night.jpg')
+      .bumpImageUrl('//unpkg.com/three-globe/example/img/earth-topology.png')
       .backgroundImageUrl('//unpkg.com/three-globe/example/img/night-sky.png')
       .atmosphereColor('#1a3a5c')
       .atmosphereAltitude(0.15)
       .width(window.innerWidth)
       .height(window.innerHeight)
-      // Points
-      .pointsData(allPoints)
+      .pointsData([])
       .pointLat('lat')
       .pointLng('lng')
-      .pointColor(d => d.type === 'install' ? (d._isTop10 ? '#E5443A' : '#4A9EFF') : '#F5A623')
-      .pointAltitude(d => {
-        if (d.type === 'install') return scaleAltitude(d.count, _pypiMaxCount, 0.005, 0.06);
-        return scaleAltitude(d.count, maxSubs, 0.003, 0.04);
-      })
-      .pointRadius(d => {
-        if (d.type === 'install') return scaleRadius(d.count, _pypiMaxCount, 0.4, 1.1);
-        return scaleRadius(d.count, maxSubs, 0.35, 0.8);
-      })
+      .pointAltitude('alt')
+      .pointRadius('radius')
+      .pointColor('color')
       .pointsMerge(false)
-      .pointLabel(() => '')
-      // Arcs
-      .arcsData(arcsData)
-      .arcStartLat('startLat')
-      .arcStartLng('startLng')
-      .arcEndLat('endLat')
-      .arcEndLng('endLng')
-      .arcColor(() => ['rgba(229,68,58,0)', 'rgba(229,68,58,0.9)', 'rgba(229,68,58,0)'])
-      .arcAltitudeAutoScale(0.35)
-      .arcDashLength(0.4)
-      .arcDashGap(0.2)
-      .arcDashAnimateTime(3000)
-      .arcStroke(0.5)
-      // Hover
-      .onPointHover((point, coords) => {
-        if (point) {
-          ttCountry.textContent = point.country;
-          ttCount.textContent = point.type === 'install'
-            ? point.count.toLocaleString() + ' installs'
-            : point.count.toLocaleString() + ' subscribers';
-          ttCount.className = 'tt-count ' + (point.type === 'install' ? 'installs' : 'subs');
-          tooltip.classList.add('visible');
-        } else {
-          tooltip.classList.remove('visible');
-        }
-      });
+      .pointLabel(() => '');
 
-    // ── Live PyPI country data from Metabase / ClickHouse ─────────────────
-    (function loadPypiCountries() {
-      fetch('/api/pypi-countries')
-        .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
-        .then(function(data) {
-          var countries = data.countries || [];
-          if (!countries.length) return;
-          _pypiMaxCount = Math.max.apply(null, countries.map(function(c) { return c.downloads; }));
-          var top10 = new Set(countries.slice(0, 10).map(function(c) { return c.country_code; }));
-          pypiData = countries.map(function(c) {
-            return {
-              lat: c.lat, lng: c.lng,
-              country: c.country_name,
-              city: c.country_name,
-              count: c.downloads,
-              country_code: c.country_code,
-              type: 'install',
-              _isTop10: top10.has(c.country_code),
-            };
-          });
-          // Update globe with real data
-          var merged = pypiData.concat(subsPoints);
-          globe.pointsData(merged);
-          // Update counter
-          var counter = document.getElementById('tt-quote');
-          if (counter) {
-            counter.textContent = data.total_downloads.toLocaleString() + ' installs across ' + data.total_countries + ' countries';
-          }
-          var statsEl = document.getElementById('globe-stats');
-          if (statsEl) {
-            statsEl.innerHTML = '<strong>' + data.total_downloads.toLocaleString() + '</strong> downloads &middot; <strong>' + data.total_countries + '</strong> countries';
-          }
-        })
-        .catch(function(err) {
-          console.warn('[globe] pypi-countries fetch failed:', err);
-        });
-    })();
+    globe.controls().autoRotate = true;
+    globe.controls().autoRotateSpeed = 0.4;
+    globe.controls().enableDamping = true;
 
-
-
-    // Move tooltip with mouse
-    container.addEventListener('mousemove', e => {
-      tooltip.style.left = (e.clientX + 16) + 'px';
-      tooltip.style.top  = (e.clientY - 40) + 'px';
-    });
-
-
-    // Fetch real visitor data and update globe
-    fetch('/api/globe-data')
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        var vis = document.getElementById('stat-visitors');
-        var ctries = document.getElementById('stat-countries');
-        if (vis && data.total_visitors > 0) vis.textContent = data.total_visitors.toLocaleString() + '+';
-        if (ctries) ctries.textContent = data.total_countries;
-
-        var maxCount = Math.max.apply(null, data.points.map(function(p) { return p.count; }).concat([1]));
-        function altScale(cnt) { return 0.005 + (cnt / maxCount) * 0.08; }
-
-        // Only layer in NEW real visitor events (page_visits etc), keep hardcoded baseline
-        var realPts = data.points.filter(function(p) {
-          return p.type !== 'install' && p.type !== 'sub';
-        });
-        if (realPts.length > 0) {
-          var merged = allPoints.concat(realPts);
-          globe.pointsData(merged);
-        }
-        // Always update labels with city names
-        globe.pointLabel(function(p) {
-          var label = (p.city && p.city !== p.country) ? p.city + ', ' + p.country : (p.country || p.city || '');
-          var typeLabel = (p.type || 'install').replace(/_/g, ' ');
-          var plural = p.count > 1 ? 's' : '';
-          return '<div style="background:rgba(0,0,0,0.85);padding:6px 10px;border-radius:6px;color:#fff;font-family:Inter,sans-serif;font-size:12px"><b>' + label + '</b><br/><span style="color:#aaa">' + p.count.toLocaleString() + ' ' + typeLabel + plural + '</span></div>';
-        });
-      })
-      .catch(function() {
-        // Keep existing hardcoded data rendered as fallback
-      });
-
-    // Auto-rotate
-    const controls = globe.controls();
-    controls.autoRotate      = true;
-    controls.autoRotateSpeed = 0.3;
-    controls.enableDamping   = true;
-    controls.dampingFactor   = 0.08;
-    controls.minDistance     = 200;
-    controls.maxDistance     = 600;
-
-    // Pause on mouse down, resume on mouse up
-    container.addEventListener('mousedown', () => {
-      controls.autoRotate = false;
-    });
-
-    container.addEventListener('mouseup', () => {
-      setTimeout(() => { controls.autoRotate = true; }, 2000);
-    });
-
-    container.addEventListener('touchstart', () => {
-      controls.autoRotate = false;
-    }, { passive: true });
-
-    container.addEventListener('touchend', () => {
-      setTimeout(() => { controls.autoRotate = true; }, 3000);
-    }, { passive: true });
-
-    // Responsive resize
-    window.addEventListener('resize', () => {
+    // Resize
+    window.addEventListener('resize', function() {
       globe.width(window.innerWidth).height(window.innerHeight);
     });
 
-    // Hide loading overlay once globe is ready
-    globe.onGlobeReady(() => {
-      const loading = document.getElementById('loading');
-      loading.classList.add('fade-out');
-      setTimeout(() => { loading.remove(); }, 600);
+    // Hover tooltip
+    globe.onPointHover(function(point, ev) {
+      if (!point) {
+        tooltip.classList.remove('visible');
+        return;
+      }
+      ttFlag.textContent = countryFlag(point.country_code);
+      ttCountry.textContent = ' ' + point.country_name;
+      ttCount.textContent = fmt(point.downloads);
+      tooltip.classList.add('visible');
     });
 
-    // Fallback: hide loading after 5s regardless
-    setTimeout(() => {
-      const loading = document.getElementById('loading');
-      if (loading) {
-        loading.classList.add('fade-out');
-        setTimeout(() => { loading.remove(); }, 600);
+    document.addEventListener('mousemove', function(e) {
+      if (tooltip.classList.contains('visible')) {
+        tooltip.style.left = (e.clientX + 16) + 'px';
+        tooltip.style.top  = (e.clientY + 16) + 'px';
       }
-    }, 5000);
+    });
+
+    // Fetch live data
+    fetch('/api/pypi-countries')
+      .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
+      .then(function(data) {
+        var countries = data.countries || [];
+        var total     = data.total_downloads || 0;
+        var ncountries = data.total_countries || 0;
+
+        if (!countries.length) throw new Error('no data');
+
+        var dlMin = countries[countries.length - 1].downloads;
+        var dlMax = countries[0].downloads; // already sorted desc
+        var top10 = new Set(countries.slice(0, 10).map(function(c) { return c.country_code; }));
+
+        var points = countries.map(function(c) {
+          return {
+            lat: c.lat,
+            lng: c.lng,
+            alt: logScale(c.downloads, dlMin, dlMax, 0.005, 0.08),
+            radius: logScale(c.downloads, dlMin, dlMax, 0.3, 1.2),
+            color: top10.has(c.country_code) ? '#E5443A' : '#4A9EFF',
+            country_code: c.country_code,
+            country_name: c.country_name,
+            downloads: c.downloads,
+          };
+        });
+
+        globe.pointsData(points);
+
+        document.getElementById('stat-total').textContent = fmt(total);
+        document.getElementById('stat-countries').textContent = ncountries + '+';
+
+        loading.classList.add('hidden');
+      })
+      .catch(function(err) {
+        console.warn('[globe] fetch failed:', err);
+        loading.textContent = 'Could not load data. Refresh to retry.';
+      });
   </script>
-<script>
-(function() {
-  function getOrCreateVisitorId() {
-    var key = "cm_vid";
-    var vid = localStorage.getItem(key);
-    if (!vid) { vid = "v_" + Math.random().toString(36).substr(2,9) + Date.now().toString(36); localStorage.setItem(key, vid); }
-    return vid;
-  }
-  function track(eventType, metadata) {
-    try {
-      fetch("/api/track", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-          event_type: eventType,
-          visitor_id: getOrCreateVisitorId(),
-          page: window.location.pathname,
-          metadata: metadata || {}
-        })
-      }).catch(function(){});
-    } catch(e) {}
-  }
-  track("page_visit");
-  window.cmTrack = track;
-})();
-</script>
 </body>
 </html>
