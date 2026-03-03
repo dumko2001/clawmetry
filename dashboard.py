@@ -51,7 +51,7 @@ except ImportError:
     metrics_service_pb2 = None
     trace_service_pb2 = None
 
-__version__ = "0.9.16"
+__version__ = "0.9.17"
 
 # ── Turso Cloud Sync (optional) ─────────────────────────────────────────
 try:
@@ -506,6 +506,24 @@ def _budget_init_db():
             ON alert_history(fired_at DESC);
         CREATE INDEX IF NOT EXISTS idx_alert_history_rule
             ON alert_history(rule_id, fired_at DESC);
+        CREATE TABLE IF NOT EXISTS alert_channels (
+            id TEXT PRIMARY KEY,
+            type TEXT NOT NULL,
+            name TEXT NOT NULL,
+            config TEXT NOT NULL,
+            enabled INTEGER DEFAULT 1,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS agent_alert_rules (
+            id TEXT PRIMARY KEY,
+            type TEXT NOT NULL,
+            threshold REAL NOT NULL,
+            enabled INTEGER DEFAULT 1,
+            cooldown_min INTEGER DEFAULT 30,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
     """)
     db.close()
 
@@ -694,7 +712,7 @@ def _resume_gateway():
     _budget_paused_reason = ''
 
 
-def _fire_alert(rule_id, alert_type, message, channels=None):
+def _fire_alert(rule_id, alert_type, message, channels=None, details=None):
     """Fire an alert with cooldown check."""
     global _budget_alert_cooldowns
     now = time.time()
@@ -724,12 +742,18 @@ def _fire_alert(rule_id, alert_type, message, channels=None):
     except Exception as e:
         print(f"Warning: Failed to save alert history: {e}")
 
-    # Send to channels
+    # Send to explicit channels
     for ch in channels:
         if ch == 'telegram':
             _send_telegram_alert(message)
         elif ch == 'webhook':
             pass  # webhook sending handled by custom alert rules
+
+    # Dispatch to all configured integration channels (Slack, Discord, PagerDuty, OpsGenie)
+    try:
+        _dispatch_to_alert_channels(message, alert_type, details)
+    except Exception as e:
+        print(f"Warning: Failed to dispatch to alert channels: {e}")
 
 
 def _send_telegram_alert(message):
@@ -776,6 +800,284 @@ def _send_webhook_alert(url, alert_data):
         pass
 
 
+# ── Alert Channel Integrations ─────────────────────────────────────────
+
+_CHANNEL_TYPES = {'slack', 'discord', 'pagerduty', 'opsgenie', 'webhook'}
+
+def _get_alert_channels():
+    """Get all configured alert channels."""
+    try:
+        with _fleet_db_lock:
+            db = _fleet_db()
+            rows = db.execute("SELECT * FROM alert_channels ORDER BY created_at DESC").fetchall()
+            db.close()
+        result = []
+        for r in rows:
+            ch = dict(r)
+            try:
+                ch['config'] = json.loads(ch['config'])
+            except Exception:
+                ch['config'] = {}
+            result.append(ch)
+        return result
+    except Exception:
+        return []
+
+
+def _save_alert_channel(channel_id, channel_type, name, config, enabled=True):
+    """Create or update an alert channel."""
+    now = time.time()
+    with _fleet_db_lock:
+        db = _fleet_db()
+        existing = db.execute("SELECT id FROM alert_channels WHERE id = ?", (channel_id,)).fetchone()
+        if existing:
+            db.execute(
+                "UPDATE alert_channels SET type=?, name=?, config=?, enabled=?, updated_at=? WHERE id=?",
+                (channel_type, name, json.dumps(config), 1 if enabled else 0, now, channel_id)
+            )
+        else:
+            db.execute(
+                "INSERT INTO alert_channels (id, type, name, config, enabled, created_at, updated_at) VALUES (?,?,?,?,?,?,?)",
+                (channel_id, channel_type, name, json.dumps(config), 1 if enabled else 0, now, now)
+            )
+        db.commit()
+        db.close()
+
+
+def _delete_alert_channel(channel_id):
+    """Delete an alert channel."""
+    with _fleet_db_lock:
+        db = _fleet_db()
+        db.execute("DELETE FROM alert_channels WHERE id = ?", (channel_id,))
+        db.commit()
+        db.close()
+
+
+def _send_slack_alert(config, message, alert_type, details=None):
+    """Send alert to Slack via incoming webhook.
+    config: {'webhook_url': str, 'channel': str (optional), 'username': str (optional)}
+    """
+    import urllib.request as _ur
+    url = config.get('webhook_url', '')
+    if not url:
+        return False, 'No webhook_url configured'
+    # Color by severity
+    color_map = {
+        'agent_down': '#ff4444',
+        'agent_silent': '#ff4444',
+        'error_rate_spike': '#ff8800',
+        'token_anomaly': '#ffbb00',
+        'anomaly': '#ffbb00',
+        'threshold': '#ff8800',
+        'spike': '#ff4444',
+    }
+    color = color_map.get(alert_type, '#888888')
+    emoji_map = {
+        'agent_down': ':red_circle:',
+        'agent_silent': ':mute:',
+        'error_rate_spike': ':warning:',
+        'token_anomaly': ':chart_with_upwards_trend:',
+        'anomaly': ':chart_with_upwards_trend:',
+        'threshold': ':money_with_wings:',
+        'spike': ':zap:',
+    }
+    emoji = emoji_map.get(alert_type, ':bell:')
+    payload = {
+        'username': config.get('username', 'ClawMetry'),
+        'icon_emoji': ':robot_face:',
+        'attachments': [{
+            'color': color,
+            'title': f'{emoji} ClawMetry Alert',
+            'text': message,
+            'footer': 'ClawMetry',
+            'ts': int(time.time()),
+            'fields': [{'title': k, 'value': str(v), 'short': True} for k, v in (details or {}).items()],
+        }]
+    }
+    if config.get('channel'):
+        payload['channel'] = config['channel']
+    try:
+        data = json.dumps(payload).encode()
+        req = _ur.Request(url, data=data, headers={'Content-Type': 'application/json'}, method='POST')
+        resp = _ur.urlopen(req, timeout=10)
+        body = resp.read().decode()
+        if body.strip() == 'ok':
+            return True, None
+        return False, f'Slack returned: {body}'
+    except Exception as e:
+        return False, str(e)
+
+
+def _send_discord_alert(config, message, alert_type, details=None):
+    """Send alert to Discord via webhook.
+    config: {'webhook_url': str, 'username': str (optional)}
+    """
+    import urllib.request as _ur
+    url = config.get('webhook_url', '')
+    if not url:
+        return False, 'No webhook_url configured'
+    color_map = {
+        'agent_down': 0xff4444,
+        'agent_silent': 0xff4444,
+        'error_rate_spike': 0xff8800,
+        'token_anomaly': 0xffbb00,
+        'anomaly': 0xffbb00,
+        'threshold': 0xff8800,
+        'spike': 0xff4444,
+    }
+    color = color_map.get(alert_type, 0x888888)
+    fields = [{'name': k, 'value': str(v), 'inline': True} for k, v in (details or {}).items()]
+    payload = {
+        'username': config.get('username', 'ClawMetry'),
+        'avatar_url': 'https://clawmetry.com/favicon-192.png',
+        'embeds': [{
+            'title': '\U0001f6a8 ClawMetry Alert',
+            'description': message,
+            'color': color,
+            'timestamp': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.000Z'),
+            'footer': {'text': 'ClawMetry Observability'},
+            'fields': fields,
+        }]
+    }
+    try:
+        data = json.dumps(payload).encode()
+        req = _ur.Request(url, data=data, headers={'Content-Type': 'application/json'}, method='POST')
+        resp = _ur.urlopen(req, timeout=10)
+        # Discord returns 204 No Content on success
+        return True, None
+    except Exception as e:
+        return False, str(e)
+
+
+def _send_pagerduty_alert(config, message, alert_type, details=None, severity=None):
+    """Send alert to PagerDuty via Events API v2.
+    config: {'routing_key': str, 'source': str (optional)}
+    """
+    import urllib.request as _ur
+    routing_key = config.get('routing_key', '')
+    if not routing_key:
+        return False, 'No routing_key configured'
+    severity_map = {
+        'agent_down': 'critical',
+        'agent_silent': 'critical',
+        'error_rate_spike': 'error',
+        'token_anomaly': 'warning',
+        'anomaly': 'warning',
+        'threshold': 'warning',
+        'spike': 'error',
+    }
+    pd_severity = severity or severity_map.get(alert_type, 'warning')
+    dedup_key = f'clawmetry-{alert_type}-{int(time.time() // 3600)}'
+    payload = {
+        'routing_key': routing_key,
+        'event_action': 'trigger',
+        'dedup_key': dedup_key,
+        'payload': {
+            'summary': message,
+            'source': config.get('source', 'ClawMetry'),
+            'severity': pd_severity,
+            'timestamp': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.000Z'),
+            'custom_details': details or {},
+        },
+        'client': 'ClawMetry',
+        'client_url': 'https://clawmetry.com',
+    }
+    try:
+        data = json.dumps(payload).encode()
+        req = _ur.Request(
+            'https://events.pagerduty.com/v2/enqueue',
+            data=data,
+            headers={'Content-Type': 'application/json'},
+            method='POST'
+        )
+        resp = _ur.urlopen(req, timeout=15)
+        result = json.loads(resp.read().decode())
+        if result.get('status') == 'success':
+            return True, None
+        return False, str(result)
+    except Exception as e:
+        return False, str(e)
+
+
+def _send_opsgenie_alert(config, message, alert_type, details=None):
+    """Send alert to OpsGenie via REST API.
+    config: {'api_key': str, 'team': str (optional), 'priority': str (optional)}
+    """
+    import urllib.request as _ur
+    api_key = config.get('api_key', '')
+    if not api_key:
+        return False, 'No api_key configured'
+    priority_map = {
+        'agent_down': 'P1',
+        'agent_silent': 'P1',
+        'error_rate_spike': 'P2',
+        'token_anomaly': 'P3',
+        'anomaly': 'P3',
+        'threshold': 'P3',
+        'spike': 'P2',
+    }
+    priority = config.get('priority') or priority_map.get(alert_type, 'P3')
+    tags = ['clawmetry', alert_type.replace('_', '-')]
+    alias = f'clawmetry-{alert_type}-{int(time.time() // 3600)}'
+    payload = {
+        'message': message[:130],  # OpsGenie limit is 130 chars
+        'alias': alias,
+        'description': message,
+        'tags': tags,
+        'priority': priority,
+        'source': 'ClawMetry',
+        'details': {k: str(v) for k, v in (details or {}).items()},
+    }
+    if config.get('team'):
+        payload['responders'] = [{'name': config['team'], 'type': 'team'}]
+    try:
+        data = json.dumps(payload).encode()
+        req = _ur.Request(
+            'https://api.opsgenie.com/v2/alerts',
+            data=data,
+            headers={
+                'Content-Type': 'application/json',
+                'Authorization': f'GenieKey {api_key}',
+            },
+            method='POST'
+        )
+        resp = _ur.urlopen(req, timeout=15)
+        result = json.loads(resp.read().decode())
+        if result.get('result') == 'Request will be processed':
+            return True, None
+        return False, str(result)
+    except Exception as e:
+        return False, str(e)
+
+
+def _dispatch_to_alert_channels(message, alert_type, details=None):
+    """Send alert to all enabled configured channels."""
+    channels = _get_alert_channels()
+    for ch in channels:
+        if not ch.get('enabled'):
+            continue
+        ctype = ch['type']
+        cfg = ch['config']
+        try:
+            if ctype == 'slack':
+                _send_slack_alert(cfg, message, alert_type, details)
+            elif ctype == 'discord':
+                _send_discord_alert(cfg, message, alert_type, details)
+            elif ctype == 'pagerduty':
+                _send_pagerduty_alert(cfg, message, alert_type, details)
+            elif ctype == 'opsgenie':
+                _send_opsgenie_alert(cfg, message, alert_type, details)
+            elif ctype == 'webhook':
+                url = cfg.get('url', '')
+                if url:
+                    _send_webhook_alert(url, {
+                        'type': alert_type, 'message': message,
+                        'timestamp': time.time(), 'details': details or {}
+                    })
+        except Exception as e:
+            print(f'Warning: Failed to send alert to channel {ch["id"]} ({ctype}): {e}')
+
+
 def _get_alert_rules():
     """Get all alert rules."""
     try:
@@ -820,6 +1122,118 @@ def _get_active_alerts():
         return []
 
 
+# ── Agent Condition Checks ─────────────────────────────────────────────
+
+def _check_agent_silent(sessions_dir, silent_threshold_minutes=10):
+    """Check if the main agent session has been silent for too long.
+    Returns (is_silent: bool, minutes_silent: int, session_id: str)
+    """
+    if not sessions_dir or not os.path.isdir(sessions_dir):
+        return False, 0, ''
+    try:
+        # Find the most recently modified session file
+        jsonl_files = [
+            os.path.join(sessions_dir, f)
+            for f in os.listdir(sessions_dir)
+            if f.endswith('.jsonl')
+        ]
+        if not jsonl_files:
+            return False, 0, ''
+        # Sort by mtime descending
+        jsonl_files.sort(key=lambda p: os.path.getmtime(p), reverse=True)
+        latest = jsonl_files[0]
+        mtime = os.path.getmtime(latest)
+        minutes_ago = (time.time() - mtime) / 60
+        session_id = os.path.basename(latest).replace('.jsonl', '')
+        if minutes_ago > silent_threshold_minutes:
+            return True, int(minutes_ago), session_id
+        return False, 0, ''
+    except Exception:
+        return False, 0, ''
+
+
+def _check_error_rate_spike(sessions_dir, window_minutes=60, error_rate_threshold=0.3):
+    """Check if tool call error rate in the last window is above threshold.
+    Returns (is_spike: bool, error_rate: float, total_calls: int, error_count: int)
+    """
+    if not sessions_dir or not os.path.isdir(sessions_dir):
+        return False, 0.0, 0, 0
+    now = time.time()
+    cutoff = now - window_minutes * 60
+    total_calls = 0
+    error_calls = 0
+    try:
+        for fname in os.listdir(sessions_dir):
+            if not fname.endswith('.jsonl'):
+                continue
+            fpath = os.path.join(sessions_dir, fname)
+            # Only check files modified recently
+            if os.path.getmtime(fpath) < cutoff - 3600:
+                continue
+            with open(fpath, 'r', errors='replace') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        event = json.loads(line)
+                    except Exception:
+                        continue
+                    # Check event timestamp
+                    ts = event.get('timestamp', event.get('ts', 0))
+                    if isinstance(ts, str):
+                        try:
+                            from datetime import datetime as dt
+                            ts = dt.fromisoformat(ts.replace('Z', '+00:00')).timestamp()
+                        except Exception:
+                            ts = 0
+                    if ts < cutoff:
+                        continue
+                    # Count tool_result events
+                    etype = event.get('type', '')
+                    if etype == 'tool_result':
+                        total_calls += 1
+                        content = event.get('content', '')
+                        if isinstance(content, list):
+                            content = ' '.join(str(c) for c in content)
+                        if 'error' in str(content).lower() or event.get('is_error'):
+                            error_calls += 1
+    except Exception:
+        return False, 0.0, 0, 0
+
+    if total_calls < 5:
+        return False, 0.0, total_calls, error_calls
+    error_rate = error_calls / total_calls
+    return error_rate >= error_rate_threshold, error_rate, total_calls, error_calls
+
+
+def _check_token_anomaly(spike_multiplier=3.0):
+    """Check for token usage anomaly in the last hour vs 24h average.
+    Returns (is_anomaly: bool, current_rate: float, avg_rate: float)
+    """
+    now = time.time()
+    hour_ago = now - 3600
+    day_ago = now - 86400
+    hour_tokens = 0
+    day_tokens = 0
+    with _metrics_lock:
+        for e in metrics_store['tokens']:
+            ts = e.get('timestamp', 0)
+            total = e.get('total', e.get('input', 0) + e.get('output', 0))
+            if ts >= hour_ago:
+                hour_tokens += total
+            if ts >= day_ago:
+                day_tokens += total
+    if day_tokens == 0:
+        return False, 0.0, 0.0
+    # Average hourly rate over 24h
+    avg_hourly = day_tokens / 24
+    if avg_hourly == 0:
+        return False, 0.0, 0.0
+    is_anomaly = hour_tokens > avg_hourly * spike_multiplier
+    return is_anomaly, hour_tokens, avg_hourly
+
+
 def _budget_monitor_loop():
     """Background thread: check for anomalies, agent-down, and custom alert rules."""
     global _budget_alert_cooldowns
@@ -828,13 +1242,61 @@ def _budget_monitor_loop():
         try:
             now = time.time()
 
-            # Agent-down check
+            # Agent-down check (OTLP-based)
             if _otel_last_received > 0 and (now - _otel_last_received) > _AGENT_DOWN_SECONDS:
                 _fire_alert(
                     rule_id='agent_down',
                     alert_type='agent_down',
                     message=f'Agent appears down: no OTLP data for {int((now - _otel_last_received) / 60)} minutes',
                     channels=['banner', 'telegram'],
+                    details={'minutes_silent': int((now - _otel_last_received) / 60)},
+                )
+
+            # Agent-silent check (filesystem-based, fires if no session activity)
+            sessions_dir = os.path.join(WORKSPACE, '.openclaw', 'agents', 'main', 'sessions') if WORKSPACE else \
+                os.path.expanduser('~/.openclaw/agents/main/sessions')
+            is_silent, minutes_silent, silent_session = _check_agent_silent(
+                sessions_dir, silent_threshold_minutes=10
+            )
+            if is_silent:
+                _fire_alert(
+                    rule_id='agent_silent',
+                    alert_type='agent_silent',
+                    message=f'Agent session has been silent for {minutes_silent} minutes',
+                    channels=['banner'],
+                    details={'session': silent_session, 'minutes_silent': minutes_silent},
+                )
+
+            # Error rate spike check
+            is_spike, error_rate, total_calls, error_count = _check_error_rate_spike(
+                sessions_dir, window_minutes=60, error_rate_threshold=0.3
+            )
+            if is_spike:
+                _fire_alert(
+                    rule_id='error_rate_spike',
+                    alert_type='error_rate_spike',
+                    message=f'Tool call error rate spike: {error_rate:.0%} ({error_count}/{total_calls} calls failed in last hour)',
+                    channels=['banner'],
+                    details={
+                        'error_rate': f'{error_rate:.1%}',
+                        'failed_calls': error_count,
+                        'total_calls': total_calls,
+                    },
+                )
+
+            # Token usage anomaly check
+            is_token_anomaly, hour_tokens, avg_tokens = _check_token_anomaly(spike_multiplier=3.0)
+            if is_token_anomaly:
+                _fire_alert(
+                    rule_id='token_anomaly',
+                    alert_type='token_anomaly',
+                    message=f'Token usage anomaly: {int(hour_tokens):,} tokens in last hour ({hour_tokens/max(1,avg_tokens):.1f}x average of {int(avg_tokens):,}/hr)',
+                    channels=['banner'],
+                    details={
+                        'tokens_last_hour': int(hour_tokens),
+                        'avg_tokens_per_hour': int(avg_tokens),
+                        'multiplier': f'{hour_tokens/max(1,avg_tokens):.1f}x',
+                    },
                 )
 
             # Anomaly check: today's cost > 2x 7-day average
@@ -848,6 +1310,10 @@ def _budget_monitor_loop():
                         alert_type='anomaly',
                         message=f'Spending anomaly: today ${daily_spent:.2f} is {(daily_spent/week_avg):.1f}x the 7-day average (${week_avg:.2f}/day)',
                         channels=['banner', 'telegram'],
+                        details={
+                            'today_spend': f'${daily_spent:.2f}',
+                            'avg_daily_spend': f'${week_avg:.2f}',
+                        },
                     )
 
             # Custom alert rules
@@ -910,6 +1376,8 @@ def _budget_monitor_loop():
                                 _send_webhook_alert(webhook_url, {
                                     'type': rtype, 'message': msg, 'timestamp': now
                                 })
+                    # Also dispatch to integration channels
+                    _dispatch_to_alert_channels(msg, rtype)
 
         except Exception as e:
             print(f"Warning: Budget monitor error: {e}")
@@ -2325,6 +2793,7 @@ function clawmetryLogout(){
       <div class="modal-tab active" onclick="switchBudgetTab('limits',this)">Budget Limits</div>
       <div class="modal-tab" onclick="switchBudgetTab('alerts',this)">Alert Rules</div>
       <div class="modal-tab" onclick="switchBudgetTab('telegram',this)">Telegram</div>
+      <div class="modal-tab" onclick="switchBudgetTab('integrations',this)">&#128279; Integrations</div>
       <div class="modal-tab" onclick="switchBudgetTab('history',this)">History</div>
     </div>
     <!-- Budget Limits Tab -->
@@ -2402,6 +2871,43 @@ function clawmetryLogout(){
         </div>
         <div id="tg-status" style="font-size:12px;color:var(--text-muted);"></div>
       </div>
+    </div>
+    <!-- History Tab -->
+    <!-- Integrations Tab (Slack, Discord, PagerDuty, OpsGenie) -->
+    <div id="budget-tab-integrations" style="display:none;">
+      <div style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:12px;color:var(--text-muted);">Send alerts to Slack, Discord, PagerDuty, OpsGenie, or any webhook.</div>
+        <button onclick="showAddChannelForm()" style="background:var(--bg-accent);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;">+ Add Channel</button>
+      </div>
+      <div id="add-channel-form" style="display:none;padding:12px;background:var(--bg-secondary);border:1px solid var(--border-primary);border-radius:8px;margin-bottom:12px;">
+        <div style="display:grid;gap:8px;">
+          <div>
+            <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Channel Type</label>
+            <select id="channel-type" onchange="updateChannelForm()" style="width:100%;padding:8px;border:1px solid var(--border-primary);border-radius:6px;background:var(--bg-tertiary);color:var(--text-primary);">
+              <option value="slack">Slack (Incoming Webhook)</option>
+              <option value="discord">Discord (Webhook)</option>
+              <option value="pagerduty">PagerDuty (Events API v2)</option>
+              <option value="opsgenie">OpsGenie (REST API)</option>
+              <option value="webhook">Generic Webhook</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Display Name</label>
+            <input id="channel-name" type="text" placeholder="e.g. #alerts-prod" style="width:100%;padding:8px;border:1px solid var(--border-primary);border-radius:6px;background:var(--bg-tertiary);color:var(--text-primary);">
+          </div>
+          <div id="channel-config-fields">
+            <!-- Populated by updateChannelForm() -->
+            <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Webhook URL</label>
+            <input id="channel-cfg-webhook_url" type="text" placeholder="https://hooks.slack.com/services/..." style="width:100%;padding:8px;border:1px solid var(--border-primary);border-radius:6px;background:var(--bg-tertiary);color:var(--text-primary);">
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button onclick="createAlertChannel()" style="background:#16a34a;color:#fff;border:none;border-radius:6px;padding:6px 16px;font-size:13px;cursor:pointer;">Save Channel</button>
+            <button onclick="document.getElementById('add-channel-form').style.display='none'" style="background:var(--button-bg);color:var(--text-secondary);border:none;border-radius:6px;padding:6px 16px;font-size:13px;cursor:pointer;">Cancel</button>
+          </div>
+          <div id="channel-save-status" style="font-size:12px;color:var(--text-muted);"></div>
+        </div>
+      </div>
+      <div id="alert-channels-list" style="font-size:13px;color:var(--text-secondary);">Loading...</div>
     </div>
     <!-- History Tab -->
     <div id="budget-tab-history" style="display:none;">
@@ -2973,13 +3479,134 @@ function openBudgetModal() {
 function switchBudgetTab(tab, el) {
   document.querySelectorAll('#budget-modal-tabs .modal-tab').forEach(function(t){t.classList.remove('active');});
   if(el) el.classList.add('active');
-  ['limits','alerts','telegram','history'].forEach(function(t){
+  ['limits','alerts','telegram','integrations','history'].forEach(function(t){
     var d = document.getElementById('budget-tab-'+t);
     if(d) d.style.display = t===tab ? 'block' : 'none';
   });
   if(tab==='alerts') loadAlertRules();
   if(tab==='telegram') loadTelegramConfig();
   if(tab==='history') loadAlertHistory();
+  if(tab==='integrations') loadAlertChannels();
+}
+
+// ── Alert Channels (Integrations) ──────────────────────────────────────
+
+var CHANNEL_CONFIG_FIELDS = {
+  slack:     [{id:'webhook_url',label:'Webhook URL',placeholder:'https://hooks.slack.com/services/...',required:true},{id:'channel',label:'Channel (optional)',placeholder:'#alerts',required:false},{id:'username',label:'Bot Name (optional)',placeholder:'ClawMetry',required:false}],
+  discord:   [{id:'webhook_url',label:'Webhook URL',placeholder:'https://discord.com/api/webhooks/...',required:true},{id:'username',label:'Bot Name (optional)',placeholder:'ClawMetry',required:false}],
+  pagerduty: [{id:'routing_key',label:'Integration/Routing Key',placeholder:'abc123...',required:true},{id:'source',label:'Source (optional)',placeholder:'ClawMetry',required:false}],
+  opsgenie:  [{id:'api_key',label:'API Key',placeholder:'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',required:true},{id:'team',label:'Team Name (optional)',placeholder:'ops-team',required:false},{id:'priority',label:'Priority (optional)',placeholder:'P2',required:false}],
+  webhook:   [{id:'url',label:'Webhook URL',placeholder:'https://your-server/webhook',required:true}],
+};
+
+function updateChannelForm() {
+  var type = document.getElementById('channel-type').value;
+  var fields = CHANNEL_CONFIG_FIELDS[type] || [];
+  var html = '';
+  fields.forEach(function(f) {
+    html += '<div style="margin-bottom:6px;">';
+    html += '<label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:3px;">' + f.label + (f.required ? ' <span style="color:#ff4444">*</span>' : '') + '</label>';
+    var inputType = (f.id==='api_key'||f.id==='routing_key') ? 'password' : 'text';
+    html += '<input id="channel-cfg-' + f.id + '" type="' + inputType + '" placeholder="' + f.placeholder + '" style="width:100%;padding:8px;border:1px solid var(--border-primary);border-radius:6px;background:var(--bg-tertiary);color:var(--text-primary);font-family:monospace;font-size:12px;">';
+    html += '</div>';
+  });
+  document.getElementById('channel-config-fields').innerHTML = html;
+}
+
+function showAddChannelForm() {
+  document.getElementById('add-channel-form').style.display = 'block';
+  document.getElementById('channel-save-status').textContent = '';
+  updateChannelForm();
+}
+
+async function createAlertChannel() {
+  var type = document.getElementById('channel-type').value;
+  var name = document.getElementById('channel-name').value.trim();
+  if(!name) { document.getElementById('channel-save-status').textContent = 'Name is required'; return; }
+  var fields = CHANNEL_CONFIG_FIELDS[type] || [];
+  var config = {};
+  var missing = [];
+  fields.forEach(function(f) {
+    var el = document.getElementById('channel-cfg-' + f.id);
+    if(el) {
+      var val = el.value.trim();
+      if(f.required && !val) missing.push(f.label);
+      if(val) config[f.id] = val;
+    }
+  });
+  if(missing.length) { document.getElementById('channel-save-status').textContent = 'Required: ' + missing.join(', '); return; }
+  try {
+    var r = await fetch('/api/alerts/channels', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({type:type, name:name, config:config})});
+    var d = await r.json();
+    if(d.ok) {
+      document.getElementById('add-channel-form').style.display = 'none';
+      loadAlertChannels();
+    } else {
+      document.getElementById('channel-save-status').textContent = d.error || 'Failed to save';
+    }
+  } catch(e) {
+    document.getElementById('channel-save-status').textContent = 'Error: ' + e.message;
+  }
+}
+
+async function loadAlertChannels() {
+  var el = document.getElementById('alert-channels-list');
+  if(!el) return;
+  try {
+    var data = await fetch('/api/alerts/channels').then(function(r){return r.json();});
+    var channels = data.channels || [];
+    if(!channels.length) {
+      el.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:24px;">No integrations configured yet.<br><span style="font-size:11px;">Add Slack, Discord, PagerDuty, or OpsGenie to receive alerts.</span></div>';
+      return;
+    }
+    var icons = {slack:'\uD83D\uDCEC', discord:'\uD83C\uDFAE', pagerduty:'\uD83D\uDCF5', opsgenie:'\u26A0\uFE0F', webhook:'\uD83D\uDD17'};
+    var html = '<div style="display:grid;gap:8px;">';
+    channels.forEach(function(c) {
+      var icon = icons[c.type] || '\uD83D\uDD14';
+      var enabled = c.enabled !== 0;
+      html += '<div style="padding:10px 12px;background:var(--bg-secondary);border:1px solid var(--border-primary);border-radius:8px;display:flex;align-items:center;gap:10px;">';
+      html += '<span style="font-size:18px;">' + icon + '</span>';
+      html += '<div style="flex:1;min-width:0;">';
+      html += '<div style="font-weight:600;color:var(--text-primary);font-size:13px;">' + c.name + '</div>';
+      html += '<div style="font-size:11px;color:var(--text-muted);">' + c.type + (enabled?'':' \u2022 disabled') + '</div>';
+      html += '</div>';
+      html += '<div style="display:flex;gap:6px;">';
+      html += '<button onclick="testAlertChannel(\'' + c.id + '\')" title="Send test" style="background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;color:var(--text-secondary);">Test</button>';
+      html += '<button onclick="toggleAlertChannel(\'' + c.id + '\',' + (enabled?'false':'true') + ')" title="' + (enabled?'Disable':'Enable') + '" style="background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;color:var(--text-secondary);">' + (enabled?'\u23F8\uFE0F':'\u25B6\uFE0F') + '</button>';
+      html += '<button onclick="deleteAlertChannel(\'' + c.id + '\')" title="Delete" style="background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;color:var(--text-error);">\uD83D\uDDD1\uFE0F</button>';
+      html += '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+    el.innerHTML = html;
+  } catch(e) {
+    if(el) el.innerHTML = '<div style="color:var(--text-error);">Failed to load integrations</div>';
+  }
+}
+
+async function testAlertChannel(id) {
+  try {
+    var r = await fetch('/api/alerts/channels/' + id + '/test', {method:'POST'});
+    var d = await r.json();
+    if(d.ok) {
+      alert('\u2705 Test alert sent successfully!');
+    } else {
+      alert('\u274C Test failed: ' + (d.error||'Unknown error'));
+    }
+  } catch(e) {
+    alert('\u274C Error: ' + e.message);
+  }
+}
+
+async function deleteAlertChannel(id) {
+  if(!confirm('Delete this alert channel?')) return;
+  await fetch('/api/alerts/channels/' + id, {method:'DELETE'});
+  loadAlertChannels();
+}
+
+async function toggleAlertChannel(id, newEnabled) {
+  await fetch('/api/alerts/channels/' + id, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({enabled:newEnabled})});
+  loadAlertChannels();
 }
 
 async function loadBudgetConfig() {
@@ -9182,6 +9809,108 @@ def api_alert_ack(alert_id):
 def api_alerts_active():
     """Get active (unacknowledged) alerts."""
     return jsonify({'alerts': _get_active_alerts()})
+
+
+# ── Alert Channels API (Slack, Discord, PagerDuty, OpsGenie) ─────────────
+
+@app.route('/api/alerts/channels', methods=['GET', 'POST'])
+def api_alert_channels():
+    """List or create alert channels."""
+    if request.method == 'POST':
+        data = request.get_json(silent=True) or {}
+        ctype = data.get('type', '')
+        if ctype not in _CHANNEL_TYPES:
+            return jsonify({'error': f'Invalid channel type. Must be one of: {", ".join(sorted(_CHANNEL_TYPES))}'}), 400
+        name = data.get('name', '').strip()
+        if not name:
+            return jsonify({'error': 'name is required'}), 400
+        config = data.get('config', {})
+        if not isinstance(config, dict):
+            return jsonify({'error': 'config must be an object'}), 400
+        # Validate required config fields per type
+        required = {
+            'slack': ['webhook_url'],
+            'discord': ['webhook_url'],
+            'pagerduty': ['routing_key'],
+            'opsgenie': ['api_key'],
+            'webhook': ['url'],
+        }
+        missing = [f for f in required.get(ctype, []) if not config.get(f, '').strip()]
+        if missing:
+            return jsonify({'error': f'Missing required config fields: {", ".join(missing)}'}), 400
+        import uuid
+        channel_id = str(uuid.uuid4())[:8]
+        _save_alert_channel(
+            channel_id=channel_id,
+            channel_type=ctype,
+            name=name,
+            config=config,
+            enabled=data.get('enabled', True),
+        )
+        return jsonify({'ok': True, 'id': channel_id})
+    return jsonify({'channels': _get_alert_channels()})
+
+
+@app.route('/api/alerts/channels/<channel_id>', methods=['GET', 'PUT', 'DELETE'])
+def api_alert_channel(channel_id):
+    """Get, update, or delete an alert channel."""
+    if request.method == 'DELETE':
+        _delete_alert_channel(channel_id)
+        return jsonify({'ok': True})
+    if request.method == 'GET':
+        channels = _get_alert_channels()
+        ch = next((c for c in channels if c['id'] == channel_id), None)
+        if not ch:
+            return jsonify({'error': 'Channel not found'}), 404
+        return jsonify(ch)
+    # PUT - update
+    data = request.get_json(silent=True) or {}
+    channels = _get_alert_channels()
+    ch = next((c for c in channels if c['id'] == channel_id), None)
+    if not ch:
+        return jsonify({'error': 'Channel not found'}), 404
+    new_name = data.get('name', ch['name'])
+    new_config = data.get('config', ch['config'])
+    new_enabled = data.get('enabled', ch.get('enabled', True))
+    _save_alert_channel(
+        channel_id=channel_id,
+        channel_type=ch['type'],
+        name=new_name,
+        config=new_config,
+        enabled=new_enabled,
+    )
+    return jsonify({'ok': True})
+
+
+@app.route('/api/alerts/channels/<channel_id>/test', methods=['POST'])
+def api_alert_channel_test(channel_id):
+    """Send a test alert to a specific channel."""
+    channels = _get_alert_channels()
+    ch = next((c for c in channels if c['id'] == channel_id), None)
+    if not ch:
+        return jsonify({'error': 'Channel not found'}), 404
+    ctype = ch['type']
+    cfg = ch['config']
+    test_msg = '\u2705 ClawMetry test alert: your integration is working!'
+    ok, err = False, 'Unknown channel type'
+    if ctype == 'slack':
+        ok, err = _send_slack_alert(cfg, test_msg, 'test', {'source': 'ClawMetry test'})
+    elif ctype == 'discord':
+        ok, err = _send_discord_alert(cfg, test_msg, 'test', {'source': 'ClawMetry test'})
+    elif ctype == 'pagerduty':
+        ok, err = _send_pagerduty_alert(cfg, test_msg, 'test', {'source': 'ClawMetry test'}, severity='info')
+    elif ctype == 'opsgenie':
+        ok, err = _send_opsgenie_alert(cfg, test_msg, 'test', {'source': 'ClawMetry test'})
+    elif ctype == 'webhook':
+        url = cfg.get('url', '')
+        if url:
+            _send_webhook_alert(url, {'type': 'test', 'message': test_msg, 'timestamp': time.time()})
+            ok, err = True, None
+        else:
+            ok, err = False, 'No URL configured'
+    if ok:
+        return jsonify({'ok': True})
+    return jsonify({'ok': False, 'error': err or 'Unknown error'}), 500
 
 
 # ── History / Time-Series API ────────────────────────────────────────────

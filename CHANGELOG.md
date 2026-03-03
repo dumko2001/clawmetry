@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.9.17 — 2026-03-03
+
+**Alert Channel Integrations + Agent Condition Checks**
+
+- **📣 Alert Integrations**: New Integrations tab in Alerts/Budget modal — add Slack (Incoming Webhook), Discord (Webhook), PagerDuty (Events API v2), OpsGenie (REST API), or any generic webhook as alert destinations
+- **🧪 Test Channels**: Send a test alert to any configured channel directly from the UI
+- **🤫 Agent Silent Detection**: New `_check_agent_silent()` — alerts when your agent goes quiet for >10 min
+- **📉 Error Rate Spike**: New `_check_error_rate_spike()` — detects when tool call error rate exceeds 30% in a 60-minute window
+- **⚡ Token Anomaly Detection**: New `_check_token_anomaly()` — catches runaway loops when current hourly token rate is 3× above 24h average
+- **🔌 Alert Dispatch**: All fired alerts now automatically fan out to all configured integration channels (Slack, Discord, PagerDuty, OpsGenie)
+- **DB**: Added `alert_channels` and `agent_alert_rules` tables to the budget SQLite store
+- **Landing**: Restructured traction.html — moved ClickHouse analytics iframe to top of page, cleaned up PyPI metric cards
+
 ## v0.2.8 — 2026-02-12
 
 - UX: removed dashboard login/logout flow and related token-auth UI to avoid confusion

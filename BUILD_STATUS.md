@@ -2,6 +2,52 @@
 
 ## Latest Updates
 
+### March 3, 2026 — v0.9.17: Alert Channel Integrations ✅ COMPLETE
+
+**🔌 Alert Channel Integrations (Slack, Discord, PagerDuty, OpsGenie)**
+
+Added first-class multi-channel alert dispatch so ClawMetry can notify any team's existing incident pipeline when agent anomalies are detected:
+
+**New UI:**
+- **Integrations tab** in the Alerts/Budget modal — clean tabbed interface for managing channels
+- **Add Channel form** — select channel type, fill in type-specific required fields (webhook URL, routing key, API key, etc.)
+- **Channel list** — shows all configured integrations with type icon, enable/disable toggle, test button, and delete
+- **Test button** — fires a test alert immediately to verify the integration works before going live
+- Sensitive fields (API keys, routing keys) rendered as password inputs
+
+**New Backend:**
+- `_get_alert_channels()` / `_save_alert_channel()` / `_delete_alert_channel()` — CRUD against new `alert_channels` SQLite table
+- `_send_slack_alert()` — posts rich message with color sidebar via Slack Incoming Webhook
+- `_send_discord_alert()` — posts embed card via Discord webhook
+- `_send_pagerduty_alert()` — triggers via PagerDuty Events API v2 with dedup key and severity mapping
+- `_send_opsgenie_alert()` — opens alert via OpsGenie REST API with team/priority support
+- `_dispatch_to_alert_channels()` — fan-out to all enabled channels on every alert fire
+- `_fire_alert()` enhanced with `details` param and automatic dispatch to integrations
+
+**Agent Condition Checks:**
+- `_check_agent_silent(threshold_min=10)` — detects when the most recently active session JSONL hasn't been modified (agent went quiet / crashed)
+- `_check_error_rate_spike(window_min=60, threshold=0.3)` — scans session files for tool call error events in the last hour; alerts if error rate >30%
+- `_check_token_anomaly(spike_multiplier=3.0)` — compares current hourly token rate to 24h average; flags 3× spikes (runaway loops)
+
+**DB Schema additions:**
+- `alert_channels` table: id, type, name, config (JSON), enabled, created_at, updated_at
+- `agent_alert_rules` table: id, type, threshold, enabled, cooldown_min, created_at, updated_at
+
+**API Routes:**
+- `GET/POST /api/alerts/channels` — list all / create new channel
+- `GET/PUT/DELETE /api/alerts/channels/<id>` — get / update / delete a channel
+- `POST /api/alerts/channels/<id>/test` — fire a live test alert to the channel
+
+**Landing page:**
+- Moved ClickHouse/Metabase analytics iframe to top of traction.html for immediate visibility
+- Removed stale template-based PyPI metric cards that were duplicating the iframe data
+
+**🚀 Impact:**
+- ClawMetry can now plug into existing incident workflows — no more Telegram-only alerts
+- Silent agent detection fills the gap between "agent is running" and "agent is actually doing something"
+- Token anomaly and error spike detection give early warning of runaway loops or broken integrations
+- Foundation for webhook-driven escalation (auto-pause gateway on PD incident, etc.)
+
 ### February 10, 2026 - 7:46 PM CET
 **UX Polish: Enhanced Startup Banner with Flow Features** ✅ COMPLETE
 
