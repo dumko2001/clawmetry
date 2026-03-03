@@ -273,14 +273,6 @@
       .pointLabel(() => '');
 
     globe.controls().autoRotate = true;
-
-    // Pause rotation while hovering so tooltip is easy to use
-    document.getElementById('globe-container').addEventListener('mouseenter', function() {
-      globe.controls().autoRotate = false;
-    });
-    document.getElementById('globe-container').addEventListener('mouseleave', function() {
-      globe.controls().autoRotate = true;
-    });
     globe.controls().autoRotateSpeed = 0.15;
     globe.controls().enableDamping = true;
 
