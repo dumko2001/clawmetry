@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XDF9MFD8FJ"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-XDF9MFD8FJ');
+    gtag('config', 'G-6H5W9Y2B79');
+  </script>
+  <title>ClawMetry Cloud — Monitor your agents from anywhere</title>
+  <meta name="description" content="ClawMetry Cloud syncs your OpenClaw activity — encrypted, real-time, accessible from any browser. No VPN, no port forwarding. $5/node/month.">
+  <link rel="canonical" href="https://clawmetry.com/cloud">
+  <meta property="og:title" content="ClawMetry Cloud — Monitor your agents from anywhere">
+  <meta property="og:description" content="ClawMetry Cloud syncs your OpenClaw activity — encrypted, real-time, accessible from any browser.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://clawmetry.com/cloud">
+  <meta property="og:image" content="https://clawmetry.com/dashboard-overview-og.png">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0B0F1A;
+      --bg-card: #111827;
+      --bg-card-hover: #1a2236;
+      --border: rgba(255,255,255,0.08);
+      --border-hover: rgba(229,68,58,0.3);
+      --text: #F1F5F9;
+      --text-muted: #94A3B8;
+      --text-dim: #64748B;
+      --accent: #E5443A;
+      --accent-glow: rgba(229,68,58,0.15);
+      --accent-glow-strong: rgba(229,68,58,0.25);
+      --terminal-bg: #0D1117;
+      --green: #34D399;
+      --blue: #60A5FA;
+      --purple: #A78BFA;
+      --yellow: #FBBF24;
+    }
+
+    html { scroll-behavior: smooth; overflow-x: hidden; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    img, video, pre, code, table { max-width: 100%; }
+
+    /* NAV */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(11,15,26,0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-inner {
+      max-width: 1100px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; height: 60px;
+    }
+    .nav-logo { display: flex; align-items: center; gap: 8px; text-decoration: none; }
+    .nav-logo-text { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
+    .nav-logo-text span:first-child { color: var(--text); }
+    .nav-logo-text span:last-child { color: var(--accent); }
+    .nav-links { display: flex; align-items: center; gap: 20px; }
+    .nav-links a {
+      color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 500;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--text); }
+    .nav-links a.active { color: var(--accent); }
+    .nav-cta {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--accent); color: #fff;
+      border-radius: 8px; padding: 7px 16px;
+      font-size: 13px; font-weight: 600; text-decoration: none;
+      transition: all 0.2s;
+    }
+    .nav-cta:hover { filter: brightness(1.1); }
+
+    /* HERO */
+    .hero {
+      position: relative;
+      text-align: center;
+      padding: 130px 24px 60px;
+      max-width: 1100px; margin: 0 auto;
+    }
+    .hero-glow {
+      position: absolute;
+      top: -200px; left: 50%;
+      transform: translateX(-50%);
+      width: 800px; max-width: 100vw; height: 600px;
+      background: radial-gradient(ellipse at center, rgba(229,68,58,0.12) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--accent-glow);
+      border: 1px solid rgba(229,68,58,0.25);
+      border-radius: 999px; padding: 6px 16px;
+      font-size: 13px; color: var(--text-muted); font-weight: 500;
+      margin-bottom: 24px;
+    }
+    .hero-badge-dot {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(229,68,58,0.5); }
+      50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(229,68,58,0); }
+    }
+    .hero h1 {
+      font-size: clamp(2.4rem, 6vw, 3.8rem);
+      font-weight: 800; line-height: 1.1;
+      letter-spacing: -0.03em;
+      margin-bottom: 20px;
+    }
+    .hero h1 .accent {
+      background: linear-gradient(135deg, #E5443A 0%, #FF6B5A 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-sub {
+      font-size: 18px; color: var(--text-muted);
+      max-width: 560px; margin: 0 auto 40px; line-height: 1.6;
+    }
+    .hero-buttons { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--accent); color: #fff;
+      padding: 13px 30px; border-radius: 10px;
+      font-size: 15px; font-weight: 600; text-decoration: none;
+      transition: all 0.2s;
+      box-shadow: 0 0 20px rgba(229,68,58,0.3);
+    }
+    .btn-primary:hover { filter: brightness(1.15); box-shadow: 0 0 30px rgba(229,68,58,0.4); transform: translateY(-1px); }
+    .btn-secondary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: transparent; color: var(--text);
+      padding: 13px 30px; border-radius: 10px;
+      border: 1px solid var(--border);
+      font-size: 15px; font-weight: 600; text-decoration: none;
+      transition: all 0.2s;
+    }
+    .btn-secondary:hover { border-color: var(--border-hover); color: var(--accent); }
+
+    /* SECTIONS */
+    .section { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+    .section-title {
+      font-size: clamp(1.75rem, 4vw, 2.4rem);
+      font-weight: 700; letter-spacing: -0.02em;
+      text-align: center; margin-bottom: 12px;
+    }
+    .section-sub {
+      text-align: center; color: var(--text-muted);
+      font-size: 17px; max-width: 560px; margin: 0 auto 48px;
+    }
+
+    /* FEATURE CARDS */
+    .features-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px; padding: 28px;
+      transition: all 0.3s;
+    }
+    .feature-card:hover { border-color: var(--border-hover); background: var(--bg-card-hover); transform: translateY(-2px); }
+    .feature-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 16px; font-size: 20px;
+    }
+    .feature-icon.blue { background: rgba(96,165,250,0.15); color: var(--blue); }
+    .feature-icon.green { background: rgba(52,211,153,0.15); color: var(--green); }
+    .feature-icon.purple { background: rgba(167,139,250,0.15); color: var(--purple); }
+    .feature-card h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+    .feature-card p { font-size: 14px; color: var(--text-muted); line-height: 1.6; }
+
+    /* TERMINAL */
+    .terminal {
+      max-width: 680px; margin: 0 auto;
+      background: var(--terminal-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px; overflow: hidden;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.4), 0 0 60px rgba(229,68,58,0.06);
+    }
+    .terminal-bar {
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px 16px; border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+    }
+    .terminal-dot { width: 12px; height: 12px; border-radius: 50%; }
+    .terminal-dot.red { background: #FF5F57; }
+    .terminal-dot.yellow { background: #FEBC2E; }
+    .terminal-dot.green { background: #28C840; }
+    .terminal-body {
+      padding: 24px 28px;
+      font-family: 'JetBrains Mono', monospace; font-size: 14px; line-height: 2.1;
+    }
+    .t-comment { color: rgba(255,255,255,0.3); font-style: italic; }
+    .t-prompt { color: rgba(255,255,255,0.35); }
+    .t-cmd { color: #28c840; }
+    .t-out { color: var(--blue); }
+    .t-dim { color: var(--text-dim); }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 24px;
+      max-width: 1100px; margin: 0 auto;
+    }
+    .footer-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 16px;
+    }
+    .footer-text { font-size: 13px; color: var(--text-dim); }
+    .footer-text a { color: var(--text-muted); text-decoration: none; transition: color 0.2s; }
+    .footer-text a:hover { color: var(--accent); }
+    .footer-links { display: flex; gap: 20px; }
+    .footer-links a {
+      font-size: 13px; color: var(--text-dim); text-decoration: none;
+      display: inline-flex; align-items: center; gap: 6px;
+      transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--text); }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+      .features-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .hero { padding-top: 110px; }
+      .hero-buttons { flex-direction: column; align-items: center; }
+      .footer-inner { flex-direction: column; text-align: center; }
+      .nav-links .nav-link-hide { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="/" class="nav-logo">
+      <span style="font-size:26px;line-height:28px;">🦞</span>
+      <div class="nav-logo-text"><span>Claw</span><span>metry</span></div>
+      <span style="font-size:12px;color:var(--text-muted);margin-left:6px;opacity:0.7;">Cloud</span>
+    </a>
+    <div class="nav-links">
+      <a href="/" class="nav-link-hide">Home</a>
+      <a href="/pricing" class="nav-link-hide">Pricing</a>
+      <a href="https://app.clawmetry.com" target="_blank" rel="noopener" class="nav-cta">Start free trial</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div style="position:relative;z-index:1;">
+    <div class="hero-badge">
+      <div class="hero-badge-dot"></div>
+      ClawMetry Cloud — now in early access
+    </div>
+    <h1>
+      Monitor your agents<br>
+      <span class="accent">from anywhere.</span>
+    </h1>
+    <p class="hero-sub">
+      ClawMetry Cloud syncs your OpenClaw activity — encrypted, real-time, accessible from any browser.
+    </p>
+    <div class="hero-buttons">
+      <a href="https://app.clawmetry.com" target="_blank" rel="noopener" class="btn-primary">Start free trial</a>
+      <a href="https://app.clawmetry.com?token=cm_58ac8e0c2c7349b0b6c8372a&node=Macbook-Pro" target="_blank" rel="noopener" class="btn-secondary">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        View live demo
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section" style="padding-top:20px;padding-bottom:72px;">
+  <div class="features-grid">
+
+    <!-- Remote access -->
+    <div class="feature-card">
+      <div class="feature-icon blue">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      </div>
+      <h3>Remote access</h3>
+      <p>View all your nodes from any device, anywhere. No VPN, no port forwarding. Just open a browser.</p>
+    </div>
+
+    <!-- E2E encrypted -->
+    <div class="feature-card">
+      <div class="feature-icon green">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </div>
+      <h3>E2E encrypted</h3>
+      <p>Your agent activity is encrypted before it leaves your machine. We never see your data.</p>
+    </div>
+
+    <!-- Multi-node -->
+    <div class="feature-card">
+      <div class="feature-icon purple">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="6" height="5" rx="1"/><rect x="16" y="3" width="6" height="5" rx="1"/><rect x="9" y="16" width="6" height="5" rx="1"/><path d="M5 8v3a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"/><line x1="12" y1="12" x2="12" y2="16"/></svg>
+      </div>
+      <h3>Multi-node fleet</h3>
+      <p>All your machines in one dashboard. Mac, Linux, Windows. Switch between nodes instantly.</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- INSTALL & CONNECT -->
+<section class="section" style="padding-bottom:80px;">
+  <h2 class="section-title">Up and running in two commands</h2>
+  <p class="section-sub">Install ClawMetry, connect your node — that's it.</p>
+
+  <div class="terminal">
+    <div class="terminal-bar">
+      <div class="terminal-dot red"></div>
+      <div class="terminal-dot yellow"></div>
+      <div class="terminal-dot green"></div>
+      <span style="margin-left:8px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-dim);">terminal</span>
+    </div>
+    <div class="terminal-body">
+      <div class="t-comment"># Install ClawMetry</div>
+      <div><span class="t-prompt">$ </span><span class="t-cmd">curl -fsSL https://clawmetry.com/install.sh | bash</span></div>
+      <div style="margin-top:4px;" class="t-comment"># Connect your node to the cloud</div>
+      <div><span class="t-prompt">$ </span><span class="t-cmd">clawmetry connect</span></div>
+      <div style="margin-top:8px;padding:10px 14px;background:rgba(52,211,153,0.07);border:1px solid rgba(52,211,153,0.15);border-radius:8px;font-size:13px;">
+        <span class="t-out">✓ Node connected.</span> <span class="t-dim">Opening app.clawmetry.com...</span>
+      </div>
+    </div>
+  </div>
+
+  <p style="text-align:center;color:var(--text-dim);font-size:13px;margin-top:18px;">
+    Opens <strong style="color:var(--text-muted);">app.clawmetry.com</strong> with your node connected and live data streaming in.
+  </p>
+</section>
+
+<!-- PRICING TEASER -->
+<section style="padding:60px 24px 80px;text-align:center;border-top:1px solid rgba(255,255,255,0.06);">
+  <div style="max-width:480px;margin:0 auto;">
+    <p style="font-size:28px;font-weight:700;letter-spacing:-0.02em;margin-bottom:12px;">
+      $5 <span style="font-size:16px;font-weight:400;color:var(--text-muted);">/ node / month</span>
+    </p>
+    <p style="color:var(--text-muted);font-size:15px;margin-bottom:28px;">
+      After your free trial. Cancel anytime. No contracts.
+    </p>
+    <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;">
+      <a href="https://app.clawmetry.com" target="_blank" rel="noopener" class="btn-primary">Start free trial</a>
+      <a href="/pricing" class="btn-secondary">See full pricing</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-text">
+      🦞 ClawMetry for <a href="https://github.com/openclaw/openclaw">OpenClaw</a> · Built by <a href="https://github.com/vivekchand">vivekchand</a> · MIT licensed
+    </div>
+    <div class="footer-links">
+      <a href="https://github.com/vivekchand/clawmetry" target="_blank" rel="noopener">GitHub</a>
+      <a href="/pricing">Pricing</a>
+      <a href="/">Home</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function() {
+  function getOrCreateVisitorId() {
+    var key = "cm_vid";
+    var vid = localStorage.getItem(key);
+    if (!vid) { vid = "v_" + Math.random().toString(36).substr(2,9) + Date.now().toString(36); localStorage.setItem(key, vid); }
+    return vid;
+  }
+  try {
+    fetch("/api/track", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ event_type: "page_visit", visitor_id: getOrCreateVisitorId(), page: "/cloud", metadata: {} })
+    }).catch(function(){});
+  } catch(e) {}
+})();
+</script>
+
+</body>
+</html>
