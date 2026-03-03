@@ -126,16 +126,22 @@
     /* ── Loading state ── */
     #loading {
       position: fixed;
-      inset: 0;
-      z-index: 5;
+      bottom: 70px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
       display: flex;
       align-items: center;
-      justify-content: center;
-      background: var(--bg);
-      font-size: 14px;
+      gap: 8px;
+      background: rgba(11,15,26,0.85);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: 8px 16px;
+      font-size: 13px;
       color: var(--muted);
-      gap: 10px;
-      transition: opacity 0.4s;
+      white-space: nowrap;
+      transition: opacity 0.5s;
     }
     #loading.hidden { opacity: 0; pointer-events: none; }
     .spinner {
@@ -254,7 +260,37 @@
     var ttCount   = document.getElementById('tt-count');
     var loading   = document.getElementById('loading');
 
-    // Init globe (empty, points added after fetch)
+    // Fallback top-10 shown immediately so globe never appears empty
+    var FALLBACK = [
+      {lat:37.09,lng:-95.71,downloads:12759,country_code:'US',country_name:'United States'},
+      {lat:35.86,lng:104.20,downloads:1498,country_code:'CN',country_name:'China'},
+      {lat:22.40,lng:114.11,downloads:1451,country_code:'HK',country_name:'Hong Kong'},
+      {lat:51.17,lng:10.45,downloads:897, country_code:'DE',country_name:'Germany'},
+      {lat:1.35, lng:103.82,downloads:888, country_code:'SG',country_name:'Singapore'},
+      {lat:36.20,lng:138.25,downloads:699, country_code:'JP',country_name:'Japan'},
+      {lat:35.91,lng:127.77,downloads:652, country_code:'KR',country_name:'South Korea'},
+      {lat:61.52,lng:105.32,downloads:614, country_code:'RU',country_name:'Russia'},
+      {lat:46.23,lng:2.21, downloads:548, country_code:'FR',country_name:'France'},
+      {lat:52.13,lng:5.29, downloads:491, country_code:'NL',country_name:'Netherlands'},
+    ];
+
+    function buildPoints(countries) {
+      var dlMin = countries[countries.length - 1].downloads;
+      var dlMax = countries[0].downloads;
+      var top10 = new Set(countries.slice(0, 10).map(function(c) { return c.country_code; }));
+      return countries.map(function(c) {
+        return {
+          lat: c.lat, lng: c.lng,
+          alt: logScale(c.downloads, dlMin, dlMax, 0.005, 0.08),
+          radius: logScale(c.downloads, dlMin, dlMax, 0.3, 1.2),
+          color: top10.has(c.country_code) ? '#E5443A' : '#4A9EFF',
+          country_code: c.country_code,
+          country_name: c.country_name,
+          downloads: c.downloads,
+        };
+      });
+    }
+
     var globe = Globe()(document.getElementById('globe-container'))
       .globeImageUrl('//unpkg.com/three-globe/example/img/earth-night.jpg')
       .bumpImageUrl('//unpkg.com/three-globe/example/img/earth-topology.png')
@@ -263,7 +299,7 @@
       .atmosphereAltitude(0.15)
       .width(window.innerWidth)
       .height(window.innerHeight)
-      .pointsData([])
+      .pointsData(buildPoints(FALLBACK))
       .pointLat('lat')
       .pointLng('lng')
       .pointAltitude('alt')
@@ -300,43 +336,22 @@
       }
     });
 
-    // Fetch live data
+    // Fetch live data and update globe (fallback already showing)
     fetch('/api/pypi-countries')
       .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
       .then(function(data) {
         var countries = data.countries || [];
         var total     = data.total_downloads || 0;
         var ncountries = data.total_countries || 0;
-
         if (!countries.length) throw new Error('no data');
-
-        var dlMin = countries[countries.length - 1].downloads;
-        var dlMax = countries[0].downloads; // already sorted desc
-        var top10 = new Set(countries.slice(0, 10).map(function(c) { return c.country_code; }));
-
-        var points = countries.map(function(c) {
-          return {
-            lat: c.lat,
-            lng: c.lng,
-            alt: logScale(c.downloads, dlMin, dlMax, 0.005, 0.08),
-            radius: logScale(c.downloads, dlMin, dlMax, 0.3, 1.2),
-            color: top10.has(c.country_code) ? '#E5443A' : '#4A9EFF',
-            country_code: c.country_code,
-            country_name: c.country_name,
-            downloads: c.downloads,
-          };
-        });
-
-        globe.pointsData(points);
-
+        globe.pointsData(buildPoints(countries));
         document.getElementById('stat-total').textContent = fmt(total);
         document.getElementById('stat-countries').textContent = ncountries + '+';
-
         loading.classList.add('hidden');
       })
       .catch(function(err) {
         console.warn('[globe] fetch failed:', err);
-        loading.textContent = 'Could not load data. Refresh to retry.';
+        loading.classList.add('hidden'); // hide even on error — fallback is already showing
       });
   </script>
 </body>
