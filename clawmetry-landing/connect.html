@@ -100,7 +100,21 @@
         <div class="step-num">3</div>
         <div class="step-text">Open your dashboard and sign in with the same email.</div>
       </div>
-      <a href="https://app.clawmetry.com/fleet/" class="open-btn">Open dashboard &#x2192;</a>
+      <a href="https://app.clawmetry.com/fleet/" class="open-btn" id="open-dash-btn">Open dashboard &#x2192;</a>
+      <script>
+      // Set dashboard link with token so auth gate lets user through
+      (function() {
+        function setDashLink() {
+          var key = window._apiKey || '';
+          var btn = document.getElementById('open-dash-btn');
+          if (btn && key) btn.href = 'https://app.clawmetry.com/fleet/?token=' + encodeURIComponent(key);
+        }
+        setDashLink();
+        // Re-run after key is revealed
+        var _orig = window.revealKey;
+        window.revealKey = function() { if(_orig) _orig.apply(this, arguments); setTimeout(setDashLink, 100); };
+      })();
+      </script>
       <p class="note">Same key works on all your machines. Regenerate anytime from settings.</p>
     </div>
 
