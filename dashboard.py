@@ -8392,6 +8392,11 @@ function renderBrainStream(events) {
     if (_brainTypeFilter !== 'all') {
       filtered = filtered.filter(function(ev) { return ev.type === _brainTypeFilter; });
     }
+  filtered = filtered.slice().sort(function(a,b){
+    var ta = a.time ? new Date(a.time).getTime() : 0;
+    var tb = b.time ? new Date(b.time).getTime() : 0;
+    return tb - ta;
+  });
   if (!filtered || filtered.length === 0) {
     el.innerHTML = '<div style="color:var(--text-muted);padding:20px">No activity yet</div>';
     return;
@@ -8464,7 +8469,11 @@ function renderBrainChart(events) {
 async function loadBrainPage(silent) {
   try {
     var data = await fetchJsonWithTimeout('/api/brain-history', 8000);
-    var events = data.events || [];
+    var events = (data.events || []).slice().sort(function(a,b){
+      var ta = a.time ? new Date(a.time).getTime() : 0;
+      var tb = b.time ? new Date(b.time).getTime() : 0;
+      return tb - ta;
+    });
     _brainAllEvents = events;
     renderBrainFilterChips(data.sources || []);
     renderBrainTypeChips(events);
@@ -14464,7 +14473,7 @@ def api_brain_history():
                 except Exception:
                     pass
 
-    events.sort(key=lambda ev: ev.get('time', ''), reverse=True)
+    events.sort(key=lambda ev: ev.get('time', '') or '', reverse=True)  # ISO string sort - correct across days
     # Keep CONTEXT events + most recent 300
     context_evts = [e for e in events if e.get('type') == 'CONTEXT']
     other_evts = [e for e in events if e.get('type') != 'CONTEXT'][:300]
