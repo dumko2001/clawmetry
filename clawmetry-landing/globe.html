@@ -436,39 +436,9 @@
   <script>
     // ── DATA ─────────────────────────────────────────────────────────────
 
-    // Real city-level PyPI install estimates + Firestore data
-    const pypiData = [
-      { country: 'United States',  city: 'San Francisco',  lat: 37.77,  lng: -122.42, count: 800  },
-      { country: 'United States',  city: 'New York',       lat: 40.71,  lng: -74.01,  count: 600  },
-      { country: 'United States',  city: 'Austin',         lat: 30.27,  lng: -97.74,  count: 200  },
-      { country: 'United Kingdom', city: 'London',         lat: 51.51,  lng: -0.13,   count: 420  },
-      { country: 'Germany',        city: 'Berlin',         lat: 52.52,  lng: 13.40,   count: 240  },
-      { country: 'Germany',        city: 'Munich',         lat: 48.14,  lng: 11.58,   count: 140  },
-      { country: 'Netherlands',    city: 'Amsterdam',      lat: 52.37,  lng: 4.90,    count: 180  },
-      { country: 'France',         city: 'Paris',          lat: 48.86,  lng: 2.35,    count: 220  },
-      { country: 'Australia',      city: 'Sydney',         lat: -33.87, lng: 151.21,  count: 160  },
-      { country: 'Japan',          city: 'Tokyo',          lat: 35.68,  lng: 139.69,  count: 130  },
-      { country: 'South Korea',    city: 'Seoul',          lat: 37.57,  lng: 126.98,  count: 110  },
-      { country: 'Singapore',      city: 'Singapore',      lat: 1.35,   lng: 103.82,  count: 90   },
-      { country: 'Sweden',         city: 'Stockholm',      lat: 59.33,  lng: 18.07,   count: 80   },
-      { country: 'Canada',         city: 'Toronto',        lat: 43.65,  lng: -79.38,  count: 280  },
-      { country: 'Brazil',         city: 'Sao Paulo',      lat: -23.55, lng: -46.63,  count: 140  },
-      { country: 'India',          city: 'Bengaluru',      lat: 12.97,  lng: 77.59,   count: 200  },
-      { country: 'India',          city: 'Mumbai',         lat: 19.08,  lng: 72.88,   count: 160  },
-      { country: 'India',          city: 'Hyderabad',      lat: 17.39,  lng: 78.49,   count: 80   },
-      { country: 'India',          city: 'Delhi',          lat: 28.61,  lng: 77.21,   count: 80   },
-      { country: 'Poland',         city: 'Warsaw',         lat: 52.23,  lng: 21.01,   count: 75   },
-      { country: 'Spain',          city: 'Madrid',         lat: 40.42,  lng: -3.70,   count: 70   },
-      { country: 'Italy',          city: 'Milan',          lat: 45.46,  lng: 9.19,    count: 65   },
-      { country: 'Switzerland',    city: 'Zurich',         lat: 47.38,  lng: 8.54,    count: 40   },
-      { country: 'Finland',        city: 'Helsinki',       lat: 60.17,  lng: 24.94,   count: 35   },
-      { country: 'Argentina',      city: 'Buenos Aires',   lat: -34.60, lng: -58.38,  count: 35   },
-      { country: 'Mexico',         city: 'Mexico City',    lat: 19.43,  lng: -99.13,  count: 30   },
-      { country: 'Israel',         city: 'Tel Aviv',       lat: 32.08,  lng: 34.78,   count: 50   },
-      { country: 'Norway',         city: 'Oslo',           lat: 59.91,  lng: 10.75,   count: 45   },
-      { country: 'Denmark',        city: 'Copenhagen',     lat: 55.68,  lng: 12.57,   count: 40   },
-      { country: 'New Zealand',    city: 'Auckland',       lat: -36.86, lng: 174.77,  count: 15   },
-    ];
+    // PyPI install data loaded async from /api/pypi-countries (real ClickHouse data)
+    let pypiData = [];
+    let _pypiMaxCount = 1;
 
 
 
@@ -559,14 +529,12 @@
       return minR + (count / maxCount) * (maxR - minR);
     }
 
-    const maxPypi = Math.max(...pypiData.map(d => d.count));
+    // maxPypi set dynamically after fetch
     const maxSubs = Math.max(...subsData.map(d => d.count));
 
     // Combine points for rendering (blue = installs, amber = subs)
-    const allPoints = [
-      ...pypiData.map(d => ({ ...d, type: 'install' })),
-      ...subsData.map(d => ({ ...d, type: 'sub' })),
-    ];
+    const subsPoints = subsData.map(d => ({ ...d, type: 'sub' }));
+    const allPoints = [...subsPoints];  // pypi points added async below
 
     // ── BUILD GLOBE ──────────────────────────────────────────────────────
 
@@ -587,13 +555,13 @@
       .pointsData(allPoints)
       .pointLat('lat')
       .pointLng('lng')
-      .pointColor(d => d.type === 'install' ? '#4A9EFF' : '#F5A623')
+      .pointColor(d => d.type === 'install' ? (d._isTop10 ? '#E5443A' : '#4A9EFF') : '#F5A623')
       .pointAltitude(d => {
-        if (d.type === 'install') return scaleAltitude(d.count, maxPypi, 0.005, 0.06);
+        if (d.type === 'install') return scaleAltitude(d.count, _pypiMaxCount, 0.005, 0.06);
         return scaleAltitude(d.count, maxSubs, 0.003, 0.04);
       })
       .pointRadius(d => {
-        if (d.type === 'install') return scaleRadius(d.count, maxPypi, 0.4, 1.1);
+        if (d.type === 'install') return scaleRadius(d.count, _pypiMaxCount, 0.4, 1.1);
         return scaleRadius(d.count, maxSubs, 0.35, 0.8);
       })
       .pointsMerge(false)
@@ -623,6 +591,46 @@
           tooltip.classList.remove('visible');
         }
       });
+
+    // ── Live PyPI country data from Metabase / ClickHouse ─────────────────
+    (function loadPypiCountries() {
+      fetch('/api/pypi-countries')
+        .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
+        .then(function(data) {
+          var countries = data.countries || [];
+          if (!countries.length) return;
+          _pypiMaxCount = Math.max.apply(null, countries.map(function(c) { return c.downloads; }));
+          var top10 = new Set(countries.slice(0, 10).map(function(c) { return c.country_code; }));
+          pypiData = countries.map(function(c) {
+            return {
+              lat: c.lat, lng: c.lng,
+              country: c.country_name,
+              city: c.country_name,
+              count: c.downloads,
+              country_code: c.country_code,
+              type: 'install',
+              _isTop10: top10.has(c.country_code),
+            };
+          });
+          // Update globe with real data
+          var merged = pypiData.concat(subsPoints);
+          globe.pointsData(merged);
+          // Update counter
+          var counter = document.getElementById('tt-quote');
+          if (counter) {
+            counter.textContent = data.total_downloads.toLocaleString() + ' installs across ' + data.total_countries + ' countries';
+          }
+          var statsEl = document.getElementById('globe-stats');
+          if (statsEl) {
+            statsEl.innerHTML = '<strong>' + data.total_downloads.toLocaleString() + '</strong> downloads &middot; <strong>' + data.total_countries + '</strong> countries';
+          }
+        })
+        .catch(function(err) {
+          console.warn('[globe] pypi-countries fetch failed:', err);
+        });
+    })();
+
+
 
     // Move tooltip with mouse
     container.addEventListener('mousemove', e => {
