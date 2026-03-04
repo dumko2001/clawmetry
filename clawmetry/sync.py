@@ -227,6 +227,42 @@ def _flush_session_batch(batch: list, fname: str, api_key: str,
 
 # ── Sync: logs (full lines, encrypted) ────────────────────────────────────────
 
+def sync_sessions_meta(config: dict, state: dict, paths: dict) -> int:
+    """Sync session metadata (labels, display names) from sessions.json to cloud."""
+    api_key = config["api_key"]
+    node_id = config["node_id"]
+    sessions_dir = paths.get("sessions_dir", "")
+    sessions_json = os.path.join(os.path.dirname(sessions_dir), "sessions.json")
+    if not os.path.isfile(sessions_json):
+        return 0
+    last_meta_hash = state.get("sessions_meta_hash", "")
+    import hashlib as _hlm
+    try:
+        raw = open(sessions_json, "rb").read()
+        h = _hlm.md5(raw).hexdigest()
+        if h == last_meta_hash:
+            return 0
+        data = json.loads(raw)
+        events = []
+        for sid, sess in data.items():
+            label = sess.get("label") or sess.get("displayName") or ""
+            model = sess.get("model") or ""
+            kind  = sess.get("kind") or ""
+            if label and label != sid:
+                events.append({
+                    "type": "session_meta",
+                    "session_id": sid,
+                    "data": {"session_id": sid, "label": label, "model": model, "kind": kind}
+                })
+        if events:
+            _post("/api/ingest", {"events": events[:200], "node_id": node_id}, api_key)
+        state["sessions_meta_hash"] = h
+        return len(events)
+    except Exception as e:
+        log.warning(f"Session meta sync error: {e}")
+    return 0
+
+
 def sync_logs(config: dict, state: dict, paths: dict) -> int:
     log_dir  = paths["log_dir"]
     api_key  = config["api_key"]
@@ -602,6 +638,7 @@ def run_daemon() -> None:
         try:
             state = load_state()
             ev = sync_sessions(config, state, paths)
+            sync_sessions_meta(config, state, paths)
             lg = sync_logs(config, state, paths)
             mem = sync_memory(config, state, paths)
             crons = sync_crons(config, state, paths)
