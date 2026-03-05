@@ -1267,6 +1267,12 @@ def webhook_email():
 
 # ─── Admin Routes ────────────────────────────────────────────────────────────
 
+@app.route("/signin")
+@app.route("/login")
+def signin_page():
+    """Sign-in page - same as connect but in sign-in mode."""
+    return send_from_directory(".", "connect.html")
+
 @app.route("/connect")
 def connect_page():
     return send_from_directory(".", "connect.html")

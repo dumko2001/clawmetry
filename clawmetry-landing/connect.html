@@ -72,12 +72,14 @@
     <!-- Step 1: Email -->
     <div id="step1" class="step active">
       <div class="card-icon">&#x1F99E;</div>
-      <h1>Get your API key</h1>
-      <p>Sign in or create a free account.<br>Takes 30 seconds.</p>
+      <h1 id="step1-title">Sign in to ClawMetry</h1>
+      <p id="step1-desc">Enter your email to continue.<br>We'll send you a verification code.</p>
       <input id="email" class="input" type="email" placeholder="you@example.com" autocomplete="email"
         onkeydown="if(event.key==='Enter')sendOtp()">
-      <button class="btn" onclick="sendOtp()" id="send-btn">Send code</button>
+      <button class="btn" onclick="sendOtp()" id="send-btn">Continue</button>
       <p id="step1-err" class="error"></p>
+      <p id="signup-link" style="font-size:13px;color:#64748b;margin-top:14px;">Don't have an account? <a href="/connect" style="color:#E5443A;text-decoration:none;font-weight:600;">Sign up free</a></p>
+      <p id="signin-link" style="font-size:13px;color:#64748b;margin-top:14px;display:none;">Already have an account? <a href="/connect?next=app" style="color:#E5443A;text-decoration:none;font-weight:600;">Sign in</a></p>
     </div>
 
     <!-- Step 2: OTP -->
@@ -99,8 +101,8 @@
     <!-- Step 3: Success -->
     <div id="step3" class="step">
       <div class="card-icon">&#x1F389;</div>
-      <h1>You're all set!</h1>
-      <p>Here is your ClawMetry API key. Keep it safe.</p>
+      <h1 id="step3-title">You're all set!</h1>
+      <p id="step3-desc">Here is your ClawMetry API key. Keep it safe.</p>
       <div class="key-box">
         <div class="key-text" id="key-display"></div>
         <button class="copy-btn" onclick="copyKey()" id="copy-btn">Copy</button>
@@ -238,6 +240,23 @@ function startResendTimer() {
       timerEl.textContent = 'Resend in ' + secs + 's';
     }
   }, 1000);
+}
+
+// Mode detection: sign-in vs sign-up
+var _isSignIn = new URLSearchParams(window.location.search).get('next') === 'app' || window.location.pathname === '/signin' || window.location.pathname === '/login';
+if (_isSignIn) {
+  document.getElementById('step1-title').textContent = 'Sign in to ClawMetry';
+  document.getElementById('step1-desc').innerHTML = 'Enter your email to access your dashboard.<br>We\u0027ll send you a verification code.';
+  document.getElementById('send-btn').textContent = 'Continue';
+  document.getElementById('signup-link').style.display = '';
+  document.getElementById('signin-link').style.display = 'none';
+  document.title = 'ClawMetry - Sign In';
+} else {
+  document.getElementById('step1-title').textContent = 'Get started with ClawMetry';
+  document.getElementById('step1-desc').innerHTML = 'Create your free account. 7-day trial included.<br>No credit card required.';
+  document.getElementById('send-btn').textContent = 'Create account';
+  document.getElementById('signup-link').style.display = 'none';
+  document.getElementById('signin-link').style.display = '';
 }
 
 // Analytics
