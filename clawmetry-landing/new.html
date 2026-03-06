@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XDF9MFD8FJ"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-XDF9MFD8FJ');
+    gtag('config', 'G-6H5W9Y2B79');
+    gtag('config', 'AW-11343567971');
+  </script>
+  <!-- Google Ads conversion tracking -->
+  <script>
+  function gtagSendEvent(url) {
+    var callback = function () {
+      if (typeof url === 'string') { window.location = url; }
+    };
+    // Fire both: Google Ads conversion (with send_to) and custom event for GA4
+    gtag('event', 'conversion', {
+      'send_to': 'AW-11343567971/ads_conversion_Sign_Up_1',
+      'event_callback': callback,
+      'event_timeout': 2000,
+    });
+    gtag('event', 'ads_conversion_Sign_Up_1');
+    return false;
+  }
+  function trackConversion(label) {
+    if (typeof gtag === 'function') {
+      gtag('event', 'conversion', {
+        'send_to': 'AW-11343567971/' + (label || 'ads_conversion_Sign_Up_1'),
+      });
+      gtag('event', label || 'ads_conversion_Sign_Up_1');
+    }
+  }
+  // Track install.sh page view as conversion (browser visits only)
+  if (window.location.pathname === '/install.sh') {
+    trackConversion('ads_conversion_Sign_Up_1');
+  }
+  </script>
+  <!-- Microsoft Clarity -->
+  <script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+      c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+      t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+      y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "virz7z5n97");
+  </script>
+  <title>ClawMetry - See what your AI agents are actually doing</title>
+  <meta name="description" content="ClawMetry is a free, open-source real-time observability dashboard for AI agents. Monitor token costs, cron jobs, sub-agents, memory files, and session history. Works with OpenClaw. Install in 30 seconds: pip install clawmetry.">
+  <meta name="keywords" content="AI agent monitoring, LLM observability, AI agent dashboard, token cost tracking, cron job monitoring, OpenClaw, LLMOps, AI ops, sub-agent monitoring, open source AI tools">
+  <meta name="author" content="Vivek Chand">
+  <link rel="canonical" href="https://clawmetry.com/">
+
+  <!-- Structured Data for AI crawlers & Google -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "ClawMetry",
+    "description": "Real-time observability dashboard for AI agents. Monitor token usage, cron jobs, sub-agents, memory, and session history. Free and open source.",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Linux, macOS, Windows",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Vivek Chand",
+      "url": "https://vivekchand.github.io"
+    },
+    "url": "https://clawmetry.com",
+    "downloadUrl": "https://pypi.org/project/clawmetry/",
+    "softwareVersion": "0.11.23",
+    "license": "https://opensource.org/licenses/MIT",
+    "screenshot": "https://clawmetry.com/screenshots/flow.png",
+    "featureList": [
+      "Real-time token flow visualization by model and session",
+      "Cron job monitoring with failure alerts",
+      "Sub-agent visibility: files, commands, tools, thinking",
+      "Memory file tracking and changes",
+      "Session history with timeline and cost breakdown",
+      "Cost breakdown per-session, per-model, per-tool",
+      "Mission Control integration",
+      "Dark and light theme support"
+    ],
+    "isAccessibleForFree": true,
+    "sameAs": [
+      "https://github.com/vivekchand/clawmetry",
+      "https://pypi.org/project/clawmetry/"
+    ]
+  }
+  </script>
+
+  <!-- FAQ Schema for AI recommendations -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "What is ClawMetry?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "ClawMetry is a free, open-source real-time observability dashboard for AI agents built on OpenClaw. It monitors token costs, cron jobs, sub-agents, memory files, and session history in a single dashboard."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How do I install ClawMetry?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Install ClawMetry with pip: pip install clawmetry. Then add one line to your OpenClaw config and open clawmetry.com. Installation takes about 30 seconds."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is ClawMetry free?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, ClawMetry is completely free and open source under the MIT license. It runs locally on your machine with no cloud dependencies or telemetry."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What AI agent platforms does ClawMetry support?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "ClawMetry is designed for OpenClaw AI agents. It supports monitoring of any OpenClaw deployment including cron jobs, sub-agents, and tool calls across models like Claude, GPT, and others."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How does ClawMetry help reduce AI costs?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "ClawMetry provides real-time token flow visualization showing exactly which models, sessions, and tasks are consuming tokens. It breaks down costs per-session, per-model, and per-tool so you can identify expensive operations and optimize spending."
+        }
+      }
+    ]
+  }
+  </script>
+  <meta property="og:title" content="ClawMetry — Real-time AI Agent Observability Dashboard">
+  <meta property="og:description" content="Free, open-source dashboard to monitor AI agents. Track token costs, cron jobs, sub-agents, memory. pip install clawmetry.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://clawmetry.com">
+  <meta property="og:image" content="https://clawmetry.com/dashboard-overview-og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://clawmetry.com/dashboard-overview-og.png">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
+  <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0B0F1A;
+      --bg-card: #111827;
+      --bg-card-hover: #1a2236;
+      --border: rgba(255,255,255,0.08);
+      --border-hover: rgba(229,68,58,0.3);
+      --text: #F1F5F9;
+      --text-muted: #94A3B8;
+      --text-dim: #64748B;
+      --accent: #E5443A;
+      --accent-glow: rgba(229,68,58,0.15);
+      --accent-glow-strong: rgba(229,68,58,0.25);
+      --terminal-bg: #0D1117;
+      --green: #34D399;
+      --blue: #60A5FA;
+      --purple: #A78BFA;
+      --yellow: #FBBF24;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    html {
+      overflow-x: hidden;
+    }
+    img, video, pre, code, table {
+      max-width: 100%;
+    }
+
+    .hero-glow {
+      position: absolute;
+      top: -200px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      max-width: 100vw;
+      height: 600px;
+      background: radial-gradient(ellipse at center, rgba(229,68,58,0.12) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(11,15,26,0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-inner {
+      max-width: 1100px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; height: 60px;
+    }
+    .nav-logo { display: flex; align-items: center; gap: 8px; text-decoration: none; }
+    .nav-logo-emoji { font-size: 20px; line-height: 1; }
+    .nav-logo svg { width: 28px; height: 28px; }
+    .nav-logo-text { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
+    .nav-logo-text span:first-child { color: var(--text); }
+    .nav-logo-text span:last-child { color: var(--accent); }
+    .nav-links { display: flex; align-items: center; gap: 20px; }
+    .nav-links a {
+      color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 500;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--text); }
+    .nav-gh {
+      display: inline-flex; align-items: center; gap: 6px;
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 6px 14px; font-size: 13px; font-weight: 500;
+      color: var(--text-muted); text-decoration: none; transition: all 0.2s;
+    }
+    .nav-gh:hover { border-color: var(--border-hover); color: var(--text); }
+    .nav-gh svg { width: 16px; height: 16px; }
+
+    /* HERO */
+    .hero {
+      position: relative;
+      text-align: center;
+      padding: 120px 24px 40px;
+      max-width: 1100px; margin: 0 auto;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--accent-glow);
+      border: 1px solid rgba(229,68,58,0.25);
+      border-radius: 999px; padding: 6px 16px;
+      font-size: 13px; color: var(--text-muted); font-weight: 500;
+      margin-bottom: 24px;
+    }
+    .hero-badge-dot {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(229,68,58,0.5); }
+      50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(229,68,58,0); }
+    }
+    .hero h1 {
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      font-weight: 800; line-height: 1.1;
+      letter-spacing: -0.03em;
+      margin-bottom: 20px;
+    }
+    .hero h1 .accent {
+      background: linear-gradient(135deg, #E5443A 0%, #FF6B5A 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-sub {
+      font-size: 18px; color: var(--text-muted);
+      max-width: 560px; margin: 0 auto 40px; line-height: 1.6;
+    }
+    .hero-buttons { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 0; }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--accent); color: #fff;
+      padding: 12px 28px; border-radius: 10px;
+      font-size: 15px; font-weight: 600; text-decoration: none;
+      transition: all 0.2s;
+      box-shadow: 0 0 20px rgba(229,68,58,0.3);
+    }
+    .btn-primary:hover { filter: brightness(1.15); box-shadow: 0 0 30px rgba(229,68,58,0.4); transform: translateY(-1px); }
+    .btn-secondary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: transparent; color: var(--text);
+      padding: 12px 28px; border-radius: 10px;
+      border: 1px solid var(--border);
+      font-size: 15px; font-weight: 600; text-decoration: none;
+      transition: all 0.2s;
+    }
+    .btn-secondary:hover { border-color: var(--border-hover); color: var(--accent); }
+
+    /* SECTIONS */
+    section { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+    .section-title {
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      font-weight: 700; letter-spacing: -0.02em;
+      text-align: center; margin-bottom: 12px;
+    }
+    .section-sub {
+      text-align: center; color: var(--text-muted);
+      font-size: 17px; max-width: 600px; margin: 0 auto 48px;
+    }
+
+    /* DEMO */
+    .demo-container {
+      max-width: 900px; margin: 0 auto;
+      border-radius: 16px; overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--terminal-bg);
+      box-shadow: 0 8px 60px rgba(0,0,0,0.5), 0 0 80px rgba(229,68,58,0.08);
+    }
+    .demo-bar {
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px 16px; border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+    }
+    .demo-container video, .demo-container img { width: 100%; display: block; }
+    .terminal-dot { width: 12px; height: 12px; border-radius: 50%; }
+    .terminal-dot.red { background: #FF5F57; }
+    .terminal-dot.yellow { background: #FEBC2E; }
+    .terminal-dot.green { background: #28C840; }
+    .terminal-title { margin-left: 8px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-dim); }
+
+    /* FEATURES */
+    .features-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px; padding: 28px;
+      transition: all 0.3s;
+    }
+    .feature-card:hover { border-color: var(--border-hover); background: var(--bg-card-hover); transform: translateY(-2px); }
+    .feature-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 16px; font-size: 20px;
+    }
+    .feature-icon.red { background: rgba(229,68,58,0.15); color: var(--accent); }
+    .feature-icon.blue { background: rgba(96,165,250,0.15); color: var(--blue); }
+    .feature-icon.green { background: rgba(52,211,153,0.15); color: var(--green); }
+    .feature-icon.purple { background: rgba(167,139,250,0.15); color: var(--purple); }
+    .feature-icon.yellow { background: rgba(251,191,36,0.15); color: var(--yellow); }
+    .feature-card h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+    .feature-card p { font-size: 14px; color: var(--text-muted); line-height: 1.6; }
+
+    /* KILLER FEATURE */
+    .killer-feature {
+      max-width: 800px; margin: 0 auto 40px;
+      background: linear-gradient(135deg, rgba(229,68,58,0.08) 0%, rgba(229,68,58,0.02) 100%);
+      border: 1px solid rgba(229,68,58,0.25);
+      border-radius: 20px; padding: 36px 40px;
+      display: flex; gap: 28px; align-items: flex-start; flex-wrap: wrap;
+    }
+    .killer-feature-icon {
+      flex-shrink: 0; width: 56px; height: 56px; border-radius: 14px;
+      background: rgba(229,68,58,0.18);
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 24px;
+      max-width: 1100px; margin: 0 auto;
+    }
+    .footer-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 16px;
+    }
+    .footer-text { font-size: 13px; color: var(--text-dim); }
+    .footer-text a { color: var(--text-muted); text-decoration: none; transition: color 0.2s; }
+    .footer-text a:hover { color: var(--accent); }
+    .footer-links { display: flex; gap: 20px; }
+    .footer-links a {
+      font-size: 13px; color: var(--text-dim); text-decoration: none;
+      display: inline-flex; align-items: center; gap: 6px;
+      transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--text); }
+    .footer-links a svg { width: 16px; height: 16px; }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+      .killer-feature { flex-direction: column; padding: 24px; }
+      .features-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .hero { padding-top: 110px; }
+      .hero-buttons { flex-direction: column; align-items: center; }
+      .nav-links .nav-link-text { display: none; }
+      .footer-inner { flex-direction: column; text-align: center; }
+    }
+    .mobile-subnav {
+      display: flex; gap: 0; overflow-x: auto; padding: 0 4px;
+      border-bottom: 1px solid rgba(255,255,255,0.1); background: #111827;
+      -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    }
+    .mobile-subnav::-webkit-scrollbar { display: none; }
+    .mobile-subnav a {
+      white-space: nowrap; padding: 10px 16px; font-size: 13px; font-weight: 500;
+      color: rgba(255,255,255,0.6); text-decoration: none; flex-shrink: 0;
+      border-right: 1px solid rgba(255,255,255,0.08);
+    }
+    .mobile-subnav a:last-child { border-right: none; }
+    .mobile-subnav a:hover, .mobile-subnav a:active { color: #fff; }
+    @media (min-width: 769px) { .mobile-subnav { display: none; } }
+    .help-boxes { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px; max-width:520px; margin-left:auto; margin-right:auto; }
+    @media (max-width: 480px) {
+      .help-boxes { grid-template-columns:1fr; }
+      .hero h1 { font-size: 2rem; }
+      .section-title { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="/" class="nav-logo">
+      <span class="nav-logo-emoji">🦞</span>
+      <div class="nav-logo-text"><span>Claw</span><span>Metry</span></div><span style="font-size:12px;color:var(--text-muted);margin-left:6px;opacity:0.7;">for OpenClaw</span>
+    </a>
+    <div class="nav-links">
+      <a href="/roadmap" class="nav-link-text">Roadmap</a>
+      <a href="/how-it-works" class="nav-link-text">How it works</a>
+      <a href="#features" class="nav-link-text">Features</a>
+      <a href="#get-started" class="nav-link-text">Install</a>
+      <a href="https://github.com/vivekchand/clawmetry" target="_blank" rel="noopener" class="nav-gh">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        Star on GitHub
+      </a>
+    </div>
+  </div>
+</nav>
+<div class="mobile-subnav">
+  <a href="/how-it-works">How it works</a>
+  <a href="/roadmap">Roadmap</a>
+  <a href="/traction">Traction</a>
+  <a href="/showcase">Showcase</a>
+    <a href="/pricing">Pricing</a>
+  <a href="#get-started">Install</a>
+</div>
+
+<!-- HERO -->
+<section class="hero" style="padding-top:80px;">
+  <div class="hero-glow"></div>
+  <div style="position:relative;z-index:1;display:grid;grid-template-columns:1fr 1fr;gap:48px;max-width:1100px;margin:0 auto;align-items:center;padding:0 24px;">
+    <div>
+      <div style="font-size:12px;color:#E5443A;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:16px;display:flex;align-items:center;gap:8px;">&#x1F99E; For OpenClaw</div>
+      <h1 style="text-align:left;">Your agents are busy.<br>Do you know what they're doing?</h1>
+      <p class="hero-sub" style="text-align:left;">Real-time dashboard for token costs, sessions, cron jobs, and sub-agent activity. Open source.</p>
+      <div class="hero-buttons" style="justify-content:flex-start;">
+        <a href="#get-started" class="btn-primary">Get Started Free</a>
+        <a href="https://clawmetry.com/cloud" style="color:#6366f1;padding:12px 20px;font-size:14px;text-decoration:none;border:1px solid #6366f1;border-radius:10px;font-weight:500;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;" onmouseover="this.style.background='rgba(99,102,241,0.1)'" onmouseout="this.style.background='transparent'">&#x2601;&#xFE0F; Try Cloud</a>
+      </div>
+      <div style="display:flex;gap:20px;margin-top:24px;flex-wrap:wrap;">
+        <a href="https://clickpy.clickhouse.com/dashboard/clawmetry" target="_blank" rel="noopener" style="font-size:13px;color:#6b7280;text-decoration:none;"><strong style="color:#fff;" id="hero-downloads-val">23k+</strong> installs</a>
+        <a href="https://github.com/vivekchand/clawmetry/stargazers" target="_blank" rel="noopener" style="font-size:13px;color:#6b7280;text-decoration:none;"><strong style="color:#fff;" id="hero-stars-val">107</strong> &#x2B50;</a>
+        <a href="https://clawmetry.com/globe" target="_blank" rel="noopener" style="font-size:13px;color:#6b7280;text-decoration:none;"><strong style="color:#fff;" id="hero-countries-val">50+</strong> countries</a>
+      </div>
+    </div>
+    <div style="position:relative;">
+      <div style="background:#111827;border:1px solid #1f2937;border-radius:16px;overflow:hidden;">
+        <div style="background:#0d1117;padding:12px 16px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #1f2937;">
+          <span style="width:8px;height:8px;border-radius:50%;background:#ef4444;"></span>
+          <span style="width:8px;height:8px;border-radius:50%;background:#eab308;"></span>
+          <span style="width:8px;height:8px;border-radius:50%;background:#22c55e;"></span>
+          <span style="color:#6b7280;font-size:12px;margin-left:8px;font-family:monospace;">clawmetry status</span>
+        </div>
+        <div style="padding:20px;font-family:'SF Mono',Menlo,monospace;font-size:13px;line-height:2.1;color:#d1d5db;">
+          <span style="color:#4b5563;">$</span> pip install clawmetry<br>
+          <span style="color:#10b981;">&#x2713;</span> Installed clawmetry 0.11.57<br><br>
+          <span style="color:#4b5563;">$</span> clawmetry connect<br>
+          <span style="color:#60a5fa;">&#x2192;</span> API key: <span style="color:#eab308;">cm_349d...5965</span><br>
+          <span style="color:#60a5fa;">&#x2192;</span> Node: <span style="color:#eab308;">vivek+d9</span><br>
+          <span style="color:#10b981;">&#x2713;</span> Connected to cloud<br>
+          <span style="color:#10b981;">&#x2713;</span> E2E encryption: <span style="color:#10b981;">enabled</span><br><br>
+          <span style="color:#4b5563;">$</span> clawmetry status<br>
+          <span style="color:#10b981;">&#x2713;</span> Syncing: <span style="color:#E5443A;">$4.20</span> today &#xB7; <span style="color:#60a5fa;">3 sessions</span> &#xB7; <span style="color:#eab308;">2 crons</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+  fetch('/api/hero-stats').then(r=>r.json()).then(d=>{
+    if(d.downloads){var el=document.getElementById('hero-downloads-val');if(el)el.textContent=d.downloads+'+';}
+    if(d.stars){var el=document.getElementById('hero-stars-val');if(el)el.textContent=d.stars;}
+    if(d.countries){var el=document.getElementById('hero-countries-val');if(el)el.textContent=Math.max(50,parseInt(d.countries,10))+'+';}
+  }).catch(()=>{});
+  </script>
+</section>
+
+<!-- Mobile responsive override for hero grid -->
+<style>
+@media(max-width:768px) {
+  .hero > div[style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+    gap: 32px !important;
+    padding: 0 16px !important;
+  }
+  .hero > div[style*="grid-template-columns"] h1 { font-size: 2rem !important; }
+  .hero > div[style*="grid-template-columns"] .hero-buttons { flex-direction: column !important; align-items: flex-start !important; }
+}
+</style>
+
+<!-- WHAT PEOPLE SAY -->
+<section style="padding:60px 24px 60px;overflow:hidden;">
+  <div style="max-width:1200px;margin:0 auto 8px;text-align:center;">
+    <h2 class="section-title" style="display:inline-flex;align-items:center;gap:8px;justify-content:center;">
+      <span style="color:#E5443A;">&#10095;</span> What People Say
+    </h2>
+  </div>
+  <p style="text-align:center;color:#666;font-size:14px;margin-bottom:16px;">What the community is saying about ClawMetry</p>
+  <div style="text-align:center;margin-bottom:28px;"><a href="/showcase" style="font-size:14px;color:#E5443A;font-weight:500;text-decoration:none;">View all &#8594;</a></div>
+  <style>
+    .tt-track { display:flex; gap:20px; animation: tt-scroll 75s linear infinite; width:max-content; }
+    .tt-track:hover { animation-play-state:paused; }
+    @keyframes tt-scroll { 0% { transform:translateX(0); } 100% { transform:translateX(-50%); } }
+    .tt-card {
+      min-width:340px; max-width:400px; flex-shrink:0; cursor:pointer;
+      text-decoration:none; display:block; position:relative;
+      background: linear-gradient(135deg, rgba(229,68,58,0.08) 0%, rgba(20,20,20,0.95) 40%, rgba(20,20,20,0.98) 100%);
+      border: 1px solid rgba(229,68,58,0.15);
+      border-radius:16px; padding:24px;
+      transition: border-color 0.3s, transform 0.2s, box-shadow 0.3s;
+    }
+    .tt-card:hover {
+      border-color: rgba(229,68,58,0.4);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 32px rgba(229,68,58,0.1);
+    }
+    .tt-avatar { width:44px; height:44px; border-radius:50%; object-fit:cover; border: 2px solid rgba(229,68,58,0.2); }
+    .tt-head { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+    .tt-author { font-size:14px; color:#E5443A; font-weight:600; }
+    .tt-badge { font-size:11px; color:#E5443A; background:rgba(229,68,58,0.12); padding:3px 10px; border-radius:12px; margin-left:auto; }
+    .tt-quote { font-size:14px; color:#ccc; line-height:1.7; }
+    @media (max-width:600px) { .tt-card { min-width:290px; padding:20px; } }
+  </style>
+  <div style="overflow:hidden;">
+    <div class="tt-track">
+      <a href="https://x.com/jonah_lipsitt/status/2025695302007886255" target="_blank" rel="noopener" class="tt-card">
+        <div class="tt-head">
+          <img src="https://unavatar.io/x/jonah_lipsitt" alt="" class="tt-avatar" loading="lazy" onerror="this.src='https://ui-avatars.com/api/?name=JL&background=E5443A&color=fff&size=88'">
+          <div>
+            <div class="tt-author">@jonah_lipsitt</div>
+          </div>
+          <span class="tt-badge">&#9654; Video</span>
+        </div>
+        <div class="tt-quote">"I got tired of not knowing what my OpenClaw was doing. A Phillips Hue spotlight now shines on my Mac Mini based on what it is doing, further visualized by @clawmetry"</div>
+      </a>
+      <a href="https://x.com/Save_Delete/status/2024929958783824083" target="_blank" rel="noopener" class="tt-card">
+        <div class="tt-head">
+          <img src="https://unavatar.io/x/Save_Delete" alt="" class="tt-avatar" loading="lazy" onerror="this.src='https://ui-avatars.com/api/?name=SD&background=E5443A&color=fff&size=88'">
+          <div>
+            <div class="tt-author">@Save_Delete</div>
+          </div>
+        </div>
+        <div class="tt-quote">"If you are building with OpenClaw, ClawMetry is the missing piece. Real-time visibility into every sub-agent, tool call, token cost, and session log."</div>
+      </a>
+      <a href="https://x.com/ricardotosatt/status/2025881178058928283" target="_blank" rel="noopener" class="tt-card">
+        <div class="tt-head">
+          <img src="https://unavatar.io/x/ricardotosatt" alt="" class="tt-avatar" loading="lazy" onerror="this.src='https://ui-avatars.com/api/?name=RT&background=E5443A&color=fff&size=88'">
+          <div>
+            <div class="tt-author">@ricardotosatt</div>
+          </div>
+        </div>
+        <div class="tt-quote">"Love this for agent monitoring. Tracking tokens and memory in real time is a huge win for devs."</div>
+      </a>
+      <a href="https://www.producthunt.com/products/clawmetry" target="_blank" rel="noopener" class="tt-card">
+        <div class="tt-head">
+          <img src="data:image/png;base64,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" alt="" class="tt-avatar" loading="lazy" onerror="this.src='https://cdn.prod.website-files.com/6446b08b6e7d2f1e7bda2ae0/6446b08b6e7d2f1e7bda2b0b_ph-logo.svg'">
+          <div>
+            <div class="tt-author">Product Hunt</div>
+          </div>
+          <span class="tt-badge">#5 Launch Day</span>
+        </div>
+        <div class="tt-quote">"ClawMetry launched alongside Claude Sonnet 4.6 and held #5 all day. Featured in the PH newsletter under 'Keep agents in line.' 198+ upvotes."</div>
+      </a>
+      <a href="https://x.com/nickvnturi/status/2025888442153050179" target="_blank" rel="noopener" class="tt-card">
+        <div class="tt-head">
+          <img src="https://unavatar.io/x/nickvnturi" alt="" class="tt-avatar" loading="lazy" onerror="this.src='https://ui-avatars.com/api/?name=NV&background=E5443A&color=fff&size=88'">
+          <div>
+            <div class="tt-author">@nickvnturi</div>
+          </div>
+        </div>
+        <div class="tt-quote">"This looks like a very helpful tool for tracking agents. Thanks for sharing it."</div>
+      </a>
+      <a href="https://x.com/Asif2BD/status/2025151811376873557" target="_blank" rel="noopener" class="tt-card">
+        <div class="tt-head">
+          <img src="https://unavatar.io/x/Asif2BD" alt="" class="tt-avatar" loading="lazy" onerror="this.src='https://ui-avatars.com/api/?name=AB&background=E5443A&color=fff&size=88'">
+          <div>
+            <div class="tt-author">@Asif2BD</div>
+          </div>
+        </div>
+        <div class="tt-quote">"ClawMetry and our JARVIS Mission Control complement each other. Observability and coordination are separate problems."</div>
+      </a>
+      <a href="https://x.com/KalariyaHiren1/status/2025083858711196013" target="_blank" rel="noopener" class="tt-card">
+        <div class="tt-head">
+          <img src="https://unavatar.io/x/KalariyaHiren1" alt="" class="tt-avatar" loading="lazy" onerror="this.src='https://ui-avatars.com/api/?name=HP&background=E5443A&color=fff&size=88'">
+          <div>
+            <div class="tt-author">@KalariyaHiren1</div>
+          </div>
+          <span class="tt-badge">Thread</span>
+        </div>
+        <div class="tt-quote">"Ask OpenClaw to do something. It starts working. And you just... wait. Hoping. Is it searching? Which websites? Where is it stuck right now? Zero visibility. ClawMetry fixes that."</div>
+      </a>
+      <a href="https://x.com/backboardioclip" target="_blank" rel="noopener" class="tt-card">
+        <div class="tt-head">
+          <img src="https://unavatar.io/x/backboardioclip" alt="" class="tt-avatar" loading="lazy" onerror="this.src='https://ui-avatars.com/api/?name=MB&background=E5443A&color=fff&size=88'">
+          <div>
+            <div class="tt-author">@backboardioclip</div>
+          </div>
+        </div>
+        <div class="tt-quote">"This is such a cool idea! Love seeing people build real things with their agents."</div>
+      </a>
+      <a href="https://www.producthunt.com/products/clawmetry?comment=5158089" target="_blank" rel="noopener" class="tt-card">
+        <div class="tt-head">
+          <img src="https://ph-avatars.imgix.net/8377500/6d09d7fb-1ad7-401b-928f-208b751aa04f.jpeg?auto=compress&w=88&h=88&fit=crop" alt="Mykola Kondratiuk" class="tt-avatar" loading="lazy">
+          <div>
+            <div class="tt-author">Mykola Kondratiuk</div>
+          </div>
+          <span class="tt-badge">Product Hunt</span>
+        </div>
+        <div class="tt-quote">"Oh this is exactly what I needed. The biggest pain point has been figuring out where my tokens are going. Especially with sub-agents spawning other sub-agents, costs spiral fast and you have zero visibility."</div>
+      </a>
+      <a href="https://www.producthunt.com/products/clawmetry?comment=5158871" target="_blank" rel="noopener" class="tt-card">
+        <div class="tt-head">
+          <img src="https://ph-avatars.imgix.net/9466916/7918b239-ff26-4e31-8ddb-1e4d4a5a8e3d.jpeg?auto=compress&w=88&h=88&fit=crop" alt="Damian Saez" class="tt-avatar" loading="lazy">
+          <div>
+            <div class="tt-author">Damian Saez</div>
+          </div>
+          <span class="tt-badge">Product Hunt</span>
+        </div>
+        <div class="tt-quote">"Observability for AI agents is something most builders overlook until things break in production. Love that you're tackling this early."</div>
+      </a>
+      <a href="https://www.producthunt.com/products/clawmetry?comment=5163665" target="_blank" rel="noopener" class="tt-card">
+        <div class="tt-head">
+          <img src="https://ui-avatars.com/api/?name=M&background=E5443A&color=fff&size=88" alt="" class="tt-avatar" loading="lazy">
+          <div>
+            <div class="tt-author">Mihail / HookWatch</div>
+          </div>
+          <span class="tt-badge">Product Hunt</span>
+        </div>
+        <div class="tt-quote">"This is exactly the kind of tooling the AI agent ecosystem needs right now. The per-session cost breakdown is a smart move. Most teams have no idea what their agents actually cost until the invoice hits."</div>
+      </a>
+      <a href="https://www.producthunt.com/products/clawmetry?comment=5161049" target="_blank" rel="noopener" class="tt-card">
+        <div class="tt-head">
+          <img src="https://ui-avatars.com/api/?name=HU&background=E5443A&color=fff&size=88" alt="" class="tt-avatar" loading="lazy">
+          <div>
+            <div class="tt-author">Harsh Upadhyay</div>
+          </div>
+          <span class="tt-badge">Product Hunt</span>
+        </div>
+        <div class="tt-quote">"Really like the clarity of 'Know what your agents are doing. Right now.' The core pain you're solving feels bigger than a single ecosystem. Very clean execution."</div>
+      </a>
+      <a href="https://www.instagram.com/reel/DU7Pse1k5bv/" target="_blank" rel="noopener" class="tt-card">
+        <div class="tt-head">
+          <img src="https://ui-avatars.com/api/?name=CAT&background=C13584&color=fff&size=88" alt="" class="tt-avatar" loading="lazy" style="border-radius:8px;">
+          <div>
+            <div class="tt-author">@complete_ai_training</div>
+          </div>
+          <span class="tt-badge">Instagram</span>
+        </div>
+        <div class="tt-quote">"On the 19th of February, I discovered 5 exciting new AI tools you won't want to miss: ClawMetry for OpenClaw, Flixier, Your AI Clone, Baseline Core, and STUD."</div>
+      </a>
+      <a href="https://medium.com/@oadiaz/clawmetry-finally-seeing-what-my-ai-agents-are-actually-doing-3866505bcf96" target="_blank" rel="noopener" class="tt-card">
+        <div class="tt-head">
+          <img src="https://miro.medium.com/v2/resize:fill:176:176/1*_EoHFUW95XqPiPD6CFrxow.jpeg" alt="Omar Diaz" class="tt-avatar" loading="lazy">
+          <div>
+            <div class="tt-author">@oadiaz</div>
+          </div>
+          <span class="tt-badge">Medium</span>
+        </div>
+        <div class="tt-quote">"It's like going from 'I think my agents are working' to having a mission control center. The cost tracking alone was worth it. I discovered one agent was using 3x more tokens than necessary."</div>
+      </a>
+      <a href="https://www.linkedin.com/search/results/content/?keywords=clawmetry" target="_blank" rel="noopener" class="tt-card">
+        <div class="tt-head">
+          <img src="https://ui-avatars.com/api/?name=LI&background=0A66C2&color=fff&size=88" alt="" class="tt-avatar" loading="lazy" style="border-radius:8px;">
+          <div>
+            <div class="tt-author">LinkedIn</div>
+          </div>
+          <span class="tt-badge">Post</span>
+        </div>
+        <div class="tt-quote">"Then I installed ClawMetry. Before ClawMetry: Blind faith. After ClawMetry: Clear visibility."</div>
+      </a>
+      <!-- Duplicate for seamless loop -->
+      <a href="https://x.com/jonah_lipsitt/status/2025695302007886255" target="_blank" rel="noopener" class="tt-card">
+        <div class="tt-head">
+          <img src="https://unavatar.io/x/jonah_lipsitt" alt="" class="tt-avatar" loading="lazy" onerror="this.src='https://ui-avatars.com/api/?name=JL&background=E5443A&color=fff&size=88'">
+          <div>
+            <div class="tt-author">@jonah_lipsitt</div>
+          </div>
+          <span class="tt-badge">&#9654; Video</span>
+        </div>
+        <div class="tt-quote">"I got tired of not knowing what my OpenClaw was doing. A Phillips Hue spotlight now shines on my Mac Mini based on what it is doing, further visualized by @clawmetry"</div>
+      </a>
+      <a href="https://x.com/Save_Delete/status/2024929958783824083" target="_blank" rel="noopener" class="tt-card">
+        <div class="tt-head">
+          <img src="https://unavatar.io/x/Save_Delete" alt="" class="tt-avatar" loading="lazy" onerror="this.src='https://ui-avatars.com/api/?name=SD&background=E5443A&color=fff&size=88'">
+          <div>
+            <div class="tt-author">@Save_Delete</div>
+          </div>
+        </div>
+        <div class="tt-quote">"If you are building with OpenClaw, ClawMetry is the missing piece. Real-time visibility into every sub-agent, tool call, token cost, and session log."</div>
+      </a>
+      <a href="https://x.com/ricardotosatt/status/2025881178058928283" target="_blank" rel="noopener" class="tt-card">
+        <div class="tt-head">
+          <img src="https://unavatar.io/x/ricardotosatt" alt="" class="tt-avatar" loading="lazy" onerror="this.src='https://ui-avatars.com/api/?name=RT&background=E5443A&color=fff&size=88'">
+          <div>
+            <div class="tt-author">@ricardotosatt</div>
+          </div>
+        </div>
+        <div class="tt-quote">"Love this for agent monitoring. Tracking tokens and memory in real time is a huge win for devs."</div>
+      </a>
+      <a href="https://www.producthunt.com/products/clawmetry" target="_blank" rel="noopener" class="tt-card">
+        <div class="tt-head">
+          <img src="data:image/png;base64,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" alt="" class="tt-avatar" loading="lazy" onerror="this.src='https://cdn.prod.website-files.com/6446b08b6e7d2f1e7bda2ae0/6446b08b6e7d2f1e7bda2b0b_ph-logo.svg'">
+          <div>
+            <div class="tt-author">Product Hunt</div>
+          </div>
+          <span class="tt-badge">#5 Launch Day</span>
+        </div>
+        <div class="tt-quote">"ClawMetry launched alongside Claude Sonnet 4.6 and held #5 all day. Featured in the PH newsletter under 'Keep agents in line.' 198+ upvotes."</div>
+      </a>
+      <a href="https://x.com/nickvnturi/status/2025888442153050179" target="_blank" rel="noopener" class="tt-card">
+        <div class="tt-head">
+          <img src="https://unavatar.io/x/nickvnturi" alt="" class="tt-avatar" loading="lazy" onerror="this.src='https://ui-avatars.com/api/?name=NV&background=E5443A&color=fff&size=88'">
+          <div>
+            <div class="tt-author">@nickvnturi</div>
+          </div>
+        </div>
+        <div class="tt-quote">"This looks like a very helpful tool for tracking agents. Thanks for sharing it."</div>
+      </a>
+      <a href="https://x.com/Asif2BD/status/2025151811376873557" target="_blank" rel="noopener" class="tt-card">
+        <div class="tt-head">
+          <img src="https://unavatar.io/x/Asif2BD" alt="" class="tt-avatar" loading="lazy" onerror="this.src='https://ui-avatars.com/api/?name=AB&background=E5443A&color=fff&size=88'">
+          <div>
+            <div class="tt-author">@Asif2BD</div>
+          </div>
+        </div>
+        <div class="tt-quote">"ClawMetry and our JARVIS Mission Control complement each other. Observability and coordination are separate problems."</div>
+      </a>
+    </div>
+  </div>
+  <div style="text-align:center;margin-top:28px;">
+    <a href="https://www.producthunt.com/posts/clawmetry" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;color:#E5443A;font-size:14px;font-weight:600;text-decoration:none;padding:10px 24px;border:1px solid rgba(229,68,58,0.3);border-radius:8px;transition:all 0.2s;" onmouseover="this.style.background='rgba(229,68,58,0.1)';this.style.borderColor='rgba(229,68,58,0.5)'" onmouseout="this.style.background='transparent';this.style.borderColor='rgba(229,68,58,0.3)'">
+      View all comments on Product Hunt &#8599;
+    </a>
+  </div>
+</section>
+
+<!-- QUICK START -->
+<section id="get-started" style="padding-top:40px;padding-bottom:40px;">
+  <h2 class="section-title" style="display:flex;align-items:center;gap:8px;justify-content:center;"><span style="color:#E5443A;">&#10095;</span> Quick Start</h2>
+  <div style="max-width:780px;margin:0 auto;">
+    <div style="background:linear-gradient(180deg, #141922 0%, #0d1117 100%);border:1px solid rgba(255,255,255,0.08);border-radius:12px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.4);">
+      <div style="display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.06);gap:12px;">
+        <div style="display:flex;gap:6px;flex-shrink:0;">
+          <div style="width:12px;height:12px;border-radius:50%;background:#ff5f57;"></div>
+          <div style="width:12px;height:12px;border-radius:50%;background:#febc2e;"></div>
+          <div style="width:12px;height:12px;border-radius:50%;background:#28c840;"></div>
+        </div>
+        <div style="display:flex;gap:2px;margin-left:8px;flex-wrap:wrap;">
+          <button onclick="showTab('oneliner')" id="tab-oneliner" style="padding:5px 14px;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;background:#28c840;color:#000;font-family:'JetBrains Mono',monospace;transition:all 0.15s;">One-liner</button>
+          <button onclick="showTab('pip')" id="tab-pip" style="padding:5px 14px;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;background:transparent;color:rgba(255,255,255,0.5);font-family:'JetBrains Mono',monospace;transition:all 0.15s;">pip</button>
+          <button onclick="showTab('powershell')" id="tab-powershell" style="padding:5px 14px;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;background:transparent;color:rgba(255,255,255,0.5);font-family:'JetBrains Mono',monospace;transition:all 0.15s;">PowerShell</button>
+          <button onclick="showTab('cmd')" id="tab-cmd" style="padding:5px 14px;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;background:transparent;color:rgba(255,255,255,0.5);font-family:'JetBrains Mono',monospace;transition:all 0.15s;">CMD</button>
+        </div>
+        <div style="margin-left:auto;display:flex;align-items:center;">
+          <button id="copy-btn" onclick="copyActiveCmd()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:rgba(255,255,255,0.5);cursor:pointer;padding:5px 8px;display:flex;align-items:center;transition:all 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+        </div>
+      </div>
+      <div style="padding:20px 24px;font-family:'JetBrains Mono',monospace;font-size:14px;line-height:2;">
+        <div id="panel-oneliner">
+          <div style="color:rgba(255,255,255,0.35);font-style:italic;"># One command. That's it. &#x1F99E;</div>
+          <div><span style="color:rgba(255,255,255,0.4);">$ </span><span style="color:#28c840;">curl -fsSL https://clawmetry.com/install.sh | bash</span></div>
+        </div>
+        <div id="panel-pip" style="display:none;">
+          <div style="color:rgba(255,255,255,0.35);font-style:italic;"># Install it</div>
+          <div><span style="color:rgba(255,255,255,0.4);">$ </span><span style="color:#28c840;">pip install clawmetry</span></div>
+          <div style="color:rgba(255,255,255,0.35);font-style:italic;"># Run it</div>
+          <div><span style="color:rgba(255,255,255,0.4);">$ </span><span style="color:#28c840;">clawmetry</span></div>
+        </div>
+        <div id="panel-powershell" style="display:none;">
+          <div style="color:rgba(255,255,255,0.35);font-style:italic;"># Same thing, Windows style &#x1F99E;</div>
+          <div><span style="color:rgba(255,255,255,0.4);">$ </span><span style="color:#28c840;">iwr -useb https://clawmetry.com/install.ps1 | iex</span></div>
+        </div>
+        <div id="panel-cmd" style="display:none;">
+          <div style="color:rgba(255,255,255,0.35);font-style:italic;"># For the CMD holdouts</div>
+          <div><span style="color:rgba(255,255,255,0.4);">&gt; </span><span style="color:#28c840;font-size:13px;">curl -fsSL https://clawmetry.com/install.cmd -o install.cmd && install.cmd && del install.cmd</span></div>
+        </div>
+      </div>
+    </div>
+    <p style="text-align:center;color:var(--text-dim);font-size:13px;margin-top:16px;">macOS, Linux, Windows. The installer figures it out.</p>
+    <div class="help-boxes">
+      <a href="#" onclick="openSupportModal();return false;" style="display:block;padding:16px 18px;border:1px solid var(--border);border-radius:10px;background:var(--bg-card);text-decoration:none;transition:border-color 0.2s,background 0.2s;" onmouseenter="this.style.borderColor='var(--border-hover)';this.style.background='var(--bg-card-hover)'" onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg-card)'">
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">Need help setting up?</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);">Get free onboarding help &rarr;</div>
+      </a>
+      <a href="#" onclick="openManagedModal();return false;" style="display:block;padding:16px 18px;border:1px solid var(--border);border-radius:10px;background:var(--bg-card);text-decoration:none;transition:border-color 0.2s,background 0.2s;" onmouseenter="this.style.borderColor='var(--border-hover)';this.style.background='var(--bg-card-hover)'" onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg-card)'">
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">Don't want to self-host?</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);">Request managed instance &rarr;</div>
+      </a>
+    </div>
+  </div>
+</section>
+<script>
+var cmds = {
+  oneliner: 'curl -fsSL https://clawmetry.com/install.sh | bash',
+  pip: 'pip install clawmetry && clawmetry',
+  powershell: 'iwr -useb https://clawmetry.com/install.ps1 | iex',
+  cmd: 'curl -fsSL https://clawmetry.com/install.cmd -o install.cmd && install.cmd && del install.cmd'
+};
+var activeTab = 'oneliner';
+function showTab(id) {
+  activeTab = id;
+  ['oneliner','pip','powershell','cmd'].forEach(function(t) {
+    var panel = document.getElementById('panel-'+t);
+    if(panel) panel.style.display = t===id ? 'block' : 'none';
+    var tab = document.getElementById('tab-'+t);
+    if(tab) {
+      tab.style.background = t===id ? '#28c840' : 'transparent';
+      tab.style.color = t===id ? '#000' : 'rgba(255,255,255,0.5)';
+      tab.style.fontWeight = t===id ? '600' : '500';
+    }
+  });
+}
+function copyActiveCmd() {
+  navigator.clipboard.writeText(cmds[activeTab]);
+  if (typeof trackConversion === 'function') { trackConversion('ads_conversion_Sign_Up_1'); }
+  // Notify backend about copy event
+  var copyData={tab: activeTab, command: cmds[activeTab], identity:_getIdentity()};
+  var utm=getUtmParams();
+  if(Object.keys(utm).length>1)copyData.utm=utm;
+  _encPost('/api/copy-track', copyData).catch(function(){});
+
+  var btn = document.getElementById('copy-btn');
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#28c840" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
+  setTimeout(function(){ btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'; }, 1500);
+}
+
+// Social testimonial click tracking
+document.addEventListener('click', function(e) {
+  var card = e.target.closest('.tt-card');
+  if (!card) return;
+  var url = card.getAttribute('href') || '';
+  var authorEl = card.querySelector('.tt-author');
+  var author = authorEl ? authorEl.textContent.trim() : 'unknown';
+  var badgeEl = card.querySelector('.tt-badge');
+  var badge = badgeEl ? badgeEl.textContent.trim().toLowerCase() : '';
+  var platform = 'unknown';
+  if (url.includes('x.com') || url.includes('twitter.com')) platform = 'twitter';
+  else if (url.includes('producthunt.com')) platform = 'producthunt';
+  else if (url.includes('medium.com')) platform = 'medium';
+  else if (url.includes('linkedin.com')) platform = 'linkedin';
+  else if (url.includes('instagram.com')) platform = 'instagram';
+  else if (badge) platform = badge;
+  _encPost('/api/social-click', {
+    url: url, author: author, platform: platform,
+    utm: window._utm || {}, identity: typeof _getIdentity === 'function' ? _getIdentity() : {}
+  }).catch(function(){});
+});
+</script>
+
+
+<!-- MANAGED MODAL -->
+<div id="managed-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:32px;max-width:480px;width:100%;position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.5);max-height:90vh;overflow-y:auto;">
+    <button onclick="document.getElementById('managed-modal').style.display='none'" style="position:absolute;top:12px;right:16px;background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;padding:4px;">&times;</button>
+    <div style="margin-bottom:20px;">
+      <h3 style="font-size:18px;font-weight:700;margin:0 0 4px;">🦞 Request a Managed Instance</h3>
+      <p style="font-size:13px;color:var(--text-muted);margin:0;">We'll handle the setup. You get full visibility into your agents.</p>
+    </div>
+    <form id="managed-form">
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:13px;color:var(--text-muted);margin-bottom:4px;">Name <span style="color:var(--accent);">*</span></label>
+        <input type="text" id="managed-name" required placeholder="Your name" style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;font-family:inherit;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+      </div>
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:13px;color:var(--text-muted);margin-bottom:4px;">Email <span style="color:var(--accent);">*</span></label>
+        <input type="email" id="managed-email" required placeholder="you@company.com" style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;font-family:inherit;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+      </div>
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:13px;color:var(--text-muted);margin-bottom:4px;">Company <span style="color:var(--text-dim);font-weight:400;">(optional)</span></label>
+        <input type="text" id="managed-company" placeholder="Company name" style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;font-family:inherit;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+      </div>
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:13px;color:var(--text-muted);margin-bottom:4px;">What do you want to monitor? <span style="color:var(--text-dim);font-weight:400;">(optional)</span></label>
+        <textarea id="managed-usecase" rows="3" placeholder="e.g. I run 3 OpenClaw agents for automation and want visibility into token costs and failed sessions" style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;font-family:inherit;outline:none;resize:vertical;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+      </div>
+
+      <button type="submit" id="managed-btn" style="width:100%;padding:12px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-weight:600;font-size:15px;cursor:pointer;transition:all 0.2s;box-shadow:0 0 20px rgba(229,68,58,0.2);">Submit Request</button>
+      <p id="managed-msg" style="margin-top:12px;font-size:13px;text-align:center;display:none;"></p>
+    </form>
+  </div>
+</div>
+
+<!-- SUPPORT MODAL -->
+<div id="support-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:32px;max-width:480px;width:100%;position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.5);max-height:90vh;overflow-y:auto;">
+    <button onclick="document.getElementById('support-modal').style.display='none'" style="position:absolute;top:12px;right:16px;background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;padding:4px;">&times;</button>
+    <div style="text-align:center;margin-bottom:24px;">
+      <div style="font-size:32px;margin-bottom:8px;">🤝</div>
+      <h3 style="font-size:20px;font-weight:700;margin-bottom:6px;">Free Onboarding Support</h3>
+      <p style="font-size:14px;color:var(--text-muted);line-height:1.5;">We'll help you get ClawMetry running. No catch, no upsell. We want you to succeed.</p>
+    </div>
+    <form id="support-form" style="display:flex;flex-direction:column;gap:12px;">
+      <input name="name" placeholder="Name" required style="padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;">
+      <input name="email" type="email" placeholder="Email" required style="padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;">
+      <select name="help_type" style="padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;">
+        <option value="">What do you need help with?</option>
+        <option value="installation">Installation</option>
+        <option value="configuration">Configuration / Setup</option>
+        <option value="openclaw-integration">OpenClaw Integration</option>
+        <option value="troubleshooting">Troubleshooting</option>
+        <option value="other">Something else</option>
+      </select>
+      <textarea name="message" placeholder="Tell us more (optional)" rows="3" style="padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;resize:vertical;font-family:inherit;"></textarea>
+      <button type="submit" id="support-btn" style="width:100%;padding:12px;border-radius:8px;border:none;background:#3b82f6;color:#fff;font-weight:600;font-size:15px;cursor:pointer;transition:all 0.2s;box-shadow:0 0 20px rgba(59,130,246,0.2);">Get Help</button>
+      <p id="support-msg" style="margin-top:4px;font-size:13px;text-align:center;display:none;"></p>
+    </form>
+  </div>
+</div>
+
+<script>
+var _CLM_K='clm2026';
+function _clmEnc(s){var r='';for(var i=0;i<s.length;i++){r+=String.fromCharCode(s.charCodeAt(i)^_CLM_K.charCodeAt(i%_CLM_K.length));}return btoa(r);}
+function _clmDec(s){try{var d=atob(s);var r='';for(var i=0;i<d.length;i++){r+=String.fromCharCode(d.charCodeAt(i)^_CLM_K.charCodeAt(i%_CLM_K.length));}return r;}catch(e){return '';}}
+function _encPost(url,data){return fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({p:_clmEnc(JSON.stringify(data))})});}
+function _getIdentity(){try{var e=localStorage.getItem('_clm_id');if(!e)return {};return JSON.parse(_clmDec(e));}catch(e){return {};}}
+function _setIdentity(name,email){try{localStorage.setItem('_clm_id',_clmEnc(JSON.stringify({name:name||'',email:email||'',ts:Date.now()})));}catch(e){}}
+window._utm=typeof getUtmParams==='function'?getUtmParams():{};
+function openManagedModal() {
+  try { if(window.cmTrack) window.cmTrack(managed_cta); } catch(e) {}
+  document.getElementById('managed-modal').style.display='flex';
+  var id=_getIdentity();
+  _encPost('/api/managed-click', {utm:window._utm,identity:id}).catch(function(){});
+}
+// Auto-open managed modal if ?managed=1 in URL
+if(new URLSearchParams(window.location.search).get('managed')==='1'){
+  setTimeout(function(){openManagedModal();},500);
+}
+function openSupportModal() {
+  try { if(window.cmTrack) window.cmTrack(support_cta); } catch(e) {}
+  document.getElementById('support-modal').style.display='flex';
+  _encPost('/api/managed-click', {utm:window._utm,identity:_getIdentity(),source:'support'}).catch(function(){});
+}
+if(new URLSearchParams(window.location.search).get('support')==='1'){
+  setTimeout(function(){openSupportModal();},500);
+}
+document.getElementById('support-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  var btn = document.getElementById('support-btn');
+  var msg = document.getElementById('support-msg');
+  btn.textContent = 'Sending...'; btn.disabled = true;
+  var fd = new FormData(e.target);
+  var data = {name:fd.get('name'),email:fd.get('email'),help_type:fd.get('help_type'),message:fd.get('message'),utm:window._utm||{},identity:_getIdentity()};
+  _setIdentity(data.name, data.email);
+  _encPost('/api/support-request', data).then(function(r){
+    if(r.ok){
+      document.getElementById('support-form').innerHTML='<div style="text-align:center;padding:20px 0;"><div style="font-size:40px;margin-bottom:12px;">✅</div><h3 style="font-size:18px;margin-bottom:8px;">Request received!</h3><p style="color:var(--text-muted);font-size:14px;">We\'ll help you get ClawMetry running. Expect a reply within a few hours. No catch, no upsell.</p></div>';
+    } else { msg.textContent='Something went wrong. Try again.'; msg.style.display='block'; msg.style.color='#ef4444'; btn.textContent='Get Help'; btn.disabled=false; }
+  }).catch(function(){msg.textContent='Network error.'; msg.style.display='block'; msg.style.color='#ef4444'; btn.textContent='Get Help'; btn.disabled=false;});
+});
+document.getElementById('managed-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  var btn = document.getElementById('managed-btn');
+  var msg = document.getElementById('managed-msg');
+  btn.disabled = true; btn.textContent = 'Submitting...';
+  msg.style.display = 'none';
+  _encPost('/api/managed-request', {
+      name: document.getElementById('managed-name').value,
+      email: document.getElementById('managed-email').value,
+      company: document.getElementById('managed-company').value,
+      use_case: document.getElementById('managed-usecase').value
+  }).then(function(r) { return r.json(); }).then(function(d) {
+    if (d.ok) {
+      _setIdentity(document.getElementById('managed-name').value, document.getElementById('managed-email').value);
+      document.getElementById('managed-form').innerHTML = '<div style="text-align:center;padding:20px 0;"><div style="font-size:40px;margin-bottom:12px;">✅</div><h3 style="font-size:18px;margin-bottom:8px;">Thanks! We\'ll be in touch.</h3><p style="color:var(--text-muted);font-size:14px;">We\'ll review your request and get back to you within 24-48 hours.</p></div>';
+    } else {
+      msg.style.display = 'block'; msg.style.color = '#E5443A';
+      msg.textContent = d.error || 'Something went wrong. Try again.';
+      btn.disabled = false; btn.textContent = 'Submit Request';
+    }
+  }).catch(function() {
+    msg.style.display = 'block'; msg.style.color = '#E5443A';
+    msg.textContent = 'Something went wrong. Try again.';
+    btn.disabled = false; btn.textContent = 'Submit Request';
+  });
+});
+</script>
+
+<!-- DASHBOARD PREVIEW -->
+<section style="padding-top:40px;padding-bottom:40px;">
+  <h2 class="section-title">Here's what it looks like</h2>
+  <p class="section-sub">One screen. Everything happening across your agents.</p>
+
+  <!-- Screenshot tab selector -->
+  <div style="display:flex;justify-content:center;gap:6px;margin-bottom:16px;flex-wrap:wrap;">
+    <button onclick="showScreenshot('flow',true)" id="ss-tab-flow" class="ss-tab active" style="padding:6px 16px;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;background:#28c840;color:#000;font-family:'Inter',sans-serif;transition:all 0.15s;">Flow</button>
+    <button onclick="showScreenshot('overview',true)" id="ss-tab-overview" class="ss-tab" style="padding:6px 16px;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);font-family:'Inter',sans-serif;transition:all 0.15s;">Overview</button>
+    <button onclick="showScreenshot('subagent',true)" id="ss-tab-subagent" class="ss-tab" style="padding:6px 16px;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);font-family:'Inter',sans-serif;transition:all 0.15s;">Sub-Agent</button>
+    <button onclick="showScreenshot('summary',true)" id="ss-tab-summary" class="ss-tab" style="padding:6px 16px;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);font-family:'Inter',sans-serif;transition:all 0.15s;">Summary</button>
+    <button onclick="showScreenshot('crons',true)" id="ss-tab-crons" class="ss-tab" style="padding:6px 16px;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);font-family:'Inter',sans-serif;transition:all 0.15s;">Crons</button>
+    <button onclick="showScreenshot('memory',true)" id="ss-tab-memory" class="ss-tab" style="padding:6px 16px;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);font-family:'Inter',sans-serif;transition:all 0.15s;">Memory</button>
+  </div>
+
+  <div class="demo-container">
+    <div class="demo-bar">
+      <div class="terminal-dot red"></div>
+      <div class="terminal-dot yellow"></div>
+      <div class="terminal-dot green"></div>
+      <span class="terminal-title" id="ss-title">clawmetry - flow</span>
+    </div>
+    <img id="ss-img" src="screenshots/flow.png" alt="ClawMetry dashboard" loading="eager" style="width:100%;display:block;">
+  </div>
+
+  <script>
+  var ssNames = ['flow','overview','subagent','summary','crons','memory'];
+  var ssIndex = 0;
+  var ssAutoPlay = null;
+  var ssPaused = false;
+  function showScreenshot(name, userClicked) {
+    document.getElementById('ss-img').src = 'screenshots/' + name + '.png';
+    document.getElementById('ss-title').textContent = 'clawmetry - ' + name;
+    ssIndex = ssNames.indexOf(name);
+    ssNames.forEach(function(n) {
+      var tab = document.getElementById('ss-tab-' + n);
+      if (tab) {
+        tab.style.background = n === name ? '#28c840' : 'rgba(255,255,255,0.06)';
+        tab.style.color = n === name ? '#000' : 'rgba(255,255,255,0.5)';
+        tab.style.fontWeight = n === name ? '600' : '500';
+      }
+    });
+    if (userClicked) { ssPaused = true; if (ssAutoPlay) clearInterval(ssAutoPlay); }
+  }
+  ssAutoPlay = setInterval(function() {
+    if (ssPaused) return;
+    ssIndex = (ssIndex + 1) % ssNames.length;
+    showScreenshot(ssNames[ssIndex]);
+  }, 4000);
+  </script>
+</section>
+
+<!-- FEATURES -->
+<section id="features" style="padding-top:48px;padding-bottom:32px;">
+  <h2 class="section-title">What you get</h2>
+  <p class="section-sub">Built because we needed it. Now you don't have to build it yourself.</p>
+
+  <!-- Killer feature card -->
+  <div class="killer-feature">
+    <div class="killer-feature-icon">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#E5443A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M11 18H8a2 2 0 0 1-2-2V9"/></svg>
+    </div>
+    <div>
+      <div style="display:inline-block;background:rgba(229,68,58,0.15);color:#E5443A;font-size:11px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;padding:3px 10px;border-radius:6px;margin-bottom:10px;">The big one</div>
+      <h3 style="font-size:22px;font-weight:700;margin-bottom:8px;">See what every sub-agent is doing. Right now.</h3>
+      <p style="font-size:15px;color:#94A3B8;line-height:1.7;margin:0;">Your agent says "spawning sub-agent" and you just... hope it works? ClawMetry shows you every step: what files it's reading, what commands it's running, what tools it's calling, and what it's thinking. Summary, narrative, full logs. No more guessing.</p>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px;max-width:960px;margin-left:auto;margin-right:auto;">
+    <div style="text-align:center;">
+      <div style="border-radius:12px;overflow:hidden;border:1px solid var(--border);">
+        <img src="screenshots/subagent.png" alt="Sub-agent running" style="width:100%;display:block;">
+      </div>
+      <p style="font-size:13px;color:var(--text-muted);margin-top:10px;">Sub-agent running</p>
+    </div>
+    <div style="text-align:center;">
+      <div style="border-radius:12px;overflow:hidden;border:1px solid var(--border);">
+        <img src="screenshots/summary.png" alt="Sub-agent on completion" style="width:100%;display:block;">
+      </div>
+      <p style="font-size:13px;color:var(--text-muted);margin-top:10px;">Sub-agent on completion</p>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES GRID -->
+<section style="padding-top:0;padding-bottom:48px;">
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon red">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></svg>
+      </div>
+      <h3>Live flow graph</h3>
+      <p>Channels, gateway, models, tools, nodes. All wired up, updating as things happen.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon blue">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2M15 20v2M2 15h2M2 9h2M20 15h2M20 9h2M9 2v2M9 20v2"/></svg>
+      </div>
+      <h3>Token and cost tracking</h3>
+      <p>Tokens in, tokens out, cache hits, response times, cost per call. Numbers you actually need.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon green">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+      </div>
+      <h3>System health</h3>
+      <p>Cron jobs, service uptime, disk usage, active sub-agents. Glanceable.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon purple">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3"/></svg>
+      </div>
+      <h3>Session history</h3>
+      <p>Every session logged. Timeline, tool calls, cost. Go back and see what happened.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon yellow">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+      </div>
+      <h3>Mission Control integration</h3>
+      <p>Hooks into OpenClaw's task system. See which agents are on which tasks.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon red">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+      </div>
+      <h3>Cost breakdown</h3>
+      <p>Per-session, per-model, per-tool. Know what you're spending before the invoice shows up.</p>
+    </div>
+  </div>
+</section>
+
+
+<!-- RUNS WHERE YOU RUN -->
+<section style="padding:60px 24px 80px;text-align:center;">
+  <h2 class="section-title">Runs where you run</h2>
+  <p class="section-sub">If OpenClaw runs there, ClawMetry runs there. Laptop, server, Raspberry Pi, whatever.</p>
+  <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:32px;max-width:700px;margin-left:auto;margin-right:auto;">
+    <span style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:8px 18px;font-size:14px;color:var(--text-muted);">macOS</span>
+    <span style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:8px 18px;font-size:14px;color:var(--text-muted);">Ubuntu</span>
+    <span style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:8px 18px;font-size:14px;color:var(--text-muted);">Debian</span>
+    <span style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:8px 18px;font-size:14px;color:var(--text-muted);">Raspberry Pi</span>
+    <span style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:8px 18px;font-size:14px;color:var(--text-muted);">Digital Ocean</span>
+    <span style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:8px 18px;font-size:14px;color:var(--text-muted);">Hostinger</span>
+    <span style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:8px 18px;font-size:14px;color:var(--text-muted);">Hetzner</span>
+    <span style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:8px 18px;font-size:14px;color:var(--text-muted);">AWS</span>
+    <span style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:8px 18px;font-size:14px;color:var(--text-muted);">GCP</span>
+    <span style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:8px 18px;font-size:14px;color:var(--text-muted);">Windows WSL</span>
+  </div>
+</section>
+
+<!-- MANAGED + APPS CTA -->
+<section style="padding:60px 24px;text-align:center;border-top:1px solid rgba(255,255,255,0.06);">
+  <h2 style="font-size:32px;font-weight:800;color:#fff;margin:0 0 12px;line-height:1.2;">Want us to run it for you?</h2>
+  <p style="font-size:16px;color:rgba(255,255,255,0.5);max-width:480px;margin:0 auto 40px;line-height:1.6;">Skip the setup. We host it, you just watch.</p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;max-width:720px;margin:0 auto 36px;">
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:20px 16px;text-align:left;">
+      <div style="font-size:22px;margin-bottom:10px;">&#128421;</div>
+      <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px;">Managed hosting</div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.45);line-height:1.5;">We set it up. We keep it running. You get full visibility from day one.</div>
+    </div>
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:20px 16px;text-align:left;">
+      <div style="font-size:22px;margin-bottom:10px;">&#63743;&#128241;</div>
+      <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px;">Mac, iOS &amp; Android</div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.45);line-height:1.5;">Menu bar on Mac. Approve requests, check spend, and manage nodes from your pocket.</div>
+    </div>
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:20px 16px;text-align:left;">
+      <div style="font-size:22px;margin-bottom:10px;">&#9757;</div>
+      <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px;">Human in the loop</div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.45);line-height:1.5;">Agents pause at key decisions and wait for your approval before continuing.</div>
+    </div>
+  </div>
+  <a href="#" onclick="openManagedModal();return false;" style="display:inline-block;background:#E5443A;color:#fff;font-weight:700;font-size:15px;padding:14px 36px;border-radius:10px;text-decoration:none;box-shadow:0 0 30px rgba(229,68,58,0.25);transition:all 150ms ease;" onmouseenter="this.style.opacity='0.9'" onmouseleave="this.style.opacity='1'">Request early access &rarr;</a>
+</section>
+
+<!-- SUBSCRIBE -->
+<section style="padding:60px 24px 80px;text-align:center;">
+  <h2 class="section-title">Stay in the loop</h2>
+  <p class="section-sub">Get notified about new features, releases, and the growing -metry ecosystem.</p>
+  <form id="subscribe-form" style="display:flex;gap:10px;max-width:440px;margin:28px auto 0;flex-wrap:wrap;justify-content:center;">
+    <input type="email" id="sub-email" placeholder="you@example.com" required style="flex:1;min-width:220px;padding:12px 16px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);color:var(--text);font-size:15px;outline:none;">
+    <button type="submit" style="padding:12px 28px;border-radius:8px;border:none;background:#28c840;color:#000;font-weight:600;font-size:15px;cursor:pointer;transition:opacity .2s;">Subscribe</button>
+  </form>
+  <p id="sub-msg" style="margin-top:12px;font-size:13px;color:var(--text-muted);display:none;"></p>
+</section>
+<script>
+function getUtmParams(){
+  var p=new URLSearchParams(window.location.search);
+  var u={};
+  ['utm_source','utm_medium','utm_campaign','utm_term','utm_content','gclid','gad_source','gad_campaignid','fbclid'].forEach(function(k){
+    if(p.get(k))u[k]=p.get(k);
+  });
+  u.landing_url=window.location.href;
+  return u;
+}
+document.getElementById('subscribe-form').addEventListener('submit',function(e){
+  e.preventDefault();
+  var email=document.getElementById('sub-email').value;
+  var msg=document.getElementById('sub-msg');
+  msg.style.display='block';
+  msg.textContent='Subscribing...';
+  msg.style.color='var(--text-muted)';
+  var btn=e.target.querySelector('button');
+  btn.disabled=true;
+  var payload={email:email};
+  var utm=getUtmParams();
+  if(Object.keys(utm).length>1)payload.utm=utm;
+  btn.textContent='Submitting...';
+  _encPost('/api/subscribe',payload).then(function(r){return r.json();}).then(function(d){
+    if(d.ok){
+      _setIdentity('',email);
+      // Fire Google Ads conversion on successful subscribe
+      if (typeof trackConversion === 'function') { trackConversion('ads_conversion_Sign_Up_1'); }
+      document.getElementById('subscribe-form').style.display='none';
+      msg.textContent='You\'re subscribed! We\'ll keep you posted. \u{1F99E}';
+      msg.style.color='#28c840';
+      msg.style.fontSize='16px';
+      msg.style.fontWeight='600';
+    } else {
+      msg.textContent='Something went wrong. Try again.';
+      msg.style.color='#E5443A';
+      btn.disabled=false; btn.textContent='Subscribe';
+    }
+  }).catch(function(){
+    msg.textContent='Something went wrong. Try again.';
+    msg.style.color='#E5443A';
+    btn.disabled=false; btn.textContent='Subscribe';
+  });
+});
+</script>
+
+<!-- FAQ SECTION — visible headings for AEO/GEO crawlers -->
+<section style="max-width:760px;margin:80px auto 0;padding:0 24px 80px;">
+  <h2 style="font-size:clamp(1.5rem,3vw,2rem);font-weight:700;letter-spacing:-0.02em;text-align:center;margin-bottom:8px;">Frequently Asked Questions</h2>
+  <p style="text-align:center;color:var(--text-muted);font-size:16px;margin-bottom:48px;">Everything you need to know about ClawMetry.</p>
+
+  <div style="display:flex;flex-direction:column;gap:0;">
+
+    <div style="border-bottom:1px solid var(--border);padding:24px 0;">
+      <h3 style="font-size:17px;font-weight:600;color:var(--text);margin-bottom:10px;">What is ClawMetry?</h3>
+      <p style="color:var(--text-muted);font-size:15px;line-height:1.7;">ClawMetry is a free, open-source real-time observability dashboard for AI agents running on OpenClaw. It gives you instant visibility into token costs, cron jobs, sub-agent activity, memory file changes, and session history — all in a single local dashboard.</p>
+    </div>
+
+    <div style="border-bottom:1px solid var(--border);padding:24px 0;">
+      <h3 style="font-size:17px;font-weight:600;color:var(--text);margin-bottom:10px;">Is ClawMetry free?</h3>
+      <p style="color:var(--text-muted);font-size:15px;line-height:1.7;">Yes, completely. ClawMetry is MIT licensed and runs locally on your machine. No cloud dependency, no telemetry, no subscription. There is also an optional ClawMetry Cloud plan for teams who want a hosted multi-node dashboard.</p>
+    </div>
+
+    <div style="border-bottom:1px solid var(--border);padding:24px 0;">
+      <h3 style="font-size:17px;font-weight:600;color:var(--text);margin-bottom:10px;">How do I install ClawMetry?</h3>
+      <p style="color:var(--text-muted);font-size:15px;line-height:1.7;">Run <code style="background:var(--bg-card);padding:2px 6px;border-radius:4px;font-family:JetBrains Mono,monospace;font-size:13px;">pip install clawmetry</code> then <code style="background:var(--bg-card);padding:2px 6px;border-radius:4px;font-family:JetBrains Mono,monospace;font-size:13px;">clawmetry</code>. It auto-detects your OpenClaw workspace — no config file needed. Setup takes about 30 seconds.</p>
+    </div>
+
+    <div style="border-bottom:1px solid var(--border);padding:24px 0;">
+      <h3 style="font-size:17px;font-weight:600;color:var(--text);margin-bottom:10px;">What does ClawMetry monitor?</h3>
+      <p style="color:var(--text-muted);font-size:15px;line-height:1.7;">ClawMetry monitors token usage and cost per session and model, cron job status and history, sub-agent spawns and outcomes, memory file changes (SOUL.md, MEMORY.md, AGENTS.md), session transcripts, channel activity, and real-time tool call traces.</p>
+    </div>
+
+    <div style="border-bottom:1px solid var(--border);padding:24px 0;">
+      <h3 style="font-size:17px;font-weight:600;color:var(--text);margin-bottom:10px;">Does ClawMetry work with Claude, GPT-4, and other models?</h3>
+      <p style="color:var(--text-muted);font-size:15px;line-height:1.7;">Yes. ClawMetry works with any model your OpenClaw agents use — Claude (Anthropic), GPT-4 (OpenAI), Gemini (Google), and others. It tracks cost and token usage per model automatically.</p>
+    </div>
+
+    <div style="border-bottom:1px solid var(--border);padding:24px 0;">
+      <h3 style="font-size:17px;font-weight:600;color:var(--text);margin-bottom:10px;">How is ClawMetry different from LangSmith or Weights & Biases?</h3>
+      <p style="color:var(--text-muted);font-size:15px;line-height:1.7;">LangSmith and W&B are enterprise platforms built for LLM application developers. ClawMetry is purpose-built for OpenClaw users — it understands the specific concepts of channels, cron jobs, sub-agents, memory files, and the full agent runtime. It runs locally in 30 seconds with zero config.</p>
+    </div>
+
+    <div style="padding:24px 0;">
+      <h3 style="font-size:17px;font-weight:600;color:var(--text);margin-bottom:10px;">What operating systems does ClawMetry support?</h3>
+      <p style="color:var(--text-muted);font-size:15px;line-height:1.7;">ClawMetry runs on Linux, macOS, and Windows (via WSL). It also works on Raspberry Pi and other ARM devices. Requires Python 3.8+ and an active OpenClaw installation.</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-text">
+      &#x1F99E; ClawMetry for <a href="https://github.com/openclaw/openclaw">OpenClaw</a> · Built by <a href="https://github.com/vivekchand">vivekchand</a> · MIT licensed
+    </div>
+    <div class="footer-links">
+      <a href="https://github.com/vivekchand/clawmetry" target="_blank" rel="noopener">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        GitHub
+      </a>
+      <a href="https://pypi.org/project/clawmetry/" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M12 0L1.5 6v12L12 24l10.5-6V6L12 0zm-.5 18.5l-6-3.5V9l6 3.5v6zm1-7L6.5 8 12 4.5 17.5 8l-6 3.5zm6.5 3.5l-6 3.5v-6l6-3.5v6z"/></svg>
+        PyPI
+      </a>
+      <a href="https://github.com/vivekchand/clawmetry/blob/main/README.md" target="_blank" rel="noopener">
+        Docs
+      </a>
+      <a href="#" onclick="openManagedModal();return false;">
+        Managed Instance
+      </a>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function() {
+  function getOrCreateVisitorId() {
+    var key = "cm_vid";
+    var vid = localStorage.getItem(key);
+    if (!vid) { vid = "v_" + Math.random().toString(36).substr(2,9) + Date.now().toString(36); localStorage.setItem(key, vid); }
+    return vid;
+  }
+  function track(eventType, metadata) {
+    try {
+      fetch("/api/track", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          event_type: eventType,
+          visitor_id: getOrCreateVisitorId(),
+          page: window.location.pathname,
+          metadata: metadata || {}
+        })
+      }).catch(function(){});
+    } catch(e) {}
+  }
+  track("page_visit");
+  window.cmTrack = track;
+})();
+</script>
+</body>
+</html>

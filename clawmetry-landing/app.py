@@ -2531,6 +2531,11 @@ def index():
     return send_from_directory(".", "index.html")
 
 
+@app.route("/new")
+def new_landing():
+    return send_from_directory(".", "new.html")
+
+
 
 @app.route("/install.sh")
 def install_sh():
