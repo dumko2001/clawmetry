@@ -2541,6 +2541,11 @@ def old_landing():
     return send_from_directory(".", "old.html")
 
 
+@app.route("/v2")
+def v2_landing():
+    return send_from_directory(".", "v2.html")
+
+
 
 @app.route("/install.sh")
 def install_sh():
