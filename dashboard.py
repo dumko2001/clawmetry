@@ -2507,6 +2507,23 @@ DASHBOARD_HTML = r"""
   /* Scanline overlay */
   .scanline-overlay { pointer-events: none; position: absolute; inset: 0; z-index: 2; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,65,0.015) 2px, rgba(0,255,65,0.015) 4px); }
   .grid-overlay { pointer-events: none; position: absolute; inset: 0; z-index: 1; background-image: linear-gradient(var(--border-secondary) 1px, transparent 1px), linear-gradient(90deg, var(--border-secondary) 1px, transparent 1px); background-size: 40px 40px; opacity: 0.3; }
+  /* === Execution Trace Panel === */
+  .exec-trace-tabs { position:absolute;top:0;left:0;right:0;z-index:5;display:flex;gap:3px;padding:5px 8px 0; }
+  .exec-trace-tab { background:var(--bg-tertiary);border:1px solid var(--border-primary);border-bottom:none;border-radius:5px 5px 0 0;padding:3px 10px;font-size:10px;font-weight:600;color:var(--text-muted);cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:4px;letter-spacing:0.3px; }
+  .exec-trace-tab.active { background:rgba(30,58,95,0.5);border-color:rgba(99,179,237,0.3);color:var(--text-primary); }
+  .exec-trace-tab:hover:not(.active) { color:var(--text-secondary);background:var(--bg-secondary); }
+  .exec-trace-view { position:absolute;inset:30px 0 0 0;z-index:3; }
+  .exec-trace-view.hidden { display:none; }
+  .exec-trace-container { height:100%;overflow-x:auto;overflow-y:hidden;display:flex;align-items:center;padding:4px 8px;scrollbar-width:thin;scrollbar-color:var(--border-primary) transparent; }
+  .exec-trace-container::-webkit-scrollbar { height:4px; }
+  .exec-trace-container::-webkit-scrollbar-track { background:transparent; }
+  .exec-trace-container::-webkit-scrollbar-thumb { background:var(--border-primary);border-radius:2px; }
+  @keyframes execNodeIn { from { opacity:0;transform:translateX(30px); } to { opacity:1;transform:translateX(0); } }
+  .exec-node-new { animation: execNodeIn 0.3s ease-out; }
+  .live-badge { display:inline-flex;align-items:center;gap:3px;font-size:8px;font-weight:700;color:#22c55e;letter-spacing:0.5px; }
+  .live-dot { width:5px;height:5px;border-radius:50%;background:#22c55e;flex-shrink:0; }
+  @keyframes livePulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.4;transform:scale(0.8);} }
+  .live-dot { animation: livePulse 1.2s ease-in-out infinite; }
   /* Task cards in overview */
   .ov-task-card { background: var(--bg-tertiary); border: 1px solid var(--border-primary); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; box-shadow: var(--card-shadow); position: relative; transition: box-shadow 0.2s; }
   .ov-task-card:hover { box-shadow: var(--card-shadow-hover); }
@@ -2975,9 +2992,23 @@ function clawmetryLogout(){
       <div class="overview-flow-pane" style="border-radius:8px 0 0 0;flex:3;min-height:0;">
         <div class="grid-overlay"></div>
         <div class="scanline-overlay"></div>
-        <div class="flow-container" id="overview-flow-container">
-          <!-- Flow SVG cloned here by JS -->
-          <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-size:13px;">Loading flow...</div>
+        <!-- Tab Toggle: Trace / Arch -->
+        <div class="exec-trace-tabs">
+          <button id="tab-btn-trace" class="exec-trace-tab active" onclick="switchFlowTab('trace')">⚡ Trace <span id="trace-live-badge" class="live-badge" style="display:none;"><span class="live-dot"></span>LIVE</span></button>
+          <button id="tab-btn-arch" class="exec-trace-tab" onclick="switchFlowTab('arch')">🔌 Arch</button>
+        </div>
+        <!-- Execution Trace View (default) -->
+        <div id="exec-trace-view" class="exec-trace-view">
+          <div class="exec-trace-container" id="exec-trace-container">
+            <div style="color:var(--text-muted);font-size:12px;padding:20px;">Loading trace...</div>
+          </div>
+        </div>
+        <!-- Architecture SVG View -->
+        <div id="arch-flow-view" class="exec-trace-view hidden">
+          <div class="flow-container" id="overview-flow-container">
+            <!-- Flow SVG cloned here by JS -->
+            <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-size:13px;">Loading flow...</div>
+          </div>
         </div>
       </div>
 
@@ -5518,6 +5549,112 @@ function toggleMsg(idx) {
   }
 }
 
+// === Execution Trace Flow ===
+var _execTraceTab = 'trace';
+
+function switchFlowTab(tab) {
+  _execTraceTab = tab;
+  var traceView = document.getElementById('exec-trace-view');
+  var archView = document.getElementById('arch-flow-view');
+  var btnTrace = document.getElementById('tab-btn-trace');
+  var btnArch = document.getElementById('tab-btn-arch');
+  if (tab === 'trace') {
+    if (traceView) traceView.classList.remove('hidden');
+    if (archView) archView.classList.add('hidden');
+    if (btnTrace) btnTrace.classList.add('active');
+    if (btnArch) btnArch.classList.remove('active');
+    loadExecutionTrace();
+  } else {
+    if (traceView) traceView.classList.add('hidden');
+    if (archView) archView.classList.remove('hidden');
+    if (btnArch) btnArch.classList.add('active');
+    if (btnTrace) btnTrace.classList.remove('active');
+  }
+}
+
+function _escXml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function _toolColor(name) {
+  if (!name) return '#374151';
+  var n = (name || '').toLowerCase();
+  if (n === 'exec' || n === 'process' || n === 'bash') return '#b45309';
+  if (n === 'web_search' || n === 'web_fetch') return '#6d28d9';
+  if (n === 'browser') return '#3730a3';
+  if (n === 'read' || n === 'write' || n === 'edit') return '#065f46';
+  if (n === 'message' || n === 'send') return '#0369a1';
+  return '#374151';
+}
+
+async function loadExecutionTrace() {
+  try {
+    var data = await fetchJsonWithTimeout('/api/execution-trace', 3000);
+    if (!data) return;
+    var events = data.events || [];
+    var container = document.getElementById('exec-trace-container');
+    if (!container) return;
+
+    // Show LIVE badge if most recent event is within last 90s
+    var liveBadge = document.getElementById('trace-live-badge');
+    if (liveBadge) {
+      var lastTs = events.length > 0 ? (events[events.length - 1].ts || 0) : 0;
+      var nowSec = Math.floor(Date.now() / 1000);
+      liveBadge.style.display = (lastTs > 0 && (nowSec - lastTs) < 90) ? 'inline-flex' : 'none';
+    }
+
+    if (events.length === 0) {
+      container.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:20px;text-align:center;width:100%;">No trace data — waiting for agent activity...</div>';
+      return;
+    }
+
+    // Show last 12 events
+    var display = events.slice(-12);
+    var NODE_W = 120, NODE_H = 50, ARROW_W = 28, MARGIN_X = 10, MARGIN_Y = 8;
+    var totalW = MARGIN_X * 2 + display.length * NODE_W + Math.max(0, display.length - 1) * ARROW_W;
+    var svgH = NODE_H + MARGIN_Y * 2;
+
+    var parts = [];
+    parts.push('<svg xmlns="http://www.w3.org/2000/svg" width="' + totalW + '" height="' + svgH + '" style="display:block;flex-shrink:0;">');
+    parts.push('<defs><marker id="et-arrow" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#4b5563"/></marker></defs>');
+
+    display.forEach(function(ev, i) {
+      var x = MARGIN_X + i * (NODE_W + ARROW_W);
+      var y = MARGIN_Y;
+      var isThink = ev.type === 'think';
+      var fill = isThink ? '#1e3a5f' : _toolColor(ev.name);
+      var label = isThink ? '\uD83D\uDCAD Think' : ('\uD83D\uDD27 ' + (ev.name || 'tool'));
+      if (label.length > 14) label = label.substring(0, 13) + '\u2026';
+      var preview = isThink ? (ev.preview || '') : (ev.input_preview || '');
+      if (preview.length > 18) preview = preview.substring(0, 17) + '\u2026';
+      var isNewest = (i === display.length - 1);
+
+      // Node rect
+      parts.push('<rect x="' + x + '" y="' + y + '" width="' + NODE_W + '" height="' + NODE_H + '" rx="8" ry="8" fill="' + fill + '" stroke="rgba(255,255,255,0.12)" stroke-width="1"' + (isNewest ? ' class="exec-node-new"' : '') + '/>');
+      // Label
+      parts.push('<text x="' + (x + NODE_W / 2) + '" y="' + (y + 19) + '" text-anchor="middle" font-size="11" font-weight="600" fill="#f0f4f8" font-family="\'JetBrains Mono\',monospace,system-ui">' + _escXml(label) + '</text>');
+      // Preview
+      if (preview) {
+        parts.push('<text x="' + (x + NODE_W / 2) + '" y="' + (y + 33) + '" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.55)" font-family="system-ui,sans-serif">' + _escXml(preview) + '</text>');
+      }
+      // Arrow to next node
+      if (i < display.length - 1) {
+        var ax1 = x + NODE_W, ay = y + NODE_H / 2;
+        var ax2 = ax1 + ARROW_W - 2;
+        parts.push('<line x1="' + ax1 + '" y1="' + ay + '" x2="' + ax2 + '" y2="' + ay + '" stroke="#4b5563" stroke-width="1.5" marker-end="url(#et-arrow)"/>');
+      }
+    });
+    parts.push('</svg>');
+
+    container.innerHTML = parts.join('');
+    // Scroll right to show newest
+    container.scrollLeft = container.scrollWidth;
+  } catch(e) {
+    console.warn('Execution trace load failed:', e);
+  }
+}
+
 function startOverviewRefresh() {
   loadAll();
   if (window._overviewTimer) clearInterval(window._overviewTimer);
@@ -5525,6 +5662,12 @@ function startOverviewRefresh() {
   loadMainActivity();
   if (window._mainActivityTimer) clearInterval(window._mainActivityTimer);
   window._mainActivityTimer = setInterval(loadMainActivity, 5000);
+  // Start execution trace refresh (every 3s, only when trace tab active)
+  loadExecutionTrace();
+  if (window._execTraceTimer) clearInterval(window._execTraceTimer);
+  window._execTraceTimer = setInterval(function() {
+    if (_execTraceTab === 'trace') loadExecutionTrace();
+  }, 3000);
 }
 
 async function loadMainActivity() {
@@ -10394,6 +10537,90 @@ def api_usage_export():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/execution-trace')
+def execution_trace():
+    """Return last 30 think+tool events from the most recent session transcript."""
+    sessions_dir = SESSIONS_DIR or os.path.expanduser('~/.openclaw/agents/main/sessions')
+    if not os.path.isdir(sessions_dir):
+        for p in [
+            os.path.expanduser('~/.openclaw/agents/main/sessions'),
+            os.path.expanduser('~/.clawdbot/agents/main/sessions'),
+            os.path.expanduser('~/.moltbot/agents/main/sessions'),
+        ]:
+            if os.path.isdir(p):
+                sessions_dir = p
+                break
+    if not os.path.isdir(sessions_dir):
+        return jsonify({'events': [], 'session_id': None, 'total': 0})
+
+    try:
+        files = [f for f in os.listdir(sessions_dir) if f.endswith('.jsonl') and 'deleted' not in f]
+        if not files:
+            return jsonify({'events': [], 'session_id': None, 'total': 0})
+        latest = max(files, key=lambda f: os.path.getmtime(os.path.join(sessions_dir, f)))
+        session_id = latest.replace('.jsonl', '')
+        fpath = os.path.join(sessions_dir, latest)
+    except Exception as e:
+        return jsonify({'error': str(e), 'events': [], 'session_id': None, 'total': 0})
+
+    events = []
+    try:
+        with open(fpath, 'r', errors='replace') as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    obj = json.loads(line)
+                    if obj.get('type') != 'message':
+                        continue
+                    msg = obj.get('message', {})
+                    role = msg.get('role')
+                    content = msg.get('content', [])
+                    ts_str = obj.get('timestamp', '')
+                    try:
+                        ts = int(datetime.fromisoformat(ts_str.replace('Z', '+00:00')).timestamp())
+                    except Exception:
+                        ts = 0
+                    if not isinstance(content, list):
+                        continue
+                    if role == 'assistant':
+                        for block in content:
+                            if not isinstance(block, dict):
+                                continue
+                            btype = block.get('type', '')
+                            if btype == 'thinking':
+                                text = block.get('thinking') or block.get('text') or ''
+                                events.append({
+                                    'type': 'think',
+                                    'preview': text[:60],
+                                    'ts': ts,
+                                })
+                            elif btype in ('tool_use', 'toolCall'):
+                                name = block.get('name', 'unknown')
+                                args = block.get('arguments') or block.get('input') or {}
+                                if isinstance(args, dict):
+                                    parts = []
+                                    for k, v in list(args.items())[:2]:
+                                        parts.append('{}: {}'.format(k, str(v)[:40]))
+                                    input_preview = ', '.join(parts)
+                                else:
+                                    input_preview = str(args)[:60]
+                                events.append({
+                                    'type': 'tool',
+                                    'name': name,
+                                    'input_preview': input_preview,
+                                    'ts': ts,
+                                })
+                except Exception:
+                    continue
+    except Exception as e:
+        return jsonify({'error': str(e), 'events': [], 'session_id': session_id, 'total': 0})
+
+    events = events[-30:]
+    return jsonify({'events': events, 'session_id': session_id, 'total': len(events)})
+
 
 @app.route('/api/transcripts')
 def api_transcripts():
