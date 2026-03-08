@@ -61,7 +61,7 @@ except ImportError:
     metrics_service_pb2 = None
     trace_service_pb2 = None
 
-__version__ = "0.11.44"
+__version__ = "0.11.95"
 
 # Extensions (Phase 2) — load plugins at import time; safe no-op if package not installed
 try:
@@ -1562,7 +1562,7 @@ DASHBOARD_HTML = r"""
   .badge-done { background:rgba(34,197,94,0.2); color:#22c55e; }
   .badge-error { background:rgba(239,68,68,0.2); color:#ef4444; }
   .badge-tool { background:rgba(148,163,184,0.2); color:#94a3b8; }
-  .brain-detail { color:var(--text-secondary); flex:1; min-width:0; overflow:hidden; }
+  .brain-detail { color:var(--text-secondary); flex:1; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
     .nav-tab { padding: 8px 16px; border-radius: 8px; background: transparent; border: 1px solid transparent; color: var(--text-tertiary); cursor: pointer; font-size: 13px; font-weight: 600; white-space: nowrap; transition: all 0.2s ease; position: relative; }
   .nav-tab:hover { background: var(--bg-hover); color: var(--text-secondary); }
   .nav-tab.active { background: var(--bg-accent); color: #ffffff; border-color: var(--bg-accent); }
@@ -2374,6 +2374,38 @@ DASHBOARD_HTML = r"""
     .zoom-controls { margin-left: 8px; gap: 2px; }
     .zoom-btn { width: 24px; height: 24px; font-size: 14px; }
     .zoom-level { min-width: 32px; font-size: 10px; }
+
+    /* Nav: logo+icons row, tabs scroll row below */
+    .nav { flex-wrap: wrap; padding: 6px 10px; gap: 6px; }
+    .nav h1 { order: 1; font-size: 15px; }
+    .theme-toggle { order: 2; }
+    .zoom-controls { order: 3; margin-left: auto; }
+    .nav-tabs {
+      order: 4; width: 100%; margin-left: 0;
+      overflow-x: auto; flex-wrap: nowrap;
+      padding-bottom: 2px; gap: 2px;
+      scrollbar-width: none;
+    }
+    .nav-tabs::-webkit-scrollbar { display: none; }
+    .nav-tab { padding: 5px 10px; font-size: 11px; white-space: nowrap; }
+
+    /* Brain event stream: compact columns so content gets space */
+    .brain-event { gap: 4px; padding: 4px 0; }
+    .brain-time { min-width: 52px; font-size: 10px; }
+    .brain-source { min-width: 60px; max-width: 80px; font-size: 10px; }
+    .brain-type { min-width: 42px; font-size: 9px; padding: 1px 3px; }
+
+    /* Cards */
+    .card { padding: 12px 14px; }
+    .card-label { font-size: 10px; }
+    .card-value { font-size: 20px; }
+    
+    /* Overview grid already 1-col, just tighten gap */
+    .grid { gap: 8px; }
+
+    /* Memory / cron tables */
+    .mem-file-row { flex-direction: column; gap: 4px; }
+    .cron-job { flex-wrap: wrap; gap: 6px; }
   }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -2416,7 +2448,7 @@ DASHBOARD_HTML = r"""
         var lb=document.getElementById('logout-btn');if(lb)lb.style.display='';
         return;
       }
-      document.getElementById('login-overlay').style.display='flex';
+      localStorage.removeItem('cm-token');localStorage.removeItem('clawmetry-token');sessionStorage.removeItem('cm-token');document.getElementById('login-overlay').style.display='flex';
     })
     .catch(function(){document.getElementById('login-overlay').style.display='none';});
 })();
@@ -3386,7 +3418,7 @@ async function loadAlertRules() {
       html += '<span style="color:var(--text-accent);">' + (r.type==='spike' ? r.threshold+'x' : '$'+r.threshold) + '</span>';
       html += '<span style="color:var(--text-muted);font-size:11px;">' + channels.join(', ') + '</span>';
       html += '<span style="color:var(--text-muted);font-size:11px;">' + r.cooldown_min + 'min cooldown</span>';
-      html += '<span style="margin-left:auto;cursor:pointer;color:var(--text-error);font-size:16px;" onclick="deleteAlertRule(\''+r.id+'\')" title="Delete">&#x1f5d1;</span>';
+      html += '<span style="margin-left:auto;cursor:pointer;color:var(--text-error);font-size:16px;" data-rule-id="'+r.id+'" onclick="deleteAlertRule(this.dataset.ruleId)" title="Delete">&#x1f5d1;</span>';
       html += '</div>';
     });
     document.getElementById('alert-rules-list').innerHTML = html;
@@ -5775,7 +5807,7 @@ DASHBOARD_HTML = r"""
   .badge-done { background:rgba(34,197,94,0.2); color:#22c55e; }
   .badge-error { background:rgba(239,68,68,0.2); color:#ef4444; }
   .badge-tool { background:rgba(148,163,184,0.2); color:#94a3b8; }
-  .brain-detail { color:var(--text-secondary); flex:1; min-width:0; overflow:hidden; }
+  .brain-detail { color:var(--text-secondary); flex:1; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
     .nav-tab { padding: 8px 16px; border-radius: 8px; background: transparent; border: 1px solid transparent; color: var(--text-tertiary); cursor: pointer; font-size: 13px; font-weight: 600; white-space: nowrap; transition: all 0.2s ease; position: relative; }
   .nav-tab:hover { background: var(--bg-hover); color: var(--text-secondary); }
   .nav-tab.active { background: var(--bg-accent); color: #ffffff; border-color: var(--bg-accent); }
@@ -6587,6 +6619,38 @@ DASHBOARD_HTML = r"""
     .zoom-controls { margin-left: 8px; gap: 2px; }
     .zoom-btn { width: 24px; height: 24px; font-size: 14px; }
     .zoom-level { min-width: 32px; font-size: 10px; }
+
+    /* Nav: logo+icons row, tabs scroll row below */
+    .nav { flex-wrap: wrap; padding: 6px 10px; gap: 6px; }
+    .nav h1 { order: 1; font-size: 15px; }
+    .theme-toggle { order: 2; }
+    .zoom-controls { order: 3; margin-left: auto; }
+    .nav-tabs {
+      order: 4; width: 100%; margin-left: 0;
+      overflow-x: auto; flex-wrap: nowrap;
+      padding-bottom: 2px; gap: 2px;
+      scrollbar-width: none;
+    }
+    .nav-tabs::-webkit-scrollbar { display: none; }
+    .nav-tab { padding: 5px 10px; font-size: 11px; white-space: nowrap; }
+
+    /* Brain event stream: compact columns so content gets space */
+    .brain-event { gap: 4px; padding: 4px 0; }
+    .brain-time { min-width: 52px; font-size: 10px; }
+    .brain-source { min-width: 60px; max-width: 80px; font-size: 10px; }
+    .brain-type { min-width: 42px; font-size: 9px; padding: 1px 3px; }
+
+    /* Cards */
+    .card { padding: 12px 14px; }
+    .card-label { font-size: 10px; }
+    .card-value { font-size: 20px; }
+    
+    /* Overview grid already 1-col, just tighten gap */
+    .grid { gap: 8px; }
+
+    /* Memory / cron tables */
+    .mem-file-row { flex-direction: column; gap: 4px; }
+    .cron-job { flex-wrap: wrap; gap: 6px; }
   }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -6629,7 +6693,7 @@ DASHBOARD_HTML = r"""
         var lb=document.getElementById('logout-btn');if(lb)lb.style.display='';
         return;
       }
-      document.getElementById('login-overlay').style.display='flex';
+      localStorage.removeItem('cm-token');localStorage.removeItem('clawmetry-token');sessionStorage.removeItem('cm-token');document.getElementById('login-overlay').style.display='flex';
     })
     .catch(function(){document.getElementById('login-overlay').style.display='none';});
 })();
@@ -7599,7 +7663,7 @@ async function loadAlertRules() {
       html += '<span style="color:var(--text-accent);">' + (r.type==='spike' ? r.threshold+'x' : '$'+r.threshold) + '</span>';
       html += '<span style="color:var(--text-muted);font-size:11px;">' + channels.join(', ') + '</span>';
       html += '<span style="color:var(--text-muted);font-size:11px;">' + r.cooldown_min + 'min cooldown</span>';
-      html += '<span style="margin-left:auto;cursor:pointer;color:var(--text-error);font-size:16px;" onclick="deleteAlertRule(\''+r.id+'\')" title="Delete">&#x1f5d1;</span>';
+      html += '<span style="margin-left:auto;cursor:pointer;color:var(--text-error);font-size:16px;" data-rule-id="'+r.id+'" onclick="deleteAlertRule(this.dataset.ruleId)" title="Delete">&#x1f5d1;</span>';
       html += '</div>';
     });
     document.getElementById('alert-rules-list').innerHTML = html;
@@ -9080,7 +9144,22 @@ function renderCrons() {
     if (j.state && j.state.lastRunAtMs) html += 'Last: ' + timeAgo(j.state.lastRunAtMs);
     if (j.state && j.state.nextRunAtMs) html += ' &middot; Next: ' + formatTime(j.state.nextRunAtMs);
     if (j.state && j.state.lastDurationMs) html += ' &middot; Took: ' + (j.state.lastDurationMs/1000).toFixed(1) + 's';
+    if (j.lastRunTokens) html += ' &middot; ' + j.lastRunTokens.toLocaleString() + ' tok';
+    if (j.lastRunCostUsd) html += ' &middot; $' + j.lastRunCostUsd.toFixed(4);
     html += '</div>';
+    // Cost badges
+    var badges = '';
+    if (j.lastRunCostUsd && j.runHistory && j.runHistory.length > 1) {
+      var costs = j.runHistory.map(function(r){return r.costUsd||0;}).filter(function(c){return c>0;});
+      if (costs.length > 1) {
+        var avg = costs.slice(1).reduce(function(a,b){return a+b;},0)/(costs.length-1);
+        if (avg > 0 && j.lastRunCostUsd > avg*2) badges += '<span title="Cost spike: '+Math.round(j.lastRunCostUsd/avg)+'x above average" style="margin-left:6px;cursor:help;">&#x26A0;&#xFE0F;</span>';
+      }
+    }
+    if (j.lastRunTokens && j.lastRunTokens > 500 && j.state && j.state.lastStatus === 'ok') {
+      if (!j.runHistory || !j.runHistory.length) badges += '<span title="Possible idle spend: tokens used but check if output was produced" style="margin-left:4px;cursor:help;">&#x1F4B8;</span>';
+    }
+    if (badges) html += '<div style="display:inline;">' + badges + '</div>';
 
     // Action buttons
     html += '<div class="cron-actions" onclick="event.stopPropagation()">';
@@ -9130,25 +9209,78 @@ async function loadCronRuns(jobId) {
       el.innerHTML = '<div style="color:var(--text-muted);">No run history available</div>';
       return;
     }
-    var h = '<div style="font-weight:600;margin-bottom:8px;">Run History (last ' + runs.length + ')</div>';
+    // Build calendar heatmap (last 30 days)
+    var now = Date.now();
+    var days = 30;
+    var dayMap = {};
+    runs.forEach(function(r){
+      var d = new Date(r.startedAt||r.ts);
+      var key = d.toISOString().slice(0,10);
+      if(!dayMap[key]) dayMap[key]={status:r.status,cost:r.costUsd||0,count:1};
+      else { dayMap[key].count++; dayMap[key].cost+=r.costUsd||0; if(r.status==='error') dayMap[key].status='error'; }
+    });
+    var cal = '<div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:12px;">';
+    for(var di=days-1;di>=0;di--){
+      var dd=new Date(now-di*86400000);
+      var dk=dd.toISOString().slice(0,10);
+      var dm=dayMap[dk];
+      var col=dm?(dm.status==='error'?'#f87171':(dm.cost>0.05?'#fbbf24':'#4ade80')):'#2a2a2a';
+      var tip=dk+(dm?' - '+dm.count+' run(s)'+(dm.cost?' $'+dm.cost.toFixed(4):''):'');
+      cal+='<div title="'+tip+'" style="width:14px;height:14px;border-radius:2px;background:'+col+';cursor:default;"></div>';
+    }
+    cal+='</div>';
+    var h = cal + '<div style="font-weight:600;margin-bottom:8px;">Run History (last ' + runs.length + ')</div>';
     runs.forEach(function(r) {
       var statusCls = r.status === 'ok' ? 'run-status-ok' : 'run-status-error';
       var dur = r.durationMs ? ' - ' + (r.durationMs/1000).toFixed(1) + 's' : '';
+      var cost = r.costUsd ? ' - $'+r.costUsd.toFixed(4) : '';
+      var tok = r.tokens ? ' - '+r.tokens.toLocaleString()+' tok' : '';
+      var sid = r.sessionFile ? r.sessionFile.replace('.jsonl','') : '';
       h += '<div class="run-entry">';
-      h += '<span>' + new Date(r.startedAt || r.ts).toLocaleString() + dur + '</span>';
+      h += '<span>' + new Date(r.startedAt || r.ts).toLocaleString() + dur + tok + cost + '</span>';
       h += '<span class="' + statusCls + '">' + (r.status || 'unknown') + '</span>';
+      if(sid) h += '<button data-sid="' + sid.replace(/"/g,'') + '" onclick="loadCronLog(event,this.dataset.sid)" style="margin-left:8px;padding:2px 8px;font-size:11px;border-radius:4px;border:1px solid var(--border-secondary);background:var(--bg-secondary);color:var(--text-muted);cursor:pointer;">View log</button>';
       h += '</div>';
       if (r.status === 'error' && r.error) {
         h += '<div style="color:var(--text-error);font-size:11px;padding:2px 0 4px 8px;border-left:2px solid var(--text-error);margin-left:4px;">' + escHtml(r.error).substring(0,200) + '</div>';
-      }
-      if (r.output) {
-        h += '<div style="font-size:11px;padding:2px 0 4px 8px;border-left:2px solid var(--border-secondary);margin-left:4px;color:var(--text-muted);white-space:pre-wrap;max-height:80px;overflow:auto;">' + escHtml(typeof r.output === 'string' ? r.output : JSON.stringify(r.output)).substring(0,500) + '</div>';
       }
     });
     el.innerHTML = h;
   } catch(e) {
     var el = document.getElementById('cron-runs-' + jobId);
     if (el) el.innerHTML = '<div style="color:var(--text-error);">Failed to load runs</div>';
+  }
+}
+
+function _closeCronLog() { var m = document.getElementById('cron-log-modal'); if (m) m.remove(); }
+async function loadCronLog(evt, sessionId) {
+  if(evt) evt.stopPropagation();
+  var existing = document.getElementById('cron-log-modal');
+  if(existing) existing.remove();
+  var modal = document.createElement('div');
+  modal.id = 'cron-log-modal';
+  modal.setAttribute('style','position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:9998;display:flex;align-items:center;justify-content:center;');
+  modal.onclick = function(e){ if(e.target===modal) modal.remove(); };
+  var inner = document.createElement('div');
+  inner.setAttribute('style','background:var(--bg-primary);border-radius:12px;width:85vw;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;padding:0;');
+  inner.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border-secondary);">'
+    + '<span style="font-weight:700;font-size:14px;">Session log</span>'
+    + '<button onclick="_closeCronLog()" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;line-height:1;">×</button>'
+    + '</div>'
+    + '<div id="cron-log-content" style="overflow:auto;padding:16px;font-family:SF Mono,Fira Code,monospace;font-size:12px;white-space:pre-wrap;color:var(--text-secondary);flex:1;">Loading...</div>';
+  modal.appendChild(inner);
+  document.body.appendChild(modal);
+  try {
+    var data = await fetch('/api/cron-run-log?session_id=' + encodeURIComponent(sessionId)).then(function(r){ return r.json(); });
+    var lines = data.events || [];
+    var out = lines.map(function(ev) {
+      var role = (ev.role || ev.type || '').toUpperCase();
+      var text = ev.text || ev.content || ev.summary || ev.tool || '';
+      return '[' + (ev.ts || '').substring(11,19) + '] ' + role + ': ' + String(text).substring(0,200);
+    }).join('\n');
+    document.getElementById('cron-log-content').textContent = out || 'No events found';
+  } catch(ex) {
+    document.getElementById('cron-log-content').textContent = 'Error: ' + ex.message;
   }
 }
 
@@ -9409,7 +9541,7 @@ async function loadMCTasks() {
     cols.forEach(function(c, i) {
       if (i > 0) html += '<span style="color:var(--text-faint);font-size:12px;margin:0 2px;">│</span>';
       var active = _mcExpanded === c.key ? 'outline:2px solid '+c.color+';outline-offset:-2px;' : '';
-      html += '<span onclick="toggleMCColumn(\''+c.key+'\')" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:16px;background:'+c.bg+';'+active+'transition:all 0.15s;">';
+      html += '<span data-col-key="'+c.key+'" onclick="toggleMCColumn(this.dataset.colKey)" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:16px;background:'+c.bg+';'+active+'transition:all 0.15s;">';
       html += '<span style="font-size:12px;">'+c.icon+'</span>';
       html += '<span style="font-size:11px;color:var(--text-secondary);">'+c.label+'</span>';
       html += '<span style="font-size:12px;font-weight:700;color:'+c.color+';min-width:16px;text-align:center;">'+c.tasks.length+'</span>';
@@ -9436,7 +9568,7 @@ function toggleMCColumn(key) {
     cols.forEach(function(c, i) {
       if (i > 0) html += '<span style="color:var(--text-faint);font-size:12px;margin:0 2px;">│</span>';
       var active = _mcExpanded === c.key ? 'outline:2px solid '+c.color+';outline-offset:-2px;' : '';
-      html += '<span onclick="toggleMCColumn(\''+c.key+'\')" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:16px;background:'+c.bg+';'+active+'transition:all 0.15s;">';
+      html += '<span data-col-key="'+c.key+'" onclick="toggleMCColumn(this.dataset.colKey)" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:16px;background:'+c.bg+';'+active+'transition:all 0.15s;">';
       html += '<span style="font-size:12px;">'+c.icon+'</span>';
       html += '<span style="font-size:11px;color:var(--text-secondary);">'+c.label+'</span>';
       html += '<span style="font-size:12px;font-weight:700;color:'+c.color+';min-width:16px;text-align:center;">'+c.tasks.length+'</span>';
@@ -13357,10 +13489,32 @@ def _gw_ws_rpc(method, params=None):
 def _load_gw_config():
     """Load gateway config from globals, env, or file."""
     global GATEWAY_URL, GATEWAY_TOKEN
-    # Already set via CLI/env/auto-detect
+    # 1. Auto-detect from live gateway config (most authoritative)
+    token = _detect_gateway_token()
+    port = _detect_gateway_port()
+    if token:
+        GATEWAY_TOKEN = token
+        if not GATEWAY_URL:
+            GATEWAY_URL = f'http://127.0.0.1:{port}'
+        # Update cache file with fresh token
+        try:
+            cache = {}
+            try:
+                with open(_GW_CONFIG_FILE) as f:
+                    cache = json.load(f)
+            except Exception:
+                pass
+            cache['token'] = token
+            cache['url'] = GATEWAY_URL or f'http://127.0.0.1:{port}'
+            with open(_GW_CONFIG_FILE, 'w') as f:
+                json.dump(cache, f)
+        except Exception:
+            pass
+        return {'url': GATEWAY_URL, 'token': GATEWAY_TOKEN}
+    # 2. Already set via CLI/env
     if GATEWAY_URL and GATEWAY_TOKEN:
         return {'url': GATEWAY_URL, 'token': GATEWAY_TOKEN}
-    # Try config file
+    # 3. Fallback to cache file
     try:
         with open(_GW_CONFIG_FILE) as f:
             cfg = json.load(f)
@@ -13369,13 +13523,6 @@ def _load_gw_config():
             return cfg
     except Exception:
         pass
-    # Auto-detect from environment/process
-    token = _detect_gateway_token()
-    port = _detect_gateway_port()
-    if token:
-        GATEWAY_TOKEN = token
-        GATEWAY_URL = f'http://127.0.0.1:{port}'
-        return {'url': GATEWAY_URL, 'token': GATEWAY_TOKEN}
     return {}
 
 
@@ -14744,6 +14891,21 @@ FLEET_HTML = r"""
   -d '{"node_id":"my-node","name":"My Agent"}' http://THIS_HOST/api/nodes/register</code></p>
 </div>
 <script>
+window.onerror = function(msg, src, line, col, err) {
+  if(window._jsErrSent) return;
+  window._jsErrSent = true;
+  var nid = (localStorage.getItem('cm_node_id') || '');
+  fetch('/api/js-error', {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({message:msg, source:src, lineno:line, colno:col, stack:err?err.stack:'', url:location.href, node_id:nid})
+  }).catch(function(){});
+};
+window.addEventListener('unhandledrejection', function(e){
+  if(window._jsErrSent) return;
+  window._jsErrSent = true;
+  fetch('/api/js-error', {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({message: e.reason ? String(e.reason) : 'unhandledrejection', source:'promise', lineno:0, colno:0, stack:'', url:location.href, node_id:(localStorage.getItem('cm_node_id')||'')})
+  }).catch(function(){});
+});
 let allNodes = [];
 async function load() {
   const r = await fetch('/api/nodes');

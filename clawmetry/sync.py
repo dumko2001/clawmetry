@@ -33,15 +33,38 @@ STREAM_INTERVAL = 2   # seconds between real-time stream pushes
 BATCH_SIZE    = 10    # events per encrypted POST
 
 CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [clawmetry-sync] %(levelname)s %(message)s",
-    handlers=[
-        logging.StreamHandler(sys.stdout),
-        logging.FileHandler(str(LOG_FILE), encoding="utf-8"),
-    ],
-)
-log = logging.getLogger("clawmetry.sync")
+log = logging.getLogger("clawmetry-sync")
+log.setLevel(logging.INFO)
+if not log.handlers:
+    _fmt = logging.Formatter("%(asctime)s [clawmetry-sync] %(levelname)s %(message)s")
+    # Detect if stdout is already redirected to our log file (e.g. launchd).
+    # In that case, only use StreamHandler to avoid duplicate lines.
+    _stdout_is_log = False
+    try:
+        import os as _os
+        if hasattr(sys.stdout, "fileno"):
+            _stdout_is_log = _os.path.samefile(
+                _os.fstat(sys.stdout.fileno()).st_ino and f"/proc/self/fd/{sys.stdout.fileno()}" or "",
+                str(LOG_FILE),
+            ) if _os.path.exists(str(LOG_FILE)) else False
+    except Exception:
+        try:
+            _stdout_stat = _os.fstat(sys.stdout.fileno())
+            _log_stat = _os.stat(str(LOG_FILE))
+            _stdout_is_log = (_stdout_stat.st_dev == _log_stat.st_dev and _stdout_stat.st_ino == _log_stat.st_ino)
+        except Exception:
+            pass
+    _sh = logging.StreamHandler(sys.stdout)
+    _sh.setFormatter(_fmt)
+    log.addHandler(_sh)
+    if not _stdout_is_log:
+        try:
+            _fh = logging.FileHandler(str(LOG_FILE), encoding="utf-8")
+            _fh.setFormatter(_fmt)
+            log.addHandler(_fh)
+        except Exception:
+            pass
+    log.propagate = False
 
 
 # ── Encryption (AES-256-GCM) ─────────────────────────────────────────────────
@@ -133,8 +156,109 @@ def _post(path: str, payload: dict, api_key: str, timeout: int = 45) -> dict:
         raise RuntimeError(f"HTTP {e.code} from {url}: {e.read().decode()[:200]}")
 
 
-def validate_key(api_key: str) -> dict:
-    return _post("/auth", {"api_key": api_key}, api_key)
+def _get_machine_id() -> str:
+    """Stable unique machine identifier (survives reboots and hostname changes)."""
+    import uuid as _uuid_mod, hashlib as _hl, subprocess as _sp
+    # macOS: IOPlatformUUID
+    if platform.system() == "Darwin":
+        try:
+            r = _sp.run(["ioreg", "-rd1", "-c", "IOPlatformExpertDevice"],
+                        capture_output=True, text=True, timeout=3)
+            for line in r.stdout.splitlines():
+                if "IOPlatformUUID" in line:
+                    parts = line.split('"')
+                    if len(parts) >= 2:
+                        return parts[-2]
+        except Exception:
+            pass
+    # Linux: /etc/machine-id
+    for p in ["/etc/machine-id", "/var/lib/dbus/machine-id"]:
+        try:
+            mid = open(p).read().strip()
+            if mid and len(mid) > 8:
+                return mid
+        except Exception:
+            pass
+    # Fallback: stable hash of MAC address
+    mac = _uuid_mod.getnode()
+    return _hl.sha256(str(mac).encode()).hexdigest()[:32]
+
+
+def _get_node_metadata() -> dict:
+    """Collect rich physical node info for multi-node fleet management."""
+    import socket as _sock, multiprocessing as _mp
+    meta = {
+        "machine_id": _get_machine_id(),
+        "hostname": _sock.gethostname(),
+        "os": platform.system(),
+        "os_version": platform.version()[:120],
+        "os_release": platform.release(),
+        "arch": platform.machine(),
+        "processor": platform.processor()[:80] or platform.machine(),
+        "python": platform.python_version(),
+    }
+    # CPU count
+    try:
+        meta["cpu_count"] = _mp.cpu_count()
+    except Exception:
+        pass
+    # RAM
+    try:
+        with open("/proc/meminfo") as f:
+            for line in f:
+                if line.startswith("MemTotal:"):
+                    meta["ram_gb"] = round(int(line.split()[1]) / 1024 / 1024, 1)
+                    break
+    except Exception:
+        try:
+            import subprocess as _sp2
+            r = _sp2.run(["sysctl", "-n", "hw.memsize"], capture_output=True, text=True, timeout=3)
+            if r.returncode == 0:
+                meta["ram_gb"] = round(int(r.stdout.strip()) / 1024 ** 3, 1)
+        except Exception:
+            pass
+    # Local IPs
+    try:
+        ips = set()
+        try:
+            infos = _sock.getaddrinfo(_sock.gethostname(), None)
+            for info in infos:
+                ip = info[4][0]
+                if not ip.startswith("127.") and ":" not in ip:
+                    ips.add(ip)
+        except Exception:
+            pass
+        if not ips:
+            s2 = _sock.socket(_sock.AF_INET, _sock.SOCK_DGRAM)
+            s2.connect(("8.8.8.8", 80))
+            ips.add(s2.getsockname()[0])
+            s2.close()
+        meta["local_ips"] = sorted(ips)
+    except Exception:
+        meta["local_ips"] = []
+    # MAC address
+    try:
+        import uuid as _u2
+        mac = _u2.getnode()
+        meta["mac"] = ":".join(f"{(mac >> i) & 0xff:02x}" for i in range(40, -1, -8))
+    except Exception:
+        pass
+    # clawmetry version
+    meta["clawmetry_version"] = _get_version()
+    return meta
+
+
+def validate_key(api_key: str, hostname: str = "", existing_node_id: str = "") -> dict:
+    meta = _get_node_metadata()
+    if hostname:
+        meta["hostname"] = hostname  # CLI override takes priority
+    return _post("/auth", {
+        "api_key": api_key,
+        "hostname": meta["hostname"],
+        "machine_id": meta["machine_id"],
+        "node_meta": meta,
+        "existing_node_id": existing_node_id,
+    }, api_key)
 
 
 # ── Path detection ─────────────────────────────────────────────────────────────
@@ -421,17 +545,80 @@ def _flush_log_batch(entries: list, fname: str, api_key: str,
 
 # ── Heartbeat ─────────────────────────────────────────────────────────────────
 
+def _check_node_commands(config: dict) -> None:
+    """Poll Turso for pending commands (update, set_auto_update)."""
+    api_key = config.get("api_key", "")
+    node_id = config.get("node_id", "")
+    if not api_key or not node_id:
+        return
+    try:
+        resp = _post("/api/cloud/nodes/" + node_id + "/commands/pending",
+                     {}, api_key, timeout=6)
+        for cmd in resp.get("commands", []):
+            cmd_id = cmd.get("id", "")
+            action = cmd.get("action", "")
+            if action == "update":
+                import subprocess as _subp
+                log.info("[cmd] running self-update")
+                r = _subp.run(["pip3", "install", "--upgrade", "--quiet", "clawmetry"],
+                               capture_output=True, text=True, timeout=180)
+                status = "ok" if r.returncode == 0 else "error"
+                detail = (r.stdout + r.stderr).strip()[-300:]
+                log.info(f"[cmd] update {status}: {detail}")
+                _post("/api/cloud/nodes/" + node_id + "/commands/" + cmd_id + "/ack",
+                      {"status": status, "detail": detail}, api_key, timeout=6)
+                if status == "ok":
+                    import sys, os as _os
+                    log.info("[cmd] restarting daemon after update")
+                    _os.execv(sys.executable, [sys.executable] + sys.argv)
+            elif action == "set_auto_update":
+                _val = bool(cmd.get("value", False))
+                try:
+                    import json as _jx
+                    _cfg_data = json.loads(CONFIG_FILE.read_text())
+                    _cfg_data["auto_update"] = _val
+                    CONFIG_FILE.write_text(json.dumps(_cfg_data, indent=2))
+                    config["auto_update"] = _val
+                except Exception:
+                    pass
+                _post("/api/cloud/nodes/" + node_id + "/commands/" + cmd_id + "/ack",
+                      {"status": "ok"}, api_key, timeout=6)
+            elif action == "set_encryption_key":
+                _new_key = cmd.get("value", "")
+                if _new_key:
+                    try:
+                        import json as _jxk
+                        _cfg_data = _jxk.loads(CONFIG_FILE.read_text())
+                        _cfg_data["encryption_key"] = _new_key
+                        CONFIG_FILE.write_text(_jxk.dumps(_cfg_data, indent=2))
+                        config["encryption_key"] = _new_key
+                        log.info("[cmd] encryption key rotated")
+                        _post("/api/cloud/nodes/" + node_id + "/commands/" + cmd_id + "/ack",
+                              {"status": "ok"}, api_key, timeout=6)
+                    except Exception as _kex:
+                        log.warning(f"[cmd] key rotation failed: {_kex}")
+                        _post("/api/cloud/nodes/" + node_id + "/commands/" + cmd_id + "/ack",
+                              {"status": "error", "detail": str(_kex)}, api_key, timeout=6)
+    except Exception:
+        pass  # non-critical
+
+
 def send_heartbeat(config: dict) -> None:
     try:
+        _meta = _get_node_metadata()
         _post("/ingest/heartbeat", {
             "node_id": config["node_id"],
             "ts": datetime.now(timezone.utc).isoformat(),
             "platform": platform.system(),
             "version": _get_version(),
             "e2e": bool(config.get("encryption_key")),
+            "auto_update": config.get("auto_update", False),
+            "node_meta": _meta,
         }, config["api_key"])
     except Exception as e:
         log.debug(f"Heartbeat failed: {e}")
+    # Poll for pending commands on every heartbeat
+    _check_node_commands(config)
 
 
 def _get_version() -> str:
@@ -590,7 +777,14 @@ def sync_memory(config: dict, state: dict, paths: dict) -> int:
     api_key   = config["api_key"]
     enc_key   = config.get("encryption_key")
     node_id   = config["node_id"]
+    import hashlib as _hlm
+    _ek_hash = _hlm.sha256(enc_key.encode()).hexdigest()[:16] if enc_key else ""
+    if _ek_hash and state.get("_encryption_key_hash","") != _ek_hash:
+        # Key changed since state was last written — clear hashes
+        state["memory_hashes"] = {}
+        state["_encryption_key_hash"] = _ek_hash
     last_hashes: dict = state.setdefault("memory_hashes", {})
+
     synced = 0
 
     # Collect all workspace memory files (same list as OSS dashboard)
@@ -651,6 +845,748 @@ def sync_memory(config: dict, state: dict, paths: dict) -> int:
 
 
 # ── Real-time log streaming ────────────────────────────────────────────────────
+
+
+
+    """Build memory file list for the Memory popup."""
+
+
+
+def _build_machine_info():
+    """Build machine hardware info for the Machine popup."""
+    try:
+        import platform, subprocess, socket
+        items = []
+        items.append({"label": "Hostname", "value": socket.gethostname(), "status": "ok"})
+        # IP
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))
+            ip = s.getsockname()[0]
+            s.close()
+            items.append({"label": "IP", "value": ip, "status": "ok"})
+        except Exception:
+            items.append({"label": "IP", "value": "unknown", "status": "warning"})
+        # CPU
+        items.append({"label": "CPU", "value": platform.machine(), "status": "ok"})
+        # CPU Cores
+        try:
+            import multiprocessing
+            items.append({"label": "CPU Cores", "value": str(multiprocessing.cpu_count()), "status": "ok"})
+        except Exception:
+            pass
+        # Load average
+        try:
+            load = os.getloadavg()
+            items.append({"label": "Load (1/5/15m)", "value": f"{load[0]:.2f} / {load[1]:.2f} / {load[2]:.2f}", "status": "ok"})
+        except Exception:
+            pass
+        # GPU
+        try:
+            gpu = subprocess.check_output(["nvidia-smi", "--query-gpu=name", "--format=csv,noheader"], timeout=5).decode().strip()
+            items.append({"label": "GPU", "value": gpu, "status": "ok"})
+        except Exception:
+            items.append({"label": "GPU", "value": "N/A (no nvidia-smi)", "status": "ok"})
+        # Kernel
+        items.append({"label": "Kernel", "value": platform.release(), "status": "ok"})
+        return {"items": items}
+    except Exception as e:
+        log.warning(f"Machine info error: {e}")
+        return {"items": []}
+
+def _build_runtime_info():
+    """Build runtime environment info for the Runtime popup."""
+    try:
+        import platform, subprocess
+        items = []
+        items.append({"label": "Python", "value": platform.python_version(), "status": "ok"})
+        items.append({"label": "OS", "value": f"{platform.system()} {platform.release()}", "status": "ok"})
+        items.append({"label": "Architecture", "value": platform.machine(), "status": "ok"})
+        # OpenClaw version
+        try:
+            oc_ver = subprocess.check_output(["openclaw", "--version"], stderr=subprocess.STDOUT, timeout=5).decode().strip()
+            items.append({"label": "OpenClaw", "value": oc_ver, "status": "ok"})
+        except Exception:
+            items.append({"label": "OpenClaw", "value": "unknown", "status": "warning"})
+        # Disk /
+        try:
+            df = subprocess.check_output(["df", "-h", "/"], timeout=5).decode().strip().split("\n")
+            if len(df) >= 2:
+                parts = df[1].split()
+                pct = int(parts[4].replace("%", ""))
+                st = "critical" if pct > 90 else "warning" if pct > 80 else "ok"
+                items.append({"label": "Disk /", "value": f"{parts[2]} / {parts[1]} ({parts[4]} used)", "status": st})
+        except Exception:
+            pass
+        # Node.js
+        try:
+            nv = subprocess.check_output(["node", "--version"], timeout=5).decode().strip()
+            items.append({"label": "Node.js", "value": nv, "status": "ok"})
+        except Exception:
+            pass
+        return {"items": items}
+    except Exception as e:
+        log.warning(f"Runtime info error: {e}")
+        return {"items": []}
+
+def _build_memory_files(workspace):
+    """Build memory file list for the Memory popup."""
+    if not workspace or not os.path.isdir(workspace):
+        return []
+    files = []
+    for name in ["MEMORY.md", "SOUL.md", "IDENTITY.md", "USER.md", "AGENTS.md", "TOOLS.md", "HEARTBEAT.md"]:
+        fpath = os.path.join(workspace, name)
+        if os.path.isfile(fpath):
+            try:
+                st = os.stat(fpath)
+                files.append({"name": name, "size": st.st_size, "modified": st.st_mtime})
+            except Exception:
+                pass
+    mem_dir = os.path.join(workspace, "memory")
+    if os.path.isdir(mem_dir):
+        for f in sorted(os.listdir(mem_dir)):
+            if f.endswith(".md"):
+                fpath = os.path.join(mem_dir, f)
+                try:
+                    st = os.stat(fpath)
+                    files.append({"name": f"memory/{f}", "size": st.st_size, "modified": st.st_mtime})
+                except Exception:
+                    pass
+    return files
+
+def _build_brain_data():
+    """Build LLM call data for the Brain/AI Model popup."""
+    try:
+        import collections
+        home = str(Path.home())
+        session_dir = os.path.join(home, ".openclaw", "agents", "main", "sessions")
+        if not os.path.isdir(session_dir):
+            return {"stats": {}, "calls": []}
+
+        calls = []
+        total_cost = 0.0
+        total_tokens_in = 0
+        total_tokens_out = 0
+        total_cache_read = 0
+        total_cache_write = 0
+        total_duration = 0
+        thinking_calls = 0
+        cache_hit_calls = 0
+        model_name = "unknown"
+
+        today = datetime.now().strftime("%Y-%m-%d")
+
+        files = sorted(glob.glob(os.path.join(session_dir, "*.jsonl")), key=os.path.getmtime, reverse=True)[:20]
+
+        for fp in files:
+            try:
+                session_name = os.path.basename(fp).split(".")[0][:12]
+                for line_raw in open(fp, errors="ignore"):
+                    try:
+                        ev = json.loads(line_raw)
+                        if ev.get("type") != "message":
+                            continue
+                        msg = ev.get("message", {})
+                        role = msg.get("role", "")
+                        if role != "assistant":
+                            continue
+
+                        usage = msg.get("usage") or ev.get("usage") or {}
+                        if not usage:
+                            continue
+
+                        ts = ev.get("timestamp", "")
+                        if not ts or today not in ts[:10]:
+                            continue
+
+                        tok_in = usage.get("inputTokens", 0) or usage.get("input_tokens", 0) or 0
+                        tok_out = usage.get("outputTokens", 0) or usage.get("output_tokens", 0) or 0
+                        cr = usage.get("cacheReadInputTokens", 0) or usage.get("cache_read_input_tokens", 0) or 0
+                        cw = usage.get("cacheCreationInputTokens", 0) or usage.get("cache_creation_input_tokens", 0) or 0
+
+                        cost = (tok_in * 15 + tok_out * 75 + cr * 1.5 + cw * 18.75) / 1_000_000
+                        dur_ms = int(ev.get("durationMs", 0) or ev.get("duration_ms", 0) or 0)
+
+                        has_thinking = False
+                        tools_used = []
+                        if isinstance(msg.get("content"), list):
+                            for c in msg["content"]:
+                                if c.get("type") == "thinking":
+                                    has_thinking = True
+                                elif c.get("type") == "toolCall":
+                                    tn = c.get("name", "")
+                                    if tn and tn not in tools_used:
+                                        tools_used.append(tn)
+
+                        m = msg.get("model") or ev.get("model") or ""
+                        if m and m != "unknown":
+                            model_name = m.split("/")[-1] if "/" in m else m
+
+                        total_tokens_in += tok_in
+                        total_tokens_out += tok_out
+                        total_cache_read += cr
+                        total_cache_write += cw
+                        total_cost += cost
+                        total_duration += dur_ms
+                        if has_thinking:
+                            thinking_calls += 1
+                        if cr > 0:
+                            cache_hit_calls += 1
+
+                        calls.append({
+                            "timestamp": ts,
+                            "session": session_name,
+                            "tokens_in": tok_in,
+                            "tokens_out": tok_out,
+                            "cost": "$" + format(cost, ".4f"),
+                            "duration_ms": dur_ms,
+                            "thinking": has_thinking,
+                            "cache_read": cr,
+                            "tools_used": tools_used[:5],
+                        })
+                    except Exception:
+                        continue
+            except Exception:
+                continue
+
+        calls.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+        calls = calls[:100]
+
+        n = len(calls)
+        avg_ms = int(total_duration / n) if n > 0 else 0
+
+        stats = {
+            "model": model_name,
+            "today_calls": n,
+            "today_cost": "$" + format(total_cost, ".2f"),
+            "avg_response_ms": avg_ms,
+            "thinking_calls": thinking_calls,
+            "cache_hits": cache_hit_calls,
+            "today_tokens": {
+                "input": total_tokens_in,
+                "output": total_tokens_out,
+                "cache_read": total_cache_read,
+                "cache_write": total_cache_write,
+            },
+        }
+
+        return {"stats": stats, "calls": calls, "total": n}
+    except Exception as e:
+        log.warning(f"Brain data error: {e}")
+        return {"stats": {}, "calls": [], "total": 0}
+
+def _build_tool_stats():
+    """Build tool usage stats from recent session logs."""
+    try:
+        import collections, glob
+        home = str(Path.home())
+        session_dir = os.path.join(home, ".openclaw", "agents", "main", "sessions")
+        if not os.path.isdir(session_dir):
+            return {}
+        
+        tool_counts = collections.Counter()
+        tool_recent = {}  # tool_name -> last few entries
+        channel_msgs = collections.defaultdict(lambda: {"in": 0, "out": 0, "messages": []})
+        
+        today = datetime.now().strftime("%Y-%m-%d")
+        
+        # Read last 20 active sessions
+        files = sorted(glob.glob(os.path.join(session_dir, "*.jsonl")), key=os.path.getmtime, reverse=True)[:20]
+        
+        for fp in files:
+            try:
+                for line in open(fp, errors="ignore"):
+                    try:
+                        ev = json.loads(line)
+                        if ev.get("type") != "message":
+                            continue
+                        msg = ev.get("message", {})
+                        ts = ev.get("timestamp", "")
+                        role = msg.get("role", "")
+                        
+                        if isinstance(msg.get("content"), list):
+                            for c in msg["content"]:
+                                if c.get("type") == "toolCall":
+                                    name = c.get("name", "?")
+                                    tool_counts[name] += 1
+                                    args = c.get("arguments", {}) or c.get("input", {}) or c.get("args", {}) or {}
+                                    if isinstance(args, str):
+                                        try: args = json.loads(args)
+                                        except: args = {}
+                                    
+                                    # Track recent entries for specific tools
+                                    if name == "web_search":
+                                        q = args.get("query", "")
+                                        if q and name not in tool_recent:
+                                            tool_recent[name] = []
+                                        if q:
+                                            tool_recent.setdefault(name, []).append({"query": q[:200], "ts": ts})
+                                    elif name == "web_fetch":
+                                        url = args.get("url", "")
+                                        if url:
+                                            tool_recent.setdefault(name, []).append({"url": url[:200], "ts": ts})
+                                    elif name == "browser":
+                                        action = args.get("action", "")
+                                        url = args.get("url", "")
+                                        tool_recent.setdefault(name, []).append({"action": action, "url": url[:200] if url else "", "ts": ts})
+                                    elif name == "exec":
+                                        cmd = args.get("command", "")
+                                        if cmd:
+                                            tool_recent.setdefault(name, []).append({"command": cmd[:300], "ts": ts})
+                                    elif name == "message":
+                                        target = args.get("target", "") or args.get("channel", "")
+                                        tool_recent.setdefault(name, []).append({"target": target, "ts": ts})
+                        
+                        # Track channel messages from inbound context
+                        if role == "user":
+                            text = ""
+                            if isinstance(msg.get("content"), str):
+                                text = msg["content"][:300]
+                            elif isinstance(msg.get("content"), list):
+                                for c in msg["content"]:
+                                    if c.get("type") == "text":
+                                        text = c.get("text", "")[:300]
+                                        break
+                            
+                            # Try to detect channel from metadata
+                            meta = ev.get("metadata", {}) or {}
+                            channel = meta.get("channel", "") or meta.get("surface", "")
+                            if channel and text:
+                                channel_msgs[channel]["in"] += 1
+                                channel_msgs[channel]["messages"].append({
+                                    "direction": "in", "content": text[:200],
+                                    "timestamp": ts, "sender": meta.get("sender", "User")
+                                })
+                    except Exception:
+                        continue
+            except Exception:
+                continue
+        
+        # Cap recent entries
+        for name in tool_recent:
+            tool_recent[name] = tool_recent[name][-30:]
+            tool_recent[name].reverse()
+        
+        for ch in channel_msgs:
+            channel_msgs[ch]["messages"] = channel_msgs[ch]["messages"][-30:]
+            channel_msgs[ch]["messages"].reverse()
+        
+        return {
+            "counts": dict(tool_counts.most_common(30)),
+            "recent": {k: v for k, v in tool_recent.items()},
+            "channelMsgs": dict(channel_msgs),
+        }
+    except Exception as e:
+        log.warning(f"Tool stats error: {e}")
+        return {}
+
+def _build_channel_list(config):
+    """Build list of configured channels."""
+    try:
+        home = str(Path.home())
+        oc_config = os.path.join(home, ".openclaw", "openclaw.json")
+        if not os.path.isfile(oc_config):
+            return []
+        data = json.load(open(oc_config))
+        channels = []
+        ch_section = data.get("channels", {})
+        if isinstance(ch_section, dict):
+            for key in ch_section:
+                channels.append({"name": key, "enabled": True})
+        # Also check top-level channel keys
+        for key in ("telegram", "discord", "slack", "whatsapp", "signal", "irc", "webchat", "imessage"):
+            if key in data and key not in [c["name"] for c in channels]:
+                cfg = data[key]
+                if isinstance(cfg, dict):
+                    channels.append({"name": key, "enabled": cfg.get("enabled", True)})
+        return channels
+    except Exception:
+        return []
+
+
+
+def _build_channel_data(config):
+    """Build recent channel message data from OpenClaw log files."""
+    import re as _re
+    try:
+        home = str(Path.home())
+        log_dir = "/tmp/openclaw" if sys.platform != "win32" else os.path.join(home, ".openclaw", "logs")
+        if not os.path.isdir(log_dir):
+            return {}
+        
+        # Find recent log files
+        log_files = sorted(glob.glob(os.path.join(log_dir, "*.log")), reverse=True)[:2]
+        if not log_files:
+            return {}
+        
+        channels = {}
+        today = datetime.now().strftime("%Y-%m-%d")
+        
+        for lf in log_files:
+            try:
+                with open(lf, 'r', errors='ignore') as f:
+                    for line in f:
+                        if 'messageChannel=' not in line and 'telegram' not in line.lower():
+                            continue
+                        try:
+                            obj = json.loads(line)
+                        except Exception:
+                            continue
+                        msg1 = obj.get("1", "") or obj.get("0", "")
+                        ts = obj.get("time", "") or ""
+                        
+                        # Extract channel name
+                        ch_match = _re.search(r'messageChannel=(\w+)', msg1)
+                        if not ch_match:
+                            continue
+                        ch_name = ch_match.group(1).lower()
+                        
+                        if ch_name not in channels:
+                            channels[ch_name] = {"messages": [], "todayIn": 0, "todayOut": 0, "total": 0}
+                        
+                        # Determine direction
+                        direction = "in" if "run start" in msg1 else "out"
+                        if "deliver" in msg1.lower():
+                            direction = "out"
+                        
+                        # Extract content
+                        text = ""
+                        content_match = _re.search(r'content=(.{1,200}?)(?:\s+\w+=|$)', msg1)
+                        if content_match:
+                            text = content_match.group(1)[:200]
+                        
+                        channels[ch_name]["messages"].append({
+                            "direction": direction,
+                            "content": text,
+                            "timestamp": ts,
+                            "sender": "User" if direction == "in" else "Clawd",
+                        })
+                        channels[ch_name]["total"] += 1
+                        if today in ts:
+                            if direction == "in":
+                                channels[ch_name]["todayIn"] += 1
+                            else:
+                                channels[ch_name]["todayOut"] += 1
+            except Exception:
+                continue
+        
+        # Cap and reverse
+        for ch in channels.values():
+            ch["messages"] = ch["messages"][-30:]
+            ch["messages"].reverse()
+        
+        return channels
+    except Exception as e:
+        log.warning(f"Channel data error: {e}")
+        return {}
+
+
+
+
+def _correlate_cron_sessions(last_run_at_ms, session_dir, tolerance_s=90, max_runs=10):
+    """Find sessions that match cron run times and extract token/cost data."""
+    import glob as _g
+    results = []
+    if not last_run_at_ms or not os.path.isdir(session_dir):
+        return results
+    target_ts = last_run_at_ms / 1000.0
+    candidates = []
+    try:
+        for fpath in _g.glob(os.path.join(session_dir, "*.jsonl")):
+            try:
+                with open(fpath, errors="ignore") as f:
+                    first = f.readline()
+                if not first.strip():
+                    continue
+                ev = json.loads(first)
+                ts_str = ev.get("timestamp", "")
+                if not ts_str:
+                    continue
+                from datetime import datetime, timezone as _tz
+                dt = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
+                file_ts = dt.timestamp()
+                delta = abs(file_ts - target_ts)
+                candidates.append((delta, file_ts, fpath))
+            except Exception:
+                continue
+    except Exception:
+        return results
+    candidates.sort(key=lambda x: x[0])
+    for delta, file_ts, fpath in candidates[:1]:
+        if delta > tolerance_s:
+            break
+        total_in = 0
+        total_out = 0
+        cost_usd = None
+        model = None
+        try:
+            with open(fpath, errors="ignore") as f:
+                for line in f:
+                    try:
+                        ev = json.loads(line)
+                        if ev.get("type") == "summary":
+                            msg = ev.get("message", {})
+                            if msg.get("totalTokens"):
+                                total_in = msg["totalTokens"]
+                            if msg.get("costUsd"):
+                                cost_usd = float(msg["costUsd"])
+                        usage = ev.get("usage") or (ev.get("message") or {}).get("usage") or {}
+                        if usage:
+                            total_in += int(usage.get("input_tokens", 0) or 0)
+                            total_out += int(usage.get("output_tokens", 0) or 0)
+                        msg = ev.get("message", {})
+                        if msg.get("model") and not model:
+                            model = msg["model"]
+                    except Exception:
+                        continue
+        except Exception:
+            pass
+        total_tokens = total_in + total_out
+        results.append({
+            "ts": file_ts * 1000,
+            "tokens": total_tokens or None,
+            "costUsd": cost_usd,
+            "model": model,
+            "sessionFile": os.path.basename(fpath),
+        })
+    return results
+
+def _build_cron_jobs(paths):
+    """Build cron jobs list for snapshot."""
+    import json as _j2
+    home = str(Path.home())
+    cron_candidates = [
+        os.path.join(home, ".openclaw", "cron", "jobs.json"),
+        os.path.join(home, ".openclaw", "agents", "main", "cron", "jobs.json"),
+    ]
+    cron_file = next((p for p in cron_candidates if os.path.isfile(p)), None)
+    if not cron_file:
+        return []
+    try:
+        data = _j2.load(open(cron_file))
+        jobs = data.get("jobs", []) if isinstance(data, dict) else data
+        result = []
+        for j in jobs:
+            sched = j.get("schedule", {})
+            kind = sched.get("kind", "")
+            expr = sched.get("interval", "") if kind == "interval" else (
+                   f"at {sched.get('at', '')}" if kind == "at" else
+                   sched.get("cron", "") if kind == "cron" else "")
+            sched_obj = j.get("schedule", {})
+            state = j.get("state", {})
+            last_run_ms = state.get("lastRunAtMs")
+            session_dir = os.path.join(str(Path.home()), ".openclaw", "agents", "main", "sessions")
+            cost_info = _correlate_cron_sessions(last_run_ms, session_dir)
+            last_tokens = cost_info[0]["tokens"] if cost_info else None
+            last_cost = cost_info[0]["costUsd"] if cost_info else None
+            last_model = cost_info[0]["model"] if cost_info else None
+            result.append({
+                "id": j.get("id", ""),
+                "name": j.get("name", ""),
+                "enabled": j.get("enabled", True),
+                "schedule": sched_obj,
+                "task": j.get("task", "")[:200],
+                "state": state,
+                "lastRun": None,
+                "lastStatus": None,
+                "lastRunTokens": last_tokens,
+                "lastRunCostUsd": last_cost,
+                "lastRunModel": last_model,
+                "runHistory": cost_info,
+            })
+        return result
+    except Exception:
+        return []
+
+def sync_system_snapshot(config: dict, state: dict, paths: dict) -> int:
+    """Push system info + subagent data as encrypted snapshot."""
+    import subprocess, platform, json as _json
+    api_key = config["api_key"]
+    enc_key = config.get("encryption_key")
+    node_id = config["node_id"]
+    if not enc_key:
+        return 0
+
+    # System info
+    system = []
+    try:
+        disk = subprocess.run(["df", "-h", "/"], capture_output=True, text=True, timeout=5).stdout.strip().split("\n")[-1].split()
+        disk_pct = int(disk[4].replace("%", "")) if len(disk) > 4 else 0
+        disk_color = "green" if disk_pct < 80 else ("yellow" if disk_pct < 90 else "red")
+        system.append(["Disk /", f"{disk[2]} / {disk[1]} ({disk[4]})", disk_color])
+    except Exception:
+        system.append(["Disk /", "--", ""])
+    # Check for additional data drives
+    for extra_mount in ["/mnt/data-drive", "/data", "/mnt/data", "/home"]:
+        try:
+            ed = subprocess.run(["df", "-h", extra_mount], capture_output=True, text=True, timeout=3).stdout.strip().split("\n")[-1].split()
+            if len(ed) > 4 and ed[5] != "/":
+                ep = int(ed[4].replace("%", ""))
+                ec = "green" if ep < 80 else ("yellow" if ep < 90 else "red")
+                system.append([f"Disk {ed[5]}", f"{ed[2]} / {ed[1]} ({ed[4]})", ec])
+        except Exception:
+            pass
+
+    try:
+        if sys.platform == "darwin":
+            import re as _re
+            vm = subprocess.run(["vm_stat"], capture_output=True, text=True, timeout=5).stdout
+            pages = {m.group(1): int(m.group(2)) for m in _re.finditer(r'"(.+?)"\s*:\s*(\d+)', vm)}
+            page_size = 16384
+            used = (pages.get("Pages active", 0) + pages.get("Pages wired down", 0)) * page_size
+            total_raw = subprocess.run(["sysctl", "-n", "hw.memsize"], capture_output=True, text=True, timeout=5).stdout.strip()
+            total = int(total_raw) if total_raw else 0
+            system.append(["RAM", f"{used // (1024**3)}G / {total // (1024**3)}G", ""])
+        else:
+            mem = subprocess.run(["free", "-h"], capture_output=True, text=True, timeout=5).stdout.strip().split("\n")[1].split()
+            system.append(["RAM", f"{mem[2]} / {mem[1]}", ""])
+    except Exception:
+        system.append(["RAM", "--", ""])
+
+    try:
+        if sys.platform == "darwin":
+            up = subprocess.run(["uptime"], capture_output=True, text=True, timeout=5).stdout.strip()
+            system.append(["Uptime", up.split(",")[0].split("up")[-1].strip(), ""])
+        else:
+            up = subprocess.run(["uptime", "-p"], capture_output=True, text=True, timeout=5).stdout.strip()
+            system.append(["Uptime", up.replace("up ", ""), ""])
+    except Exception:
+        system.append(["Uptime", "--", ""])
+
+    # Gateway status
+    try:
+        gw = subprocess.run(["pgrep", "-f", "openclaw"], capture_output=True, text=True, timeout=5)
+        gw_running = gw.returncode == 0
+        system.append(["Gateway", "Running" if gw_running else "Stopped", "green" if gw_running else "red"])
+    except Exception:
+        system.append(["Gateway", "--", ""])
+
+    # Infra
+    uname = platform.uname()
+    infra = {
+        "machine": uname.node,
+        "runtime": f"Node.js - {uname.system} {uname.release.split('-')[0]}",
+        "storage": system[0][1] if system else "--",
+    }
+
+    # Session info
+    sessions_dir = paths.get("sessions_dir", "")
+    session_count = 0
+    model_name = ""
+    main_tokens = 0
+    subagents_list = []
+    active_count = 0
+
+    index_path = os.path.join(sessions_dir, "sessions.json") if sessions_dir else ""
+    if index_path and os.path.isfile(index_path):
+        try:
+            with open(index_path) as f:
+                index = _json.load(f)
+            now_ms = time.time() * 1000
+            for key, meta in index.items():
+                if not isinstance(meta, dict):
+                    continue
+                session_count += 1
+                if ":subagent:" in key:
+                    age_ms = now_ms - meta.get("updatedAt", 0)
+                    status = "active" if age_ms < 120000 else ("idle" if age_ms < 3600000 else "stale")
+                    if status == "active":
+                        active_count += 1
+                    subagents_list.append({
+                        "label": meta.get("label", key.split(":")[-1][:12]),
+                        "status": status,
+                        "model": meta.get("model", ""),
+                        "task": meta.get("task", "")[:100],
+                        "tokens": meta.get("totalTokens", 0),
+                        "sessionId": key.split(":")[-1],
+                        "key": key,
+                        "displayName": meta.get("label", meta.get("task", key.split(":")[-1][:12]))[:80],
+                        "updatedAt": meta.get("updatedAt", 0),
+                        "runtimeMs": int(now_ms - meta.get("createdAt", meta.get("updatedAt", now_ms))),
+                    })
+                elif "subagent" not in key:
+                    if not model_name:
+                        model_name = meta.get("model", "")
+                    main_tokens = max(main_tokens, meta.get("totalTokens", 0))
+        except Exception as e:
+            log.debug(f"Session index read error: {e}")
+
+    # Crons
+    cron_enabled = 0
+    cron_disabled = 0
+    try:
+        home = os.path.expanduser("~")
+        cron_candidates = [
+            os.path.join(home, ".openclaw", "cron", "jobs.json"),
+            os.path.join(home, ".openclaw", "agents", "main", "cron", "jobs.json"),
+            os.path.join(paths.get("workspace", ""), "..", "crons.json"),
+        ]
+        cron_path = next((p for p in cron_candidates if os.path.isfile(p)), None)
+        if cron_path:
+            cron_data = _json.load(open(cron_path))
+            crons = cron_data.get("jobs", cron_data) if isinstance(cron_data, dict) else cron_data
+            if isinstance(crons, list):
+                for c in crons:
+                    if c.get("enabled", True):
+                        cron_enabled += 1
+                    else:
+                        cron_disabled += 1
+    except Exception:
+        pass
+
+    # Memory files
+    _mem_files = _build_memory_files(paths.get("workspace", ""))
+
+    # Spending (from state if available)
+    spending = state.get("spending", {"today": 0, "week": 0, "month": 0})
+
+    payload = {
+        "system": system,
+        "infra": infra,
+        "model": model_name or "unknown",
+        "provider": "",
+        "sessionCount": session_count,
+        "mainTokens": main_tokens,
+        "contextWindow": 200000,
+        "cronCount": cron_enabled + cron_disabled,
+        "cronEnabled": cron_enabled,
+        "cronDisabled": cron_disabled,
+        "memoryCount": len(_mem_files),
+        "memorySize": sum(f.get("size", 0) for f in _mem_files),
+        "memoryFiles": _mem_files,
+        "subagents": subagents_list,
+        "subagentCounts": {"active": active_count, "idle": len([s for s in subagents_list if s["status"] == "idle"]),
+                           "stale": len([s for s in subagents_list if s["status"] == "stale"]), "total": len(subagents_list)},
+        "totalActive": active_count,
+        "spending": spending,
+        "cronJobs": _build_cron_jobs(paths),
+        "channels": _build_channel_data(config),
+        "toolStats": _build_tool_stats(),
+        "brainData": _build_brain_data(),
+        "runtimeInfo": _build_runtime_info(),
+        "machineInfo": _build_machine_info(),
+        "channelList": _build_channel_list(config),
+    }
+
+    log.info(f"System snapshot: {len(subagents_list)} subagents ({active_count} active)")
+
+    try:
+        _post("/ingest/system-snapshot", {
+            "node_id": node_id,
+            "encrypted": True,
+            "blob": encrypt_payload(payload, enc_key),
+        }, api_key)
+        return 1
+    except Exception as e:
+        log.warning(f"System snapshot sync error: {e}")
+        return 0
+
+
+# ── Real-time log streaming ────────────────────────────────────────────────────
+
+def start_log_streamer(config: dict, paths: dict) -> threading.Thread:
+    """Start a background thread that tails the local log file and POSTs lines to cloud in real-time."""
+
 
 def start_log_streamer(config: dict, paths: dict) -> threading.Thread:
     """Start a background thread that tails the local log file and POSTs lines to cloud in real-time."""
@@ -738,11 +1674,11 @@ def run_daemon() -> None:
     config = load_config()
     # If node_id looks like email prefix (contains + or @), use hostname instead
     nid = config.get("node_id", "")
-    if not nid or "+" in nid or "@" in nid:
+    if not nid:
         import socket
         config["node_id"] = socket.gethostname() or platform.node() or "unknown"
         save_config(config)
-        log.info(f"Fixed node_id: {nid!r} → {config['node_id']!r}")
+        log.info(f"Auto-set node_id:  → {config['node_id']!r}")
     paths  = detect_paths()
     enc    = "🔒 E2E encrypted" if config.get("encryption_key") else "⚠️  unencrypted"
     log.info(f"Starting sync daemon — node={config['node_id']} → {INGEST_URL} ({enc})")
@@ -751,9 +1687,51 @@ def run_daemon() -> None:
     send_heartbeat(config)
     log.info("Initial heartbeat sent")
 
-    first_run = not STATE_FILE.exists()
+    # ── Key rotation detection ───────────────────────────────────────────────
+    current_key = config.get("encryption_key", "")
+    _state_check = load_state()
+    last_key = _state_check.get("_encryption_key_hash", "")
+    import hashlib as _hl
+    current_key_hash = _hl.sha256(current_key.encode()).hexdigest()[:16] if current_key else ""
+    if current_key_hash and last_key and current_key_hash != last_key:
+        log.info("Encryption key rotation detected — clearing memory hash cache so files re-upload with new key")
+        _state_check["memory_hashes"] = {}
+        _state_check["_encryption_key_hash"] = current_key_hash
+        save_state(_state_check)
+    elif current_key_hash and not last_key:
+        _state_check["_encryption_key_hash"] = current_key_hash
+        save_state(_state_check)
+
+    # ── Multiple instance detection ──────────────────────────────────────────
+    import os as _os
+    _pid_file = CONFIG_DIR / "sync.pid"
+    _my_pid = str(_os.getpid())
+    if _pid_file.exists():
+        _old_pid = _pid_file.read_text().strip()
+        if _old_pid != _my_pid:
+            try:
+                _os.kill(int(_old_pid), 0)   # 0 = just check, no signal
+                log.warning(f"Another sync daemon is already running (PID {_old_pid}). "
+                            f"Multiple instances can cause key conflicts. "
+                            f"Stop the old instance with: kill {_old_pid}")
+            except (ProcessLookupError, ValueError):
+                pass   # old PID is gone, safe to continue
+    _pid_file.write_text(_my_pid)
+
+    # First run: either no state file, OR the account changed (new api_key)
+    _state_pre = load_state() if STATE_FILE.exists() else {}
+    import hashlib as _hr2
+    _cur_key_id = _hr2.sha256(config.get("api_key","").encode()).hexdigest()[:16]
+    _prev_key_id = _state_pre.get("_api_key_id","")
+    first_run = not STATE_FILE.exists() or (_cur_key_id and _prev_key_id and _cur_key_id != _prev_key_id)
     if first_run:
-        log.info("First run detected — performing full initial sync...")
+        if not STATE_FILE.exists():
+            log.info("First run detected — performing full initial sync...")
+        else:
+            log.info("New account detected — performing full initial sync...")
+        # Save new api_key_id so next connect with same account skips re-sync
+        _state_pre["_api_key_id"] = _cur_key_id
+        save_state(_state_pre)
         state = load_state()
         try:
             mem = sync_memory(config, state, paths)
@@ -781,9 +1759,18 @@ def run_daemon() -> None:
         except Exception as e:
             log.warning(f"  Cron sync error: {e}")
         state["last_sync"] = datetime.now(timezone.utc).isoformat()
+        state["_api_key_id"] = _cur_key_id
         save_state(state)
         send_heartbeat(config)
         log.info("Initial sync complete — node fully visible in cloud")
+
+    # Always sync session metadata on connect (fast, ensures Model/Sessions show correctly)
+    if not first_run:
+        try:
+            sm2 = sync_session_metadata(config)
+            log.info(f"Session metadata refreshed: {sm2} rows")
+        except Exception as e:
+            log.warning(f"Session metadata refresh error: {e}")
 
     # Start real-time log streamer in background
     start_log_streamer(config, paths)
@@ -799,6 +1786,7 @@ def run_daemon() -> None:
             mem = sync_memory(config, state, paths)
             crons = sync_crons(config, state, paths)
             sm = sync_session_metadata(config)
+            snap = sync_system_snapshot(config, state, paths)
             state["last_sync"] = datetime.now(timezone.utc).isoformat()
             save_state(state)
             if ev or lg or mem or crons or sm:
