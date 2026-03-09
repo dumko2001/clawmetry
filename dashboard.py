@@ -51,7 +51,7 @@ except ImportError:
     metrics_service_pb2 = None
     trace_service_pb2 = None
 
-__version__ = "0.9.18"
+__version__ = "0.9.19"
 
 # ── Turso Cloud Sync (optional) ─────────────────────────────────────────
 try:
@@ -2324,7 +2324,9 @@ DASHBOARD_HTML = r"""
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ClawMetry 🦞</title>
+<title>ClawMetry</title>
+<link rel="icon" href="/favicon.ico" type="image/x-icon">
+<link rel="icon" href="https://clawmetry.com/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -3112,7 +3114,7 @@ function clawmetryLogout(){
 </div>
 <div class="zoom-wrapper" id="zoom-wrapper">
 <div class="nav">
-  <h1><span>🦞</span> ClawMetry</h1>
+  <h1><a href="https://clawmetry.com" style="display:flex;align-items:center;gap:7px;text-decoration:none;color:inherit"><img src="https://clawmetry.com/favicon.svg" width="22" height="22" style="border-radius:4px;vertical-align:middle;flex-shrink:0" alt="ClawMetry"><span>Claw<span style="color:#E5443A">metry</span></span></a></h1>
   <div class="theme-toggle" onclick="var o=document.getElementById('gw-setup-overlay');o.dataset.mandatory='false';document.getElementById('gw-setup-close').style.display='';o.style.display='flex'" title="Gateway settings" style="cursor:pointer;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
   <!-- Alert Bell -->
   <button class="alert-bell-btn" id="alert-bell-btn" onclick="toggleAlertPanel()" title="Alerts">
@@ -3676,7 +3678,7 @@ function clawmetryLogout(){
     <div class="flow-stat"><span class="flow-stat-label">Tokens Used</span><span class="flow-stat-value" id="flow-tokens">&mdash;</span></div>
   </div>
   <div class="flow-container">
-    <svg id="flow-svg" viewBox="0 0 980 550" preserveAspectRatio="xMidYMid meet">
+    <svg id="flow-svg" viewBox="0 0 1020 570" preserveAspectRatio="xMidYMid meet">
       <defs>
         <pattern id="flow-grid" width="40" height="40" patternUnits="userSpaceOnUse">
           <path d="M 40 0 L 0 0 0 40" fill="none" stroke="var(--border-secondary)" stroke-width="0.5"/>
@@ -3816,51 +3818,51 @@ function clawmetryLogout(){
 
       <!-- Cost Optimizer -->
       <g class="flow-node flow-node-optimizer" id="node-cost-optimizer">
-        <rect x="680" y="370" width="145" height="44" rx="12" ry="12" fill="#2E7D32" stroke="#1B5E20" stroke-width="2" filter="url(#dropShadow)"/>
+        <rect x="670" y="418" width="140" height="38" rx="12" ry="12" fill="#2E7D32" stroke="#1B5E20" stroke-width="2" filter="url(#dropShadow)"/>
         <text x="752" y="389" style="font-size:12px;font-weight:700;fill:#ffffff;text-anchor:middle;">
-          <tspan x="752" dy="-5">&#x1F4B0; Cost</tspan>
-          <tspan x="752" dy="13">Optimizer</tspan>
+          <tspan x="740" dy="-5">&#x1F4B0; Cost</tspan>
+          <tspan x="740" dy="13">Optimizer</tspan>
         </text>
-        <circle class="tool-indicator" id="ind-cost-optimizer" cx="817" cy="378" r="5" fill="#66BB6A"/>
+        <circle class="tool-indicator" id="ind-cost-optimizer" cx="802" cy="426" r="5" fill="#66BB6A"/>
       </g>
 
       <!-- Automation Advisor -->
       <g class="flow-node flow-node-advisor" id="node-automation-advisor">
-        <rect x="835" y="370" width="145" height="44" rx="12" ry="12" fill="#7B1FA2" stroke="#4A148C" stroke-width="2" filter="url(#dropShadow)"/>
+        <rect x="820" y="418" width="148" height="38" rx="12" ry="12" fill="#7B1FA2" stroke="#4A148C" stroke-width="2" filter="url(#dropShadow)"/>
         <text x="907" y="389" style="font-size:12px;font-weight:700;fill:#ffffff;text-anchor:middle;">
-          <tspan x="907" dy="-5">&#x1F9E0; Automation</tspan>
-          <tspan x="907" dy="13">Advisor</tspan>
+          <tspan x="894" dy="-5">&#x1F9E0; Automation</tspan>
+          <tspan x="894" dy="13">Advisor</tspan>
         </text>
-        <circle class="tool-indicator" id="ind-automation-advisor" cx="972" cy="378" r="5" fill="#BA68C8"/>
+        <circle class="tool-indicator" id="ind-automation-advisor" cx="960" cy="426" r="5" fill="#BA68C8"/>
       </g>
 
       <!-- Infrastructure Layer -->
-      <line class="flow-ground" x1="20" y1="440" x2="970" y2="440"/>
-      <text class="flow-ground-label" x="400" y="438" style="text-anchor:middle;font-size:10px;">I N F R A S T R U C T U R E</text>
+      <line class="flow-ground" x1="20" y1="460" x2="1010" y2="460"/>
+      <text class="flow-ground-label" x="400" y="458" style="text-anchor:middle;font-size:10px;">I N F R A S T R U C T U R E</text>
 
       <g class="flow-node flow-node-infra flow-node-runtime" id="node-runtime">
-        <rect x="30" y="450" width="130" height="40" rx="8" ry="8" fill="#455A64" stroke="#37474F" filter="url(#dropShadowLight)"/>
-        <text x="95" y="466" style="font-size:13px;fill:#ffffff;font-weight:700;text-anchor:middle;">&#x2699;&#xFE0F; Runtime</text>
-        <text class="infra-sub" x="95" y="480" style="fill:#B0BEC5;font-size:8px;text-anchor:middle;" id="infra-runtime-text">Node.js · Linux</text>
+        <rect x="30" y="470" width="130" height="40" rx="8" ry="8" fill="#455A64" stroke="#37474F" filter="url(#dropShadowLight)"/>
+        <text x="95" y="486" style="font-size:13px;fill:#ffffff;font-weight:700;text-anchor:middle;">&#x2699;&#xFE0F; Runtime</text>
+        <text class="infra-sub" x="95" y="500" style="fill:#B0BEC5;font-size:8px;text-anchor:middle;" id="infra-runtime-text">Node.js · Linux</text>
       </g>
       <g class="flow-node flow-node-infra flow-node-machine" id="node-machine">
-        <rect x="195" y="450" width="130" height="40" rx="8" ry="8" fill="#4E342E" stroke="#3E2723" filter="url(#dropShadowLight)"/>
-        <text x="260" y="466" style="font-size:13px;fill:#ffffff;font-weight:700;text-anchor:middle;">&#x1F5A5;&#xFE0F; Machine</text>
-        <text class="infra-sub" x="260" y="480" style="fill:#BCAAA4;font-size:8px;text-anchor:middle;" id="infra-machine-text">Host</text>
+        <rect x="195" y="470" width="130" height="40" rx="8" ry="8" fill="#4E342E" stroke="#3E2723" filter="url(#dropShadowLight)"/>
+        <text x="260" y="486" style="font-size:13px;fill:#ffffff;font-weight:700;text-anchor:middle;">&#x1F5A5;&#xFE0F; Machine</text>
+        <text class="infra-sub" x="260" y="500" style="fill:#BCAAA4;font-size:8px;text-anchor:middle;" id="infra-machine-text">Host</text>
       </g>
       <g class="flow-node flow-node-infra flow-node-storage" id="node-storage">
-        <rect x="360" y="450" width="130" height="40" rx="8" ry="8" fill="#5D4037" stroke="#4E342E" filter="url(#dropShadowLight)"/>
-        <text x="425" y="466" style="font-size:13px;fill:#ffffff;font-weight:700;text-anchor:middle;">&#x1F4BF; Storage</text>
-        <text class="infra-sub" x="425" y="480" style="fill:#BCAAA4;font-size:8px;text-anchor:middle;" id="infra-storage-text">Disk</text>
+        <rect x="360" y="470" width="130" height="40" rx="8" ry="8" fill="#5D4037" stroke="#4E342E" filter="url(#dropShadowLight)"/>
+        <text x="425" y="486" style="font-size:13px;fill:#ffffff;font-weight:700;text-anchor:middle;">&#x1F4BF; Storage</text>
+        <text class="infra-sub" x="425" y="500" style="fill:#BCAAA4;font-size:8px;text-anchor:middle;" id="infra-storage-text">Disk</text>
       </g>
       <g class="flow-node flow-node-infra flow-node-network" id="node-network">
-        <rect x="525" y="450" width="130" height="40" rx="8" ry="8" fill="#004D40" stroke="#00332E" filter="url(#dropShadowLight)"/>
-        <text x="590" y="466" style="font-size:13px;fill:#ffffff;font-weight:700;text-anchor:middle;">&#x1F310; Network</text>
-        <text class="infra-sub" x="590" y="480" style="fill:#80CBC4;font-size:8px;text-anchor:middle;" id="infra-network-text">LAN</text>
+        <rect x="525" y="470" width="130" height="40" rx="8" ry="8" fill="#004D40" stroke="#00332E" filter="url(#dropShadowLight)"/>
+        <text x="590" y="486" style="font-size:13px;fill:#ffffff;font-weight:700;text-anchor:middle;">&#x1F310; Network</text>
+        <text class="infra-sub" x="590" y="500" style="fill:#80CBC4;font-size:8px;text-anchor:middle;" id="infra-network-text">LAN</text>
       </g>
 
       <!-- Legend -->
-      <g transform="translate(140, 510)">
+      <g transform="translate(140, 530)">
         <rect x="0" y="0" width="700" height="28" rx="14" ry="14" fill="var(--bg-tertiary)" stroke="var(--border-primary)" stroke-width="1" opacity="0.9"/>
         <text x="350" y="18" style="font-size:12px;font-weight:600;fill:var(--text-secondary);letter-spacing:1px;text-anchor:middle;">&#x1F4E8; Channels  &#x27A1;&#xFE0F;  🔀 Gateway  &#x27A1;&#xFE0F;  &#x1F9E0; AI Brain  &#x27A1;&#xFE0F;  &#x1F6E0;&#xFE0F; Tools</text>
       </g>
