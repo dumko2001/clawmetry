@@ -756,6 +756,140 @@ def _fire_alert(rule_id, alert_type, message, channels=None, details=None):
         print(f"Warning: Failed to dispatch to alert channels: {e}")
 
 
+# ── System Health Alert Engine ─────────────────────────────────────────
+
+_system_health_alert_cooldowns = {}  # alert_key -> last_fired_timestamp
+
+_SYSTEM_HEALTH_DEFAULTS = {
+    'disk_alert_pct': 90.0,        # Alert when any disk mount exceeds this %
+    'disk_warn_pct': 80.0,         # Warning level for disk
+    'memory_alert_pct': 90.0,      # Alert when RAM usage exceeds this %
+    'memory_warn_pct': 80.0,       # Warning level for memory
+    'service_down_alert': 1,       # Alert when a monitored service goes down
+    'cron_fail_alert': 1,          # Alert when a cron job fails
+    'system_alert_cooldown_min': 30,  # Minutes between repeated alerts for same issue
+}
+
+
+def _get_system_health_config():
+    """Get system health alert config from budget_config table with defaults."""
+    base = dict(_SYSTEM_HEALTH_DEFAULTS)
+    try:
+        cfg = _get_budget_config()
+        for k in _SYSTEM_HEALTH_DEFAULTS:
+            if k in cfg:
+                try:
+                    base[k] = float(cfg[k])
+                except (ValueError, TypeError):
+                    pass
+    except Exception:
+        pass
+    return base
+
+
+def _check_system_health_alerts(health_data):
+    """Check system health data against configured thresholds and fire alerts.
+
+    Called on each /api/system-health poll. health_data is the dict returned
+    by api_system_health before jsonification (disks, services, crons, memory).
+    """
+    global _system_health_alert_cooldowns
+
+    now = time.time()
+    cfg = _get_system_health_config()
+    cooldown_sec = int(cfg.get('system_alert_cooldown_min', 30)) * 60
+
+    def _should_fire(alert_key):
+        last = _system_health_alert_cooldowns.get(alert_key, 0)
+        return (now - last) >= cooldown_sec
+
+    def _record_fired(alert_key):
+        _system_health_alert_cooldowns[alert_key] = now
+
+    # --- Disk Usage ---
+    for disk in health_data.get('disks', []):
+        mount = disk.get('mount', '/')
+        pct = disk.get('pct', 0)
+        alert_key = f'disk_{mount}'
+
+        if pct >= cfg['disk_alert_pct']:
+            if _should_fire(alert_key):
+                _record_fired(alert_key)
+                _fire_alert(
+                    rule_id=alert_key,
+                    alert_type='system_health',
+                    message=f'Disk critical: {mount} is {pct:.1f}% full ({disk.get("used_gb", 0):.1f} / {disk.get("total_gb", 0):.1f} GB)',
+                    channels=['banner', 'telegram'],
+                    details={'mount': mount, 'pct': pct, 'level': 'critical'},
+                )
+        elif pct >= cfg['disk_warn_pct']:
+            warn_key = f'disk_warn_{mount}'
+            if _should_fire(warn_key):
+                _record_fired(warn_key)
+                _fire_alert(
+                    rule_id=warn_key,
+                    alert_type='system_health',
+                    message=f'Disk warning: {mount} is {pct:.1f}% full ({disk.get("used_gb", 0):.1f} / {disk.get("total_gb", 0):.1f} GB)',
+                    channels=['banner'],
+                    details={'mount': mount, 'pct': pct, 'level': 'warning'},
+                )
+
+    # --- Memory Usage ---
+    mem = health_data.get('memory', {})
+    mem_pct = mem.get('pct', 0)
+    if mem_pct > 0:
+        if mem_pct >= cfg['memory_alert_pct']:
+            if _should_fire('memory_critical'):
+                _record_fired('memory_critical')
+                _fire_alert(
+                    rule_id='memory_critical',
+                    alert_type='system_health',
+                    message=f'Memory critical: {mem_pct:.1f}% used ({mem.get("used_gb", 0):.1f} / {mem.get("total_gb", 0):.1f} GB)',
+                    channels=['banner', 'telegram'],
+                    details={'pct': mem_pct, 'level': 'critical'},
+                )
+        elif mem_pct >= cfg['memory_warn_pct']:
+            if _should_fire('memory_warning'):
+                _record_fired('memory_warning')
+                _fire_alert(
+                    rule_id='memory_warning',
+                    alert_type='system_health',
+                    message=f'Memory warning: {mem_pct:.1f}% used ({mem.get("used_gb", 0):.1f} / {mem.get("total_gb", 0):.1f} GB)',
+                    channels=['banner'],
+                    details={'pct': mem_pct, 'level': 'warning'},
+                )
+
+    # --- Service Down ---
+    if cfg.get('service_down_alert', 1):
+        for svc in health_data.get('services', []):
+            if not svc.get('up', True):
+                svc_name = svc.get('name', 'Unknown')
+                alert_key = f'service_down_{svc_name.lower().replace(" ", "_")}'
+                if _should_fire(alert_key):
+                    _record_fired(alert_key)
+                    _fire_alert(
+                        rule_id=alert_key,
+                        alert_type='system_health',
+                        message=f'Service down: {svc_name} (port {svc.get("port", "?")})',
+                        channels=['banner', 'telegram'],
+                        details={'service': svc_name, 'port': svc.get('port'), 'level': 'critical'},
+                    )
+
+    # --- Cron Failures ---
+    if cfg.get('cron_fail_alert', 1):
+        for cron_name in health_data.get('crons', {}).get('failed', []):
+            alert_key = f'cron_fail_{cron_name[:40].lower().replace(" ", "_")}'
+            if _should_fire(alert_key):
+                _record_fired(alert_key)
+                _fire_alert(
+                    rule_id=alert_key,
+                    alert_type='system_health',
+                    message=f'Cron job failed: {cron_name}',
+                    channels=['banner'],
+                    details={'cron': cron_name, 'level': 'warning'},
+                )
+
+
 def _send_telegram_alert(message):
     """Send alert via direct Telegram API (preferred) or gateway fallback."""
     # Try direct Telegram API first (using budget config)
@@ -3238,6 +3372,8 @@ function clawmetryLogout(){
         <div id="sh-services" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;"></div>
         <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">Disk Usage</div>
         <div id="sh-disks" style="margin-bottom:14px;"></div>
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">Memory</div>
+        <div id="sh-memory" style="margin-bottom:14px;"></div>
         <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">Cron Jobs</div>
         <div id="sh-crons" style="margin-bottom:14px;"></div>
         <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">Sub-Agents (24h)</div>
@@ -5433,6 +5569,7 @@ async function loadSystemHealth() {
     var disks = Array.isArray(d.disks) ? d.disks : [];
     var crons = (d.crons && typeof d.crons === 'object') ? d.crons : {enabled: 0, ok24h: 0, failed: []};
     var subagents = (d.subagents && typeof d.subagents === 'object') ? d.subagents : {runs: 0, successPct: 0};
+    var memory = (d.memory && typeof d.memory === 'object') ? d.memory : {};
 
     // Services
     var shtml = '';
@@ -5463,6 +5600,26 @@ async function loadSystemHealth() {
       dhtml = '<div style="padding:8px 10px;background:var(--bg-secondary);border:1px solid var(--border-secondary);border-radius:8px;font-size:12px;color:var(--text-muted);">No disk data available</div>';
     }
     document.getElementById('sh-disks').innerHTML = dhtml;
+
+    // Memory
+    var mhtml = '';
+    if (memory && memory.pct > 0) {
+      var memColor = memory.pct > 90 ? '#dc2626' : (memory.pct > 80 ? '#d97706' : '#16a34a');
+      mhtml = '<div style="margin-bottom:10px;">'
+        + '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">'
+        + '<span style="font-weight:600;color:var(--text-primary);">RAM</span>'
+        + '<span style="color:var(--text-muted);">' + memory.used_gb + ' / ' + memory.total_gb + ' GB (' + memory.pct + '%)</span></div>'
+        + '<div style="background:var(--bg-secondary);border-radius:6px;height:10px;overflow:hidden;border:1px solid var(--border-secondary);">'
+        + '<div style="width:' + Math.min(100, memory.pct) + '%;height:100%;background:' + memColor + ';border-radius:6px;transition:width 0.5s;"></div>'
+        + '</div></div>';
+      if (memory.pct >= 80) {
+        mhtml += '<div style="font-size:11px;color:' + memColor + ';margin-top:4px;">⚠ High memory usage — consider restarting heavy processes</div>';
+      }
+    } else {
+      mhtml = '<div style="padding:8px 10px;background:var(--bg-secondary);border:1px solid var(--border-secondary);border-radius:8px;font-size:12px;color:var(--text-muted);">Memory data unavailable</div>';
+    }
+    var shMem = document.getElementById('sh-memory');
+    if (shMem) shMem.innerHTML = mhtml;
 
     // Crons
     var c = crons;
@@ -10035,6 +10192,20 @@ def api_budget_config():
     return jsonify(_get_budget_config())
 
 
+@app.route('/api/system-health/config', methods=['GET', 'POST'])
+def api_system_health_config():
+    """Get or update system health alert thresholds."""
+    allowed_keys = list(_SYSTEM_HEALTH_DEFAULTS.keys())
+    if request.method == 'POST':
+        data = request.get_json(silent=True) or {}
+        updates = {k: v for k, v in data.items() if k in allowed_keys}
+        if not updates:
+            return jsonify({'error': 'No valid fields provided'}), 400
+        _set_budget_config(updates)  # Reuse budget_config table (generic KV store)
+        return jsonify({'ok': True})
+    return jsonify(_get_system_health_config())
+
+
 @app.route('/api/budget/status')
 def api_budget_status():
     """Get current budget status with spending totals."""
@@ -12343,12 +12514,35 @@ def api_system_health():
 
     sa_pct = round((sa_success / sa_runs * 100) if sa_runs > 0 else 100, 0)
 
-    return jsonify({
+    # --- MEMORY ---
+    memory = {}
+    try:
+        import psutil
+        mem = psutil.virtual_memory()
+        memory = {
+            'used_gb': round(mem.used / (1024**3), 1),
+            'total_gb': round(mem.total / (1024**3), 1),
+            'pct': round(mem.percent, 1),
+            'available_gb': round(mem.available / (1024**3), 1),
+        }
+    except Exception:
+        pass
+
+    health_data = {
         'services': services,
         'disks': disks,
         'crons': {'enabled': cron_enabled, 'ok24h': cron_ok_24h, 'failed': cron_failed},
         'subagents': {'runs': sa_runs, 'successPct': sa_pct},
-    })
+        'memory': memory,
+    }
+
+    # Run system health alert checks (non-blocking, fires alerts if thresholds exceeded)
+    try:
+        _check_system_health_alerts(health_data)
+    except Exception as e:
+        print(f"Warning: System health alert check failed: {e}")
+
+    return jsonify(health_data)
 
 
 @app.route('/api/health')
