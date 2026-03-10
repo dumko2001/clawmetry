@@ -4,18 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pricing - ClawMetry</title>
-  <meta name="description" content="ClawMetry is free and open source forever. Cloud Pro ($5/node/month) gets you remote access from anywhere - same features, no LAN required.">
+  <meta name="description" content="ClawMetry is free and open source forever. Cloud Pro ($29/mo founder pricing) gets you remote access from anywhere - same features, no LAN required.">
   <link rel="canonical" href="https://clawmetry.com/pricing">
   <meta property="og:title" content="ClawMetry Pricing — Free & Open Source Forever">
-  <meta property="og:description" content="ClawMetry is free and open source. Cloud Pro ($5/node/month) gives you remote access from anywhere. No credit card required to start.">
+  <meta property="og:description" content="ClawMetry is free and open source. Cloud Pro ($29/mo founder pricing) gives you remote access from anywhere. No credit card required to start.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://clawmetry.com/pricing">
   <meta property="og:image" content="https://clawmetry.com/dashboard-overview-og.png">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="ClawMetry Pricing — Free Agent Observability">
-  <meta name="twitter:description" content="Free open-source plan forever. Cloud Pro at $5/node/month. pip install clawmetry to get started.">
+  <meta name="twitter:description" content="Free open-source plan forever. Cloud Pro at $29/mo. pip install clawmetry to get started.">
   <meta name="twitter:image" content="https://clawmetry.com/dashboard-overview-og.png">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"Product","name":"ClawMetry","description":"Real-time AI agent observability dashboard for OpenClaw","url":"https://clawmetry.com","offers":[{"@type":"Offer","name":"Free Open Source","price":"0","priceCurrency":"USD","description":"Self-hosted, full features, free forever"},{"@type":"Offer","name":"Cloud Pro","price":"5","priceCurrency":"USD","priceSpecification":{"billingDuration":"P1M"},"description":"Remote access from anywhere, end-to-end encrypted"}]}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"Product","name":"ClawMetry","description":"Real-time AI agent observability dashboard for OpenClaw","url":"https://clawmetry.com","offers":[{"@type":"Offer","name":"Free Open Source","price":"0","priceCurrency":"USD","description":"Self-hosted, full features, free forever"},{"@type":"Offer","name":"Cloud Pro","price":"29","priceCurrency":"USD","priceSpecification":{"billingDuration":"P1M"},"description":"Remote access from anywhere, end-to-end encrypted, founder pricing"}]}</script>
   <link rel="icon" href="/favicon.ico">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
@@ -224,7 +224,7 @@
 <div class="hero">
   <div class="hero-badge">Pricing</div>
   <h1>All features, <span>everywhere</span></h1>
-  <p>We don't lock features behind a paywall. Self-host free forever, or pay $5/node/month to access your dashboard from anywhere in the world.</p>
+  <p>We don't lock features behind a paywall. Self-host free forever, or pay $29/mo to access your dashboard from anywhere in the world.</p>
   <div class="diff-banner">
     <strong>The only difference between Free and Cloud Pro is where you can access it from.</strong><br>
     Free = your local network. Cloud Pro = any browser, anywhere, on any device.
@@ -268,8 +268,8 @@
       <div class="pcard featured">
         <div class="popular-badge">Most Popular</div>
         <div class="pcard-tier">Cloud Pro</div>
-        <div class="pcard-price"><span class="currency">$</span>5 <span class="period">/ node / month</span></div>
-        <div class="pcard-sub">7-day free trial</div>
+        <div class="pcard-price"><span class="currency">$</span>29 <span class="period">/ month</span></div>
+        <div class="pcard-sub">7-day free trial &middot; founder pricing</div>
         <div class="pcard-desc">Every feature from the OSS version, plus a secure cloud relay so you can access your dashboard from your phone, a coffee shop, or anywhere else.</div>
 
         <div class="features-label">Everything in Free, plus</div>
@@ -289,7 +289,7 @@
           <li><span class="icon icon-check">✓</span> Push alerts anywhere (not just LAN)</li>
         </ul>
         <button class="btn-primary" onclick="startTrial()">Start Free Trial &rarr;</button>
-        <p style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:10px;">$5/node/month after trial &middot; cancel anytime</p>
+        <p style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:10px;">$29/mo after trial &middot; cancel anytime</p>
       </div>
 
       <!-- Enterprise -->
@@ -342,7 +342,7 @@
 
     <div class="faq-item">
       <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">What counts as a node?</div>
-      <div class="faq-a">One node = one machine running OpenClaw with the sync daemon. If you have a Mac, a home server, and a VPS all running OpenClaw, that's 3 nodes = $15/month. You can add or remove nodes anytime.</div>
+      <div class="faq-a">One subscription covers unlimited nodes. $29/month gets you the full Cloud Pro experience for all your machines — Mac, home server, VPS, whatever you run.</div>
     </div>
 
     <div class="faq-item">
@@ -417,7 +417,7 @@ function closeTrialModal() {
 function adjustNodes(d) {
   _trialNodes = Math.max(1, _trialNodes + d);
   document.getElementById('trial-nodes').textContent = _trialNodes;
-  document.getElementById('trial-price-preview').textContent = '= $' + (_trialNodes * 5) + '/month after trial';
+  document.getElementById('trial-price-preview').textContent = '$29/month after trial';
 }
 var _trialEmail = '';
 var _trialOtpSent = false;
