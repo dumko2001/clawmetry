@@ -10205,6 +10205,7 @@ function hideUnconfiguredChannels(svgRoot) {
 var _flowSse = null;
 var _flowSseDebounce = {};
 function _startFlowSse() {
+  if (window.CLOUD_MODE) return;
   if (_flowSse && _flowSse.readyState !== EventSource.CLOSED) return;
   var _fTok = localStorage.getItem('clawmetry-token') || '';
   _flowSse = new EventSource('/api/flow-events' + (_fTok ? '?token=' + encodeURIComponent(_fTok) : ''));
