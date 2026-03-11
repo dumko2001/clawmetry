@@ -34,15 +34,11 @@ fi
 
 # Install / upgrade clawmetry
 echo -e "  ${CYAN}→${NC} Installing ClawMetry..."
-python3 -m pip install --upgrade clawmetry --quiet
+python3 -m pip install --upgrade clawmetry 2>/dev/null
 
-CLAWMETRY_VERSION=$(python3 -c "import clawmetry; print(getattr(clawmetry, '__version__', '?'))" 2>/dev/null || clawmetry --version 2>/dev/null | head -1 || echo "?")
-echo -e "  ${GREEN}✓${NC} ClawMetry installed"
+CLAWMETRY_VERSION=$(python3 -c "import importlib.metadata; print(importlib.metadata.version('clawmetry'))" 2>/dev/null || echo "?")
+echo -e "  ${GREEN}✓${NC} ClawMetry $CLAWMETRY_VERSION installed"
 echo ""
 
-# Run connect wizard
-clawmetry connect
-
-echo ""
-echo -e "  ${GREEN}${BOLD}Done!${NC} Open ${CYAN}${CLAWMETRY_APP}${NC} to see your agents."
+echo -e "  ${GREEN}${BOLD}Done!${NC} Run ${CYAN}clawmetry connect${NC} to link to ${CYAN}${CLAWMETRY_APP}${NC}."
 echo ""
