@@ -89,7 +89,7 @@ def _cmd_onboard(args) -> None:
     print(f"      {DIM('Decrypted in the dashboard on demand.')}")
     print(f"      {DIM('Nothing reaches the cloud in plaintext. Ever.')}")
     print()
-    print(f"      {BOLD('[y]')} Connect to ClawMetry Cloud  {DIM('(free 7-day trial)')}")
+    print(f"      {BOLD('[y]')} Connect to ClawMetry Cloud  {DIM('(free 7-day trial · $5/node/month after)')}")
     print(f"      {BOLD('[n]')} I\'ll start the server locally for now")
     print()
 
