@@ -3,9 +3,7 @@ from __future__ import annotations
 import sys
 import os
 
-_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if _root not in sys.path:
-    sys.path.insert(0, _root)
+
 
 
 
@@ -476,7 +474,12 @@ def _cmd_status(args) -> None:
 
 def main() -> None:
     import argparse
-    from dashboard import main as dashboard_main
+    import importlib.util as _ilu, pathlib as _pl
+    _dp = _pl.Path(__file__).parent.parent / "dashboard.py"
+    _spec = _ilu.spec_from_file_location("_clawmetry_dashboard", str(_dp))
+    _mod = _ilu.module_from_spec(_spec)
+    _spec.loader.exec_module(_mod)  # type: ignore[union-attr]
+    dashboard_main = _mod.main
 
     parser = argparse.ArgumentParser(prog="clawmetry", add_help=False)
     sub = parser.add_subparsers(dest="cmd")
