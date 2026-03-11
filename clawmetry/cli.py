@@ -3,9 +3,7 @@ from __future__ import annotations
 import sys
 import os
 
-_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if _root not in sys.path:
-    sys.path.insert(0, _root)
+
 
 
 
@@ -183,7 +181,9 @@ def _cmd_connect(args) -> None:
         except (SystemExit, KeyboardInterrupt):
             raise
         except Exception as _otp_err:
-            print(f"\n  \u26a0\ufe0f  OTP check unavailable ({_otp_err}). Proceeding.")
+            print(f"\n  \u274c  OTP verification failed: {_otp_err}")
+            print("  Cannot connect without device verification. Try again or contact support.")
+            sys.exit(1)
 
     from clawmetry.sync import generate_encryption_key
 
@@ -476,7 +476,12 @@ def _cmd_status(args) -> None:
 
 def main() -> None:
     import argparse
-    from dashboard import main as dashboard_main
+    import importlib.util as _ilu, pathlib as _pl
+    _dp = _pl.Path(__file__).parent.parent / "dashboard.py"
+    _spec = _ilu.spec_from_file_location("_clawmetry_dashboard", str(_dp))
+    _mod = _ilu.module_from_spec(_spec)
+    _spec.loader.exec_module(_mod)  # type: ignore[union-attr]
+    dashboard_main = _mod.main
 
     parser = argparse.ArgumentParser(prog="clawmetry", add_help=False)
     sub = parser.add_subparsers(dest="cmd")
