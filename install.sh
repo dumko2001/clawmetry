@@ -1,13 +1,11 @@
 #!/usr/bin/env bash
 set -e
 
-CLAWMETRY_INGEST="https://ingest.clawmetry.com"
 CLAWMETRY_APP="https://app.clawmetry.com"
 
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m'
@@ -33,11 +31,21 @@ if ! python3 -m pip --version &>/dev/null; then
 fi
 
 # Install / upgrade clawmetry
+# Try in order: system → user → break-system-packages (PEP 668 envs)
 echo -e "  ${CYAN}→${NC} Installing ClawMetry..."
-python3 -m pip install --upgrade clawmetry --quiet
+if python3 -m pip install --upgrade clawmetry 2>/dev/null; then
+  :
+elif python3 -m pip install --upgrade --user clawmetry 2>/dev/null; then
+  :
+elif python3 -m pip install --upgrade --break-system-packages clawmetry 2>/dev/null; then
+  :
+else
+  echo -e "${RED}  ✗ Failed to install clawmetry. Try: pip install clawmetry${NC}"
+  exit 1
+fi
 
-CLAWMETRY_VERSION=$(python3 -c "import clawmetry; print(getattr(clawmetry, '__version__', '?'))" 2>/dev/null || clawmetry --version 2>/dev/null | head -1 || echo "?")
-echo -e "  ${GREEN}✓${NC} ClawMetry installed"
+CLAWMETRY_VERSION=$(python3 -c "import importlib.metadata; print(importlib.metadata.version('clawmetry'))" 2>/dev/null || echo "?")
+echo -e "  ${GREEN}✓${NC} ClawMetry $CLAWMETRY_VERSION installed"
 echo ""
 
 # Run onboarding wizard
