@@ -20595,7 +20595,7 @@ def _run_server(args):
         print()
         _globe = "[web]" if sys.platform == "win32" else "🌐 "
         _lock  = "[enc]" if sys.platform == "win32" else "🔒 "
-        print(f"  {_globe}  Access from anywhere:  clawmetry connect")
+        print(f"  {_globe}  Run clawmetry connect to access your dashboard from app.clawmetry.com")
         print(f"      {_lock}  E2E encrypted with your local key — decrypted in the dashboard on demand.")
         print("      Free 7-day trial · no credit card required.")
         print()
