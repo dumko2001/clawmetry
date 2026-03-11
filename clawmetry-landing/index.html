@@ -1004,7 +1004,7 @@ document.getElementById('managed-form').addEventListener('submit', function(e) {
   // Save lead in background (fire and forget)
   _encPost('/api/managed-request', {name:name, email:email, company:company, use_case:use_case}).catch(function(){});
   // Send OTP
-  _encPost('/api/otp/send', {email:email}).then(function(r){return r.json();}).then(function(d){
+  fetch('https://app.clawmetry.com/api/otp/send', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email})}).then(function(r){return r.json();}).then(function(d){
     if (d.ok || d.sent) {
       _setIdentity(name, email);
       document.getElementById('managed-form').style.display = 'none';
@@ -1031,7 +1031,7 @@ function managedVerifyOtp() {
   if (otp.length !== 6) return;
   btn.disabled = true; btn.textContent = 'Verifying...';
   msg.style.display = 'none';
-  _encPost('/api/otp/verify', {email:_managedEmail, otp:otp}).then(function(r){return r.json();}).then(function(d){
+  fetch('https://app.clawmetry.com/api/otp/verify', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:_managedEmail, otp:otp})}).then(function(r){return r.json();}).then(function(d){
     if (d.ok && d.api_key) {
       document.getElementById('managed-otp-step').innerHTML =
         '<div style="text-align:center;padding:20px 0;">' +
@@ -1055,7 +1055,7 @@ function managedVerifyOtp() {
 
 function managedResendOtp() {
   var msg = document.getElementById('managed-otp-msg');
-  _encPost('/api/otp/send', {email:_managedEmail}).then(function(r){return r.json();}).then(function(d){
+  fetch('https://app.clawmetry.com/api/otp/send', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:_managedEmail})}).then(function(r){return r.json();}).then(function(d){
     msg.style.display = 'block';
     msg.style.color = (d.ok || d.sent) ? '#10b981' : '#E5443A';
     msg.textContent = (d.ok || d.sent) ? 'New code sent!' : (d.error || 'Could not resend. Try again.');
