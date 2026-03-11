@@ -2600,7 +2600,7 @@ if __name__ == "__main__":
 import time as _time
 
 _traction_cache = {"data": None, "ts": 0}
-_last_known = {"pypi_day": "1,809", "pypi_week": "10,054", "pypi_month": "17,550"}  # seeded fallbacks; updated on each successful API call
+_last_known = {"pypi_day": "1,809", "pypi_week": "10,054", "pypi_month": "17,550", "gh_stars": "78", "gh_forks": "15", "gh_issues": "0"}  # seeded fallbacks; updated on each successful API call
 
 def _fetch_traction_data():
     now = _time.time()
@@ -2638,11 +2638,14 @@ def _fetch_traction_data():
             data["gh_stars"] = f"{j.get('stargazers_count', 0):,}"
             data["gh_forks"] = f"{j.get('forks_count', 0):,}"
             data["gh_issues"] = f"{j.get('open_issues_count', 0):,}"
+            _last_known["gh_stars"] = data["gh_stars"]
+            _last_known["gh_forks"] = data["gh_forks"]
+            _last_known["gh_issues"] = data["gh_issues"]
     except:
         pass
-    data.setdefault("gh_stars", "...")
-    data.setdefault("gh_forks", "...")
-    data.setdefault("gh_issues", "...")
+    data.setdefault("gh_stars", _last_known.get("gh_stars", "0"))
+    data.setdefault("gh_forks", _last_known.get("gh_forks", "0"))
+    data.setdefault("gh_issues", _last_known.get("gh_issues", "0"))
     
     # Subscriber count from Resend (source of truth, includes pre-Firestore signups)
     try:
@@ -2652,15 +2655,15 @@ def _fetch_traction_data():
         try:
             data["subscribers"] = str(_fs_count("subscribers") or 0)
         except:
-            data["subscribers"] = "..."
+            data["subscribers"] = "0"
     try:
         data["managed_requests"] = str(_fs_count("managed_requests") or 0)
     except:
-        data["managed_requests"] = "..."
+        data["managed_requests"] = "0"
     try:
         data["copy_events"] = str(_fs_count("copy_events") or 0)
     except:
-        data["copy_events"] = "..."
+        data["copy_events"] = "0"
     
     from datetime import datetime, timezone
     data["updated_at"] = datetime.now(timezone.utc).strftime("%b %d, %Y at %H:%M UTC")
