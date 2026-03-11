@@ -6791,7 +6791,7 @@ function clawmetryLogout(){
       </div>
       <p id="cloud-email-error" style="color:#E5443A;font-size:12px;margin:6px 0 0;display:none;"></p>
       <div style="margin-top:20px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.06);text-align:center;">
-        <span style="color:#64748b;font-size:12px;">Already have a key? Run </span><code style="color:#94a3b8;font-size:12px;background:rgba(255,255,255,0.05);padding:2px 8px;border-radius:4px;">clawmetry connect</code>
+        <span style="color:#64748b;font-size:12px;">or run </span><code style="color:#94a3b8;font-size:12px;background:rgba(255,255,255,0.05);padding:2px 8px;border-radius:4px;">clawmetry connect</code>
       </div>
     </div>
     <div id="cloud-step-otp" style="display:none;">
