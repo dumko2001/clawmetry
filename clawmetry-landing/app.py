@@ -2515,6 +2515,11 @@ def how_it_works():
 def showcase():
     return send_from_directory(".", "showcase.html")
 
+
+@app.route("/mac")
+def mac_app():
+    return send_from_directory(".", "mac.html")
+
 @app.route("/")
 def index():
     return send_from_directory(".", "index.html")

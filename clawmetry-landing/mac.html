@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XDF9MFD8FJ"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-XDF9MFD8FJ');
+    gtag('config', 'G-6H5W9Y2B79');
+  </script>
+  <title>ClawMetry for Mac - Native Menu Bar App</title>
+  <meta name="description" content="Monitor your OpenClaw AI agents from the macOS menu bar. Native Swift app with E2E encryption, persistent sessions, and zero browser overhead.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="canonical" href="https://clawmetry.com/mac">
+  <meta property="og:title" content="ClawMetry for Mac">
+  <meta property="og:description" content="Monitor your OpenClaw AI agents from the macOS menu bar. Native app, E2E encrypted.">
+  <meta property="og:url" content="https://clawmetry.com/mac">
+  <meta property="og:type" content="website">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0B0F1A; --bg-card: #111827; --accent: #E5443A;
+      --text: #F1F5F9; --text-muted: #94A3B8; --border: rgba(255,255,255,0.08);
+      --border-hover: rgba(255,255,255,0.16);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', -apple-system, sans-serif; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+    a { text-decoration: none; color: inherit; }
+
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; height: 60px;
+      background: rgba(11,15,26,0.85); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo { display: flex; align-items: center; gap: 8px; }
+    .nav-logo img { width: 28px; height: 28px; }
+    .nav-logo-text { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
+    .nav-logo-text span:first-child { color: var(--text); }
+    .nav-logo-text span:last-child { color: var(--accent); }
+    .nav-links { display: flex; align-items: center; gap: 20px; }
+    .nav-links a { color: var(--text-muted); font-size: 14px; font-weight: 500; transition: color 0.2s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--text); }
+    .nav-gh {
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 6px 14px; display: flex; align-items: center; gap: 6px;
+      color: var(--text-muted); transition: all 0.2s;
+    }
+    .nav-gh:hover { border-color: var(--border-hover); color: var(--text); }
+
+    .hero {
+      text-align: center; padding: 80px 24px 48px;
+      max-width: 720px; margin: 0 auto;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(229,68,58,0.1); border: 1px solid rgba(229,68,58,0.2);
+      border-radius: 999px; padding: 6px 16px; font-size: 13px; color: var(--accent);
+      font-weight: 600; margin-bottom: 24px;
+    }
+    .hero h1 {
+      font-size: 48px; font-weight: 800; letter-spacing: -0.03em;
+      line-height: 1.1; margin-bottom: 16px;
+    }
+    .hero h1 .accent { color: var(--accent); }
+    .hero p {
+      font-size: 18px; color: var(--text-muted); max-width: 520px;
+      margin: 0 auto 32px; line-height: 1.6;
+    }
+
+    .download-btn {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: var(--accent); color: #fff; border: none;
+      border-radius: 12px; padding: 16px 32px;
+      font-size: 16px; font-weight: 700; cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 20px rgba(229,68,58,0.3);
+      text-decoration: none;
+    }
+    .download-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(229,68,58,0.4); }
+    .download-btn svg { width: 20px; height: 20px; }
+    .download-sub {
+      font-size: 13px; color: var(--text-muted); margin-top: 12px;
+    }
+    .download-sub a { color: var(--text-muted); text-decoration: underline; }
+
+    .screenshot-section {
+      max-width: 960px; margin: 48px auto 0; padding: 0 24px;
+    }
+    .screenshot-section img {
+      width: 100%; border-radius: 16px;
+      border: 1px solid var(--border);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    }
+
+    .features {
+      max-width: 960px; margin: 80px auto; padding: 0 24px;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+    }
+    .feature-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 16px; padding: 28px;
+    }
+    .feature-icon { font-size: 28px; margin-bottom: 12px; }
+    .feature-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .feature-card p { font-size: 14px; color: var(--text-muted); line-height: 1.5; }
+
+    .tech-section {
+      max-width: 720px; margin: 0 auto 80px; padding: 0 24px;
+      text-align: center;
+    }
+    .tech-section h2 {
+      font-size: 28px; font-weight: 800; margin-bottom: 12px;
+    }
+    .tech-section p { font-size: 15px; color: var(--text-muted); line-height: 1.6; margin-bottom: 8px; }
+    .tech-section code {
+      background: rgba(255,255,255,0.06); padding: 2px 8px; border-radius: 4px;
+      font-size: 13px; color: #22c55e;
+    }
+
+    .cta-section {
+      text-align: center; padding: 64px 24px;
+      border-top: 1px solid var(--border);
+    }
+    .cta-section h2 { font-size: 32px; font-weight: 800; margin-bottom: 12px; }
+    .cta-section p { color: var(--text-muted); font-size: 15px; margin-bottom: 24px; }
+
+    .footer {
+      border-top: 1px solid var(--border); padding: 24px;
+      text-align: center; font-size: 13px; color: var(--text-muted);
+    }
+
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 32px; }
+      .hero p { font-size: 16px; }
+      .features { grid-template-columns: 1fr; }
+      .nav-links .nav-link-text { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/" class="nav-logo">
+      <img src="/favicon.svg" alt="ClawMetry">
+      <div class="nav-logo-text"><span>Claw</span><span>Metry</span></div>
+    </a>
+    <div class="nav-links">
+      <a href="/how-it-works"><span class="nav-link-text">How it works</span></a>
+      <a href="/traction"><span class="nav-link-text">Traction</span></a>
+      <a href="/showcase"><span class="nav-link-text">Showcase</span></a>
+      <a href="/mac" class="active"><span class="nav-link-text">Mac</span></a>
+      <a href="https://github.com/vivekchand/clawmetry" target="_blank" class="nav-gh">
+        <svg viewBox="0 0 16 16" fill="currentColor" width="16" height="16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        <span>GitHub</span>
+      </a>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-badge">🍎 Native macOS App</div>
+    <h1>ClawMetry for <span class="accent">Mac</span></h1>
+    <p>Monitor your OpenClaw AI agents from the menu bar. Native Swift app. No browser tab needed.</p>
+    <a href="/Clawmetry-2026-03-11.dmg" class="download-btn" onclick="gtag('event','mac_download',{event_category:'downloads'})">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Download for macOS
+    </a>
+    <p class="download-sub">v1.0.1 · macOS 13+ · <a href="https://github.com/vivekchand/clawmetry-mac" target="_blank">View source on GitHub</a></p>
+  </section>
+
+  <section class="screenshot-section">
+    <img src="/dashboard-full.png" alt="ClawMetry Mac dashboard showing agent flow, token costs, and session history">
+  </section>
+
+  <section class="features">
+    <div class="feature-card">
+      <div class="feature-icon">📊</div>
+      <h3>Menu Bar Access</h3>
+      <p>Lives in your menu bar. Click to open the full dashboard. No dock icon, no browser tab. Always one click away.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔒</div>
+      <h3>E2E Encrypted</h3>
+      <p>Your data is encrypted on your machine before it leaves. Decrypted in the app on demand. Nothing reaches the cloud in plaintext.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚡</div>
+      <h3>Persistent Sessions</h3>
+      <p>No more login loops. Auth tokens survive restarts. Session storage backed by localStorage. Reload throttling built in.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔄</div>
+      <h3>Live Flow View</h3>
+      <p>Watch your agents work in real-time. Animated particle flow between gateway, sessions, tools, and sub-agents.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">💰</div>
+      <h3>Token Cost Tracking</h3>
+      <p>See exactly what your AI agents cost. Per-session, per-model breakdowns. Set budgets and get alerts.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🧠</div>
+      <h3>Memory Browser</h3>
+      <p>Browse your agent's memory files directly. See what it remembers, what it forgot, and what changed.</p>
+    </div>
+  </section>
+
+  <section class="tech-section">
+    <h2>Built with Swift + WKWebView</h2>
+    <p>Native macOS app, not an Electron wrapper. Uses <code>WKWebView</code> with persistent data store, shared process pool, and intelligent reload throttling.</p>
+    <p>Open source. 338 lines of Swift. <a href="https://github.com/vivekchand/clawmetry-mac" style="color:var(--accent)">Read the code.</a></p>
+  </section>
+
+  <section class="cta-section">
+    <h2>Get started in 30 seconds</h2>
+    <p>Download the app, connect your node, and start monitoring.</p>
+    <a href="/Clawmetry-2026-03-11.dmg" class="download-btn" onclick="gtag('event','mac_download_bottom',{event_category:'downloads'})">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Download for macOS
+    </a>
+    <p class="download-sub">
+      No Mac? Install via CLI: <code style="background:rgba(255,255,255,0.06);padding:2px 8px;border-radius:4px;color:#22c55e;">pip install clawmetry</code>
+    </p>
+  </section>
+
+  <footer class="footer">
+    <p>ClawMetry · Open source AI observability · <a href="/" style="color:var(--text-muted)">clawmetry.com</a></p>
+  </footer>
+
+  <script>
+    fetch('/api/track', {method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({page:'/mac',referrer:document.referrer,ua:navigator.userAgent})
+    }).catch(function(){});
+  </script>
+</body>
+</html>
