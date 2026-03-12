@@ -2343,7 +2343,7 @@ def api_hero_stats():
         r = requests.get("https://pypistats.org/api/packages/clawmetry/overall",
                          timeout=10, headers={"User-Agent": "ClawMetry/1.0"})
         r.raise_for_status()
-        total = sum(row["downloads"] for row in r.json().get("data", []))
+        total = sum(row["downloads"] for row in r.json().get("data", []) if row.get("category") == "with_mirrors")
         result["downloads"] = f"{round(total / 1000)}k" if total >= 1000 else str(total)
         result["downloads_exact"] = total
     except Exception as e:
