@@ -20635,24 +20635,16 @@ def _run_server(args):
             from waitress import serve
             serve(app, host=args.host, port=args.port, threads=8)
         except ImportError:
-            # Waitress not installed -- fall back to Flask with warning suppressed
+            # Waitress not installed -- fall back to Flask dev server.
+            # On Windows with redirected stdout (e.g. Start-Process),
+            # Flask/Click banner printing crashes on closed file handles.
+            # Unconditionally redirect to devnull on Windows to prevent it.
             import logging
             log = logging.getLogger('werkzeug')
             log.setLevel(logging.ERROR)
-            # On Windows with redirected stdout, Click's show_server_banner
-            # calls fileno() on stdout → ValueError (closed handle).
-            # Fix: replace sys.stdout/stderr with /dev/null-like streams
-            # so Flask can start without crashing. Output is already
-            # redirected to files by the CI/service manager anyway.
             if os.name == 'nt':
-                try:
-                    sys.stdout.fileno()
-                except (ValueError, OSError):
-                    sys.stdout = open(os.devnull, 'w', encoding='utf-8')
-                try:
-                    sys.stderr.fileno()
-                except (ValueError, OSError):
-                    sys.stderr = open(os.devnull, 'w', encoding='utf-8')
+                sys.stdout = open(os.devnull, 'w', encoding='utf-8')
+                sys.stderr = open(os.devnull, 'w', encoding='utf-8')
             app.run(host=args.host, port=args.port, debug=False, use_reloader=False, threaded=True)
 
 

@@ -46,7 +46,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: pip install flask pytest requests
+        run: pip install flask pytest requests waitress
 
       - name: Start server (Unix)
         if: runner.os != 'Windows'
