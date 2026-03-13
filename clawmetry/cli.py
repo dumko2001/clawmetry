@@ -425,27 +425,46 @@ def _cmd_status(args) -> None:
 
 
 def _cmd_onboard(args) -> None:
-    """clawmetry onboard — first-time setup wizard. Asks user if they want cloud."""
-    CYAN = '\033[0;36m'
-    GREEN = '\033[0;32m'
-    DIM = '\033[2m'
-    BOLD = '\033[1m'
-    NC = '\033[0m'
+    """clawmetry onboard — interactive first-time setup wizard."""
+    import os as _os
 
-    print()
-    print(f"  {BOLD}Welcome to ClawMetry 🦞{NC}")
-    print()
-    print(f"  {BOLD}Connect to ClawMetry Cloud?{NC}")
-    print(f"  {DIM}Access your dashboard from app.clawmetry.com{NC}")
-    print(f"  {DIM}E2E encrypted. Free 7-day trial, then $5/node/mo.{NC}")
-    print()
-    print(f"      {BOLD}[Y]{NC} Connect to cloud")
-    print(f"      {BOLD}[n]{NC} Run locally only")
-    print(f"          {DIM}You can connect anytime later: clawmetry connect{NC}")
-    print()
+    _is_tty = sys.stdout.isatty()
+    def _c(code, text): return f"\033[{code}m{text}\033[0m" if _is_tty else text
+    BOLD = lambda t: _c("1", t)
+    GREEN = lambda t: _c("32", t)
+    CYAN = lambda t: _c("36", t)
+    DIM = lambda t: _c("2", t)
+
+    # When stdin is piped (curl | bash), read from /dev/tty
+    _tty = None
+    if not sys.stdin.isatty():
+        try:
+            _tty = open('/dev/tty', 'r')
+        except OSError:
+            pass
+
+    def _input(prompt):
+        if _tty is not None:
+            sys.stdout.write(prompt)
+            sys.stdout.flush()
+            return _tty.readline().rstrip('\n')
+        return input(prompt)
+
+    already_connected = bool(_os.environ.get("CLAWMETRY_API_KEY") or _os.environ.get("CLAWMETRY_NODE_ID"))
+    if already_connected:
+        print(f"\n  {GREEN(BOLD('✓ Already connected to ClawMetry Cloud'))}")
+        print(f"  {DIM('Run  clawmetry status  to check sync health.')}\n")
+        return
+
+    print(f"\n  {BOLD('Your dashboard is ready at')}")
+    print(f"  {BOLD('app.clawmetry.com')}")
+    print(f"\n  {DIM('E2E encrypted. Only you can read it.')}\n")
+    print(f"      {BOLD('[Y]')} Start 7-day trial {DIM('(then $5/node/mo)')}")
+    print(f"      {BOLD('[n]')} Run locally for now")
+    print(f"          {DIM('Enable cloud anytime: clawmetry connect')}\n")
 
     try:
-        choice = input("  → [Y/n]: ").strip().lower() or 'y'
+        choice = _input("  → [Y/n]: ").strip().lower() or 'y'
     except (EOFError, KeyboardInterrupt):
         choice = 'n'
         print()
@@ -453,25 +472,29 @@ def _cmd_onboard(args) -> None:
     print()
 
     if choice in ('y', 'yes'):
-        _cmd_connect(args)
+        print(f"  {DIM('Starting clawmetry connect...')}\n")
+        import argparse as _ap
+        _fake_args = _ap.Namespace(key=None, foreground=False, custom_node_id=None)
+        _cmd_connect(_fake_args)
+
+        print(f"\n  {BOLD('All done!')}\n")
+
+        try:
+            _input("  Press Enter to open your ClawMetry dashboard...")
+        except (EOFError, KeyboardInterrupt):
+            pass
+
         try:
             import webbrowser
             webbrowser.open("https://app.clawmetry.com")
         except Exception:
             pass
-        print(f"  {CYAN}→{NC} Opening app.clawmetry.com in your browser...")
-        print()
-        print(f"  {BOLD}Setup complete!{NC} Your agent is now streaming to ClawMetry Cloud.")
-        print()
     else:
-        print(f"  {GREEN}✓{NC} ClawMetry installed (local mode)")
-        print()
+        print(f"  {GREEN('✓')} ClawMetry installed (local mode)\n")
         print(f"  Start your dashboard:")
-        print(f"    {CYAN}clawmetry{NC}         — launch on http://localhost:8900")
-        print(f"    {CYAN}clawmetry start{NC}   — run as background service")
-        print()
-        print(f"  {DIM}Connect to cloud later: clawmetry connect{NC}")
-        print()
+        print(f"    {CYAN('clawmetry --host 0.0.0.0 --port 8900')}          {DIM('# foreground (LAN)')}")
+        print(f"    {CYAN('clawmetry start --host 0.0.0.0 --port 8900')}    {DIM('# background service')}\n")
+        print(f"  {DIM('Connect to cloud later: clawmetry connect')}\n")
 
 
 def _cmd_proxy(args) -> None:
