@@ -84,8 +84,9 @@ echo ""
 
 # ── Onboarding ───────────────────────────────────────────────────────────────
 
-if [ -r /dev/tty ] && (echo < /dev/tty) 2>/dev/null; then
-  "$CLAWMETRY_BIN" onboard < /dev/tty
+# shellcheck disable=SC2217
+if [ -r /dev/tty ] 2>/dev/null; then
+  "$CLAWMETRY_BIN" onboard < /dev/tty || true
 else
   "$CLAWMETRY_BIN" onboard || true
 fi
