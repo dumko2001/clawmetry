@@ -4375,6 +4375,67 @@ _budget_paused_reason = ''
 _budget_alert_cooldowns = {}  # rule_id -> last_fired_timestamp
 _AGENT_DOWN_SECONDS = 300  # 5 min with no OTLP data = agent down alert
 
+# ── Heartbeat Gap Alerting ─────────────────────────────────────────────
+_last_heartbeat_ts = 0  # timestamp of last detected heartbeat event
+_heartbeat_interval_sec = 1800  # default 30 min, auto-detected from config
+_heartbeat_silent_since = 0  # when silence was first detected (0 = not silent)
+
+def _detect_heartbeat_interval():
+    """Read heartbeat interval from OpenClaw config."""
+    global _heartbeat_interval_sec
+    for cf in [os.path.expanduser('~/.clawdbot/openclaw.json'), os.path.expanduser('~/.openclaw/openclaw.json')]:
+        try:
+            with open(cf) as f:
+                cfg = json.load(f)
+            hb = cfg.get('agents', {}).get('defaults', {}).get('heartbeat', {})
+            every = hb.get('every', '')
+            if every:
+                import re as _re_hb
+                m = _re_hb.match(r'^(\d+)\s*(m|min|h|hr|s|sec)?$', str(every).strip().lower())
+                if m:
+                    val = int(m.group(1))
+                    unit = m.group(2) or 'm'
+                    if unit.startswith('h'):
+                        _heartbeat_interval_sec = val * 3600
+                    elif unit.startswith('s'):
+                        _heartbeat_interval_sec = val
+                    else:
+                        _heartbeat_interval_sec = val * 60
+                    return
+        except Exception:
+            continue
+
+def _record_heartbeat():
+    """Record that a heartbeat event was observed."""
+    global _last_heartbeat_ts, _heartbeat_silent_since
+    _last_heartbeat_ts = time.time()
+    _heartbeat_silent_since = 0  # reset silence tracker
+
+def _get_heartbeat_status():
+    """Return heartbeat gap status for the API."""
+    now = time.time()
+    interval = _heartbeat_interval_sec
+    threshold = interval * 1.5
+    gap_sec = (now - _last_heartbeat_ts) if _last_heartbeat_ts > 0 else 0
+    status = 'unknown'
+    if _last_heartbeat_ts == 0:
+        status = 'unknown'
+    elif gap_sec <= interval:
+        status = 'ok'
+    elif gap_sec <= threshold:
+        status = 'warning'
+    else:
+        status = 'silent'
+    return {
+        'status': status,
+        'last_heartbeat_ts': _last_heartbeat_ts,
+        'gap_seconds': int(gap_sec) if _last_heartbeat_ts > 0 else None,
+        'interval_seconds': interval,
+        'threshold_seconds': int(threshold),
+        'silent_since': _heartbeat_silent_since if _heartbeat_silent_since > 0 else None,
+    }
+
+
 # ── OTLP Metrics Store ─────────────────────────────────────────────────
 METRICS_FILE = None  # Set via CLI/env, defaults to {WORKSPACE}/.clawmetry-metrics.json
 _metrics_lock = threading.Lock()
@@ -4983,6 +5044,21 @@ def _budget_monitor_loop():
                     message=f'Agent appears down: no OTLP data for {int((now - _otel_last_received) / 60)} minutes',
                     channels=['banner', 'telegram'],
                 )
+
+            # Heartbeat gap check
+            if _last_heartbeat_ts > 0:
+                hb_gap = now - _last_heartbeat_ts
+                hb_threshold = _heartbeat_interval_sec * 1.5
+                if hb_gap > hb_threshold:
+                    if _heartbeat_silent_since == 0:
+                        globals()['_heartbeat_silent_since'] = now
+                    gap_min = int(hb_gap / 60)
+                    _fire_alert(
+                        rule_id='heartbeat_gap',
+                        alert_type='heartbeat_silent',
+                        message=f'Agent heartbeat silent for {gap_min} minutes (expected every {int(_heartbeat_interval_sec / 60)}m)',
+                        channels=['banner', 'telegram'],
+                    )
 
             # Anomaly check: today's cost > 2x 7-day average
             status = _get_budget_status()
@@ -6820,6 +6896,13 @@ function clawmetryLogout(){
   <button id="alert-resume-btn" onclick="resumeGateway()" style="display:none;background:#16a34a;color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:12px;cursor:pointer;font-weight:600;">Resume Gateway</button>
 </div>
 
+<!-- Heartbeat Gap Banner -->
+<div id="heartbeat-banner" style="display:none;padding:10px 16px;border-bottom:2px solid #f59e0b;font-size:13px;font-weight:600;align-items:center;gap:10px;background:#451a03;color:#fbbf24;">
+  <span style="font-size:18px;">&#x1F494;</span>
+  <span id="heartbeat-banner-msg" style="flex:1;"></span>
+  <button onclick="document.getElementById('heartbeat-banner').style.display='none'" style="background:#92400e;color:#fef3c7;border:none;border-radius:6px;padding:4px 12px;font-size:12px;cursor:pointer;font-weight:600;">Dismiss</button>
+</div>
+
 <!-- Budget Settings Modal -->
 <div id="budget-modal" style="display:none;position:fixed;inset:0;z-index:1200;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;">
   <div style="background:var(--bg-primary);border:1px solid var(--border-primary);border-radius:16px;width:90%;max-width:560px;padding:24px;box-shadow:0 25px 50px rgba(0,0,0,0.25);">
@@ -6990,6 +7073,8 @@ function clawmetryLogout(){
         <div id="sh-crons" style="margin-bottom:14px;"></div>
         <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">Sub-Agents (24h)</div>
         <div id="sh-subagents" style="margin-bottom:14px;"></div>
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">Heartbeat</div>
+        <div id="sh-heartbeat" style="margin-bottom:14px;"></div>
       </div>
     </div>
 
@@ -7775,6 +7860,32 @@ async function ackAllAlerts() {
 // Check alerts every 30s
 setInterval(checkActiveAlerts, 30000);
 setTimeout(checkActiveAlerts, 3000);
+
+// === Heartbeat Gap Alerting ===
+async function checkHeartbeatStatus() {
+  try {
+    var data = await fetch('/api/heartbeat-status').then(function(r){return r.json();});
+    var banner = document.getElementById('heartbeat-banner');
+    if (!banner) return;
+    if (data.status === 'warning' || data.status === 'silent') {
+      var gap = data.gap_seconds;
+      var gapStr = gap >= 3600 ? Math.floor(gap/3600) + 'h ' + Math.floor((gap%3600)/60) + 'm' : Math.floor(gap/60) + ' minutes';
+      var intervalMin = Math.floor(data.interval_seconds / 60);
+      var msg = data.status === 'silent'
+        ? 'Agent heartbeat SILENT for ' + gapStr + ' (expected every ' + intervalMin + 'm). Check if agent is running.'
+        : 'Heartbeat delayed: last seen ' + gapStr + ' ago (expected every ' + intervalMin + 'm)';
+      document.getElementById('heartbeat-banner-msg').textContent = msg;
+      banner.style.background = data.status === 'silent' ? '#7f1d1d' : '#451a03';
+      banner.style.color = data.status === 'silent' ? '#fca5a5' : '#fbbf24';
+      banner.style.borderColor = data.status === 'silent' ? '#ef4444' : '#f59e0b';
+      banner.style.display = 'flex';
+    } else {
+      banner.style.display = 'none';
+    }
+  } catch(e) {}
+}
+setInterval(checkHeartbeatStatus, 30000);
+setTimeout(checkHeartbeatStatus, 5000);
 
 // === Telegram Config Functions ===
 async function loadTelegramConfig() {
@@ -9752,6 +9863,29 @@ async function loadSystemHealth() {
       + '<div style="font-size:24px;font-weight:700;color:' + pctColor + ';">' + sa.successPct + '%</div>'
       + '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Success</div></div></div>';
     document.getElementById('sh-subagents').innerHTML = sahtml;
+
+    // Heartbeat status in system health
+    try {
+      var hbData = await fetch('/api/heartbeat-status').then(function(r){return r.json();});
+      var hbEl = document.getElementById('sh-heartbeat');
+      if (hbEl) {
+        var hbStatus = hbData.status || 'unknown';
+        var hbDot = hbStatus === 'ok' ? '🟢' : (hbStatus === 'warning' ? '🟡' : (hbStatus === 'silent' ? '🔴' : '⚪'));
+        var hbLabel = hbStatus === 'ok' ? 'Healthy' : (hbStatus === 'warning' ? 'Delayed' : (hbStatus === 'silent' ? 'SILENT' : 'No data yet'));
+        var hbGap = hbData.gap_seconds;
+        var hbDetail = '';
+        if (hbGap != null) {
+          hbDetail = hbGap >= 3600 ? Math.floor(hbGap/3600) + 'h ' + Math.floor((hbGap%3600)/60) + 'm ago' : Math.floor(hbGap/60) + 'm ago';
+        }
+        var hbInterval = Math.floor(hbData.interval_seconds / 60);
+        var hbColor = hbStatus === 'ok' ? 'var(--text-success)' : (hbStatus === 'warning' ? '#f59e0b' : (hbStatus === 'silent' ? 'var(--text-error)' : 'var(--text-muted)'));
+        hbEl.innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:var(--bg-secondary);border-radius:8px;border:1px solid var(--border-secondary);font-size:13px;">'
+          + hbDot + ' <span style="font-weight:600;color:' + hbColor + ';">' + hbLabel + '</span>'
+          + (hbDetail ? '<span style="color:var(--text-muted);font-size:11px;margin-left:auto;">Last: ' + hbDetail + ' (every ' + hbInterval + 'm)</span>' : '<span style="color:var(--text-muted);font-size:11px;margin-left:auto;">Interval: ' + hbInterval + 'm</span>')
+          + '</div>';
+      }
+    } catch(e) {}
+
     return true;
   } catch(e) {
     console.error('System health load failed', e);
@@ -10680,7 +10814,7 @@ function processFlowEvent(line) {
     var ch = 'tg';
     if (msg.includes('messagechannel=signal')) ch = 'sig';
     else if (msg.includes('messagechannel=whatsapp')) ch = 'wa';
-    else if (msg.includes('messagechannel=heartbeat')) { addFlowFeedItem('💓 Heartbeat run started', '#4a7090'); return; }
+    else if (msg.includes('messagechannel=heartbeat')) { addFlowFeedItem('💓 Heartbeat run started', '#4a7090'); fetch('/api/heartbeat-ping',{method:'POST',headers:{'Authorization':'Bearer '+(localStorage.getItem('clawmetry-token')||'')}}); return; }
     addFlowFeedItem('🧠 AI run started (' + (ch === 'tg' ? 'Telegram' : ch === 'wa' ? 'WhatsApp' : 'Signal') + ')', '#a080f0');
     triggerInbound(ch);
     flowStats.msgTimestamps.push(now);
@@ -18383,6 +18517,8 @@ def api_component_gateway():
                         if ch == 'heartbeat':
                             route['type'] = 'heartbeat'
                             stats['today_heartbeats'] += 1
+                            # Update heartbeat tracking for gap alerting
+                            _record_heartbeat()
                         elif ch == 'cron':
                             route['type'] = 'cron'
                             stats['today_crons'] += 1
@@ -18828,6 +18964,7 @@ def api_system_health():
         'disks': disks,
         'crons': {'enabled': cron_enabled, 'ok24h': cron_ok_24h, 'failed': cron_failed},
         'subagents': {'runs': sa_runs, 'successPct': sa_pct},
+        'heartbeat': _get_heartbeat_status(),
     })
 
 
@@ -18917,6 +19054,19 @@ def api_health():
                        'detail': 'Not installed - pip install clawmetry[otel]'})
 
     return jsonify({'checks': checks})
+
+
+@bp_health.route('/api/heartbeat-status')
+def api_heartbeat_status():
+    """Return heartbeat gap alerting status."""
+    return jsonify(_get_heartbeat_status())
+
+
+@bp_health.route('/api/heartbeat-ping', methods=['POST'])
+def api_heartbeat_ping():
+    """Called by frontend when a heartbeat event is detected in log stream."""
+    _record_heartbeat()
+    return jsonify({'ok': True})
 
 
 @bp_health.route('/api/health-stream')
@@ -20560,6 +20710,7 @@ def _run_server(args):
         FLEET_DB_PATH = os.path.expanduser(args.fleet_db)
     _fleet_init_db()
     _budget_init_db()
+    _detect_heartbeat_interval()
     _start_fleet_maintenance_thread()
     _start_budget_monitor_thread()
 

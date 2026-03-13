@@ -214,3 +214,53 @@ class TestChannelEndpoints:
             pytest.skip("iMessage not available on this platform")
         assert isinstance(d["todayIn"], (int, float))
         assert isinstance(d["todayOut"], (int, float))
+
+
+# ---------------------------------------------------------------------------
+# Heartbeat Gap Alerting
+# ---------------------------------------------------------------------------
+
+class TestHeartbeatStatus:
+    def test_heartbeat_status_endpoint(self, api, base_url):
+        """Heartbeat status endpoint returns 200 with expected keys."""
+        d = assert_ok(get(api, base_url, "/api/heartbeat-status"))
+        assert_keys(d, "status", "last_heartbeat_ts", "interval_seconds", "threshold_seconds")
+
+    def test_heartbeat_status_values(self, api, base_url):
+        """Status is one of: unknown, ok, warning, silent."""
+        d = assert_ok(get(api, base_url, "/api/heartbeat-status"))
+        assert d["status"] in ("unknown", "ok", "warning", "silent"), (
+            f"Unexpected status: {d['status']}"
+        )
+
+    def test_heartbeat_interval_positive(self, api, base_url):
+        """Interval should be a positive number of seconds."""
+        d = assert_ok(get(api, base_url, "/api/heartbeat-status"))
+        assert d["interval_seconds"] > 0
+
+    def test_heartbeat_threshold_gt_interval(self, api, base_url):
+        """Threshold should be greater than interval (1.5x)."""
+        d = assert_ok(get(api, base_url, "/api/heartbeat-status"))
+        assert d["threshold_seconds"] > d["interval_seconds"]
+
+    def test_heartbeat_ping(self, api, base_url):
+        """Heartbeat ping endpoint records a heartbeat event."""
+        r = api.post(f"{base_url}/api/heartbeat-ping", timeout=10)
+        assert r.status_code == 200
+        d = r.json()
+        assert d.get("ok") is True
+
+    def test_heartbeat_status_after_ping(self, api, base_url):
+        """After ping, heartbeat status should be ok."""
+        api.post(f"{base_url}/api/heartbeat-ping", timeout=10)
+        d = assert_ok(get(api, base_url, "/api/heartbeat-status"))
+        assert d["status"] == "ok", f"Expected 'ok' after ping, got '{d['status']}'"
+        assert d["gap_seconds"] is not None
+        assert d["gap_seconds"] < 5  # should be very recent
+
+    def test_system_health_includes_heartbeat(self, api, base_url):
+        """System health endpoint includes heartbeat status."""
+        d = assert_ok(get(api, base_url, "/api/system-health"))
+        assert "heartbeat" in d, "system-health should include heartbeat key"
+        hb = d["heartbeat"]
+        assert_keys(hb, "status", "interval_seconds")
