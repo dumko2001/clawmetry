@@ -2593,29 +2593,29 @@ def install_sh():
         with urllib.request.urlopen("https://raw.githubusercontent.com/vivekchand/clawmetry/refs/heads/main/install.sh", timeout=5) as r:
             script = r.read().decode()
     except Exception:
-        # Fallback to local copy if GitHub is unreachable
-        import os
-        _sh = os.path.join(os.path.dirname(__file__), "install.sh")
-        with open(_sh) as _f:
-            script = _f.read()
+        script = "echo 'Install script unavailable. Visit https://github.com/vivekchand/clawmetry'; exit 1"
     return Response(script, mimetype="text/plain", headers={"Cache-Control": "no-cache, no-store"})
 
 @app.route("/install.cmd")
 def install_cmd():
     from flask import Response
-    import os
-    _f = os.path.join(os.path.dirname(__file__), "install.cmd")
-    with open(_f, encoding="utf-8") as fh:
-        script = fh.read()
+    import urllib.request
+    try:
+        with urllib.request.urlopen("https://raw.githubusercontent.com/vivekchand/clawmetry/refs/heads/main/install.cmd", timeout=5) as r:
+            script = r.read().decode()
+    except Exception:
+        script = "echo Install script unavailable. Visit https://github.com/vivekchand/clawmetry"
     return Response(script, mimetype="text/plain", headers={"Cache-Control": "no-cache, no-store"})
 
 @app.route("/install.ps1")
 def install_ps1():
     from flask import Response
-    import os
-    _f = os.path.join(os.path.dirname(__file__), "install.ps1")
-    with open(_f, encoding="utf-8") as fh:
-        script = fh.read()
+    import urllib.request
+    try:
+        with urllib.request.urlopen("https://raw.githubusercontent.com/vivekchand/clawmetry/refs/heads/main/install.ps1", timeout=5) as r:
+            script = r.read().decode()
+    except Exception:
+        script = "Write-Host 'Install script unavailable. Visit https://github.com/vivekchand/clawmetry'"
     return Response(script, mimetype="text/plain", headers={"Cache-Control": "no-cache, no-store"})
 
 @app.route("/cloud")
