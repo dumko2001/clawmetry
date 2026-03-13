@@ -20640,12 +20640,19 @@ def _run_server(args):
             log = logging.getLogger('werkzeug')
             log.setLevel(logging.ERROR)
             # On Windows with redirected stdout, Click's show_server_banner
-            # crashes calling fileno() on a closed handle. Patch it out.
-            try:
-                import flask.cli
-                flask.cli.show_server_banner = lambda *a, **kw: None
-            except Exception:
-                pass
+            # calls fileno() on stdout → ValueError (closed handle).
+            # Fix: replace sys.stdout/stderr with /dev/null-like streams
+            # so Flask can start without crashing. Output is already
+            # redirected to files by the CI/service manager anyway.
+            if os.name == 'nt':
+                try:
+                    sys.stdout.fileno()
+                except (ValueError, OSError):
+                    sys.stdout = open(os.devnull, 'w', encoding='utf-8')
+                try:
+                    sys.stderr.fileno()
+                except (ValueError, OSError):
+                    sys.stderr = open(os.devnull, 'w', encoding='utf-8')
             app.run(host=args.host, port=args.port, debug=False, use_reloader=False, threaded=True)
 
 
