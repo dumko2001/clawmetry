@@ -2588,10 +2588,16 @@ def v2_landing():
 @app.route("/install.sh")
 def install_sh():
     from flask import Response
-    import os
-    _sh = os.path.join(os.path.dirname(__file__), "install.sh")
-    with open(_sh) as _f:
-        script = _f.read()
+    import urllib.request
+    try:
+        with urllib.request.urlopen("https://raw.githubusercontent.com/vivekchand/clawmetry/refs/heads/main/install.sh", timeout=5) as r:
+            script = r.read().decode()
+    except Exception:
+        # Fallback to local copy if GitHub is unreachable
+        import os
+        _sh = os.path.join(os.path.dirname(__file__), "install.sh")
+        with open(_sh) as _f:
+            script = _f.read()
     return Response(script, mimetype="text/plain", headers={"Cache-Control": "no-cache, no-store"})
 
 @app.route("/install.cmd")
