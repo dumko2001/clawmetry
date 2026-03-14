@@ -525,17 +525,28 @@ def _flush_log_batch(entries: list, fname: str, api_key: str,
 
 # ── Heartbeat ─────────────────────────────────────────────────────────────────
 
-def send_heartbeat(config: dict) -> None:
-    try:
-        _post("/ingest/heartbeat", {
-            "node_id": config["node_id"],
-            "ts": datetime.now(timezone.utc).isoformat(),
-            "platform": platform.system(),
-            "version": _get_version(),
-            "e2e": bool(config.get("encryption_key")),
-        }, config["api_key"])
-    except Exception as e:
-        log.debug(f"Heartbeat failed: {e}")
+def send_heartbeat(config: dict) -> bool:
+    """Send heartbeat to cloud. Returns True on success, False on failure."""
+    payload = {
+        "node_id": config["node_id"],
+        "ts": datetime.now(timezone.utc).isoformat(),
+        "platform": platform.system(),
+        "version": _get_version(),
+        "e2e": bool(config.get("encryption_key")),
+    }
+    last_err = None
+    for attempt in range(3):
+        try:
+            _post("/ingest/heartbeat", payload, config["api_key"])
+            if attempt > 0:
+                log.info(f"Heartbeat succeeded after {attempt + 1} attempts")
+            return True
+        except Exception as e:
+            last_err = e
+            if attempt < 2:
+                time.sleep(2 ** attempt)  # 1s, 2s backoff
+    log.warning(f"Heartbeat failed after 3 attempts: {last_err}")
+    return False
 
 
 def _get_version() -> str:
@@ -1635,6 +1646,7 @@ def run_daemon() -> None:
 
     heartbeat_interval = 60
     last_heartbeat = time.time()
+    consecutive_hb_failures = 0
 
     while True:
         try:
@@ -1661,8 +1673,15 @@ def run_daemon() -> None:
 
             now = time.time()
             if now - last_heartbeat > heartbeat_interval:
-                send_heartbeat(config)
-                last_heartbeat = now
+                if send_heartbeat(config):
+                    if consecutive_hb_failures > 0:
+                        log.info(f"Heartbeat recovered after {consecutive_hb_failures} consecutive failures")
+                    consecutive_hb_failures = 0
+                    last_heartbeat = now
+                else:
+                    consecutive_hb_failures += 1
+                    if consecutive_hb_failures >= 5:
+                        log.error(f"CRITICAL: {consecutive_hb_failures} consecutive heartbeat failures — node appears offline in cloud")
 
         except Exception as e:
             log.error(f"Sync cycle error: {e}")
