@@ -519,7 +519,7 @@ WELCOME_HTML = """\
       <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:8px;">Get a $10 Amazon Gift Card</div>
       <p style="font-size:13px;color:#93c5fd;line-height:1.6;margin:0;">Try ClawMetry, leave a <a href="https://www.producthunt.com/products/clawmetry/reviews/new" style="color:#93c5fd;font-weight:700;">Product Hunt review</a>, and reply to this email with a screenshot of your dashboard. We will send you a <strong>$10 Amazon gift card</strong> as a thank you.</p>
     </div>
-    <p style="font-size:15px;color:#d1d5db;">Cheers,<br><strong style="color:#fff;">The ClawMetry Team</strong> 🦞</p>
+    <p style="font-size:15px;color:#d1d5db;">Cheers,<br><strong style="color:#fff;">The ClawMetry Team</strong></p>
   </div>
   <div style="border-top:1px solid #1f1f2e;padding:20px 28px;text-align:center;">
     <p style="font-size:13px;color:#9ca3af;margin:0 0 12px;">Need help setting up?</p>
@@ -628,7 +628,7 @@ WELCOME_SIGNUP_HTML_TMPL = """\
 
 def send_signup_welcome_email(email, api_key, referral_code=""):
     """Send welcome email with API key to new OTP signups. Reply goes to vivek@clawmetry.com."""
-    subject = "Welcome to ClawMetry \U0001f99e"
+    subject = "Welcome to ClawMetry"
     referral_code_val = referral_code or _generate_referral_code(email)
     html = WELCOME_SIGNUP_HTML_TMPL.format(referral_code=referral_code_val)
     ok, resp = _resend_post("/emails", {
@@ -671,7 +671,7 @@ def _resend_get(path):
 
 
 def send_welcome_email(email):
-    subject = "Welcome to ClawMetry \U0001f99e"
+    subject = "Welcome to ClawMetry"
     ok, resp = _resend_post("/emails", {
         "from": FROM_EMAIL, "to": [email], "bcc": ["vivek@clawmetry.com"],
         "subject": subject, "html": WELCOME_HTML,
@@ -1097,7 +1097,7 @@ def managed_request():
         )
         email_html = f"""<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;background:#0d0d14;color:#e0e0e0;border-radius:12px;">
     <div style="text-align:center;margin-bottom:24px;">
-      <div style="font-size:36px;margin-bottom:8px;">&#x1F99E;</div>
+      <div style="margin-bottom:8px;"><img src="https://clawmetry.com/favicon.svg" width="40" height="40" style="border-radius:6px" alt="ClawMetry"></div>
       <h2 style="color:#fff;margin:0 0 4px;font-size:20px;">You're in, {name}!</h2>
       <p style="color:#9ca3af;font-size:13px;margin:0;">Your ClawMetry account is live</p>
     </div>
@@ -1121,7 +1121,7 @@ def managed_request():
             _resend_post("/emails", {
                 "from": FROM_EMAIL, "to": [email], "bcc": ["vivek@clawmetry.com"],
                 "reply_to": ["vivek@clawmetry.com"],
-                "subject": "You're in 🦞 — here's how to connect your first agent",
+                "subject": "You're in — here's how to connect your first agent",
                 "html": email_html
             })
         except Exception as e:
@@ -1555,7 +1555,7 @@ def api_connect():
     key_email_html = f"""
     <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:520px;margin:0 auto;">
       <div style="background:#0B0F1A;padding:24px 28px 16px;border-radius:12px 12px 0 0;">
-        <div style="font-size:20px;font-weight:800;color:#fff;">Claw<span style="color:#E5443A;">metry</span> &#x1F99E;</div>
+        <div style="font-size:20px;font-weight:800;color:#fff;"><img src="https://clawmetry.com/favicon.svg" width="22" height="22" style="vertical-align:middle;border-radius:4px;margin-right:6px" alt="">Claw<span style="color:#E5443A;">metry</span></div>
       </div>
       <div style="background:#fff;padding:28px;border-radius:0 0 12px 12px;border:1px solid #e2e8f0;border-top:none;">
         <p style="font-size:15px;color:#111;margin:0 0 16px;">Here is your ClawMetry API key:</p>
@@ -1934,7 +1934,7 @@ BLAST_EMAIL_HTML = """<!DOCTYPE html>
 <body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
   <div style="max-width:520px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
     <div style="background:#0B0F1A;padding:28px 32px 20px;">
-      <div style="font-size:22px;font-weight:800;color:#fff;letter-spacing:-0.02em;">Claw<span style="color:#E5443A;">metry</span> &#x1F99E;</div>
+      <div style="font-size:22px;font-weight:800;color:#fff;letter-spacing:-0.02em;"><img src="https://clawmetry.com/favicon.svg" width="22" height="22" style="vertical-align:middle;border-radius:4px;margin-right:6px" alt="">Claw<span style="color:#E5443A;">metry</span></div>
       <p style="font-size:13px;color:#94a3b8;margin:4px 0 0;">Real-time observability for your AI agents</p>
     </div>
     <div style="padding:32px;">
