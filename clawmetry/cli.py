@@ -243,7 +243,8 @@ def _cmd_connect(args) -> None:
         sys.exit(1)
 
     # Verify ownership via OTP when key is passed directly (not from interactive flow)
-    if args.key:
+    # Skip in non-interactive mode (scripts, CI, SSH) — the key itself is proof of ownership
+    if args.key and sys.stdin.isatty():
         _verify_key_ownership(api_key)
 
     custom_name = getattr(args, 'custom_node_id', None) or ''
