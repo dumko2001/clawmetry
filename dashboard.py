@@ -2747,6 +2747,14 @@ function clawmetryLogout(){
         <div id="sh-crons" style="margin-bottom:14px;"></div>
         <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">Sub-Agents (24h)</div>
         <div id="sh-subagents" style="margin-bottom:14px;"></div>
+        <div id="sh-heartbeat-wrap" style="display:none;"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">Heartbeat</div>
+        <div id="sh-heartbeat" style="margin-bottom:14px;"></div></div>
+        <div id="sh-sandbox-wrap" style="display:none;"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">🔒 Sandbox</div>
+        <div id="sh-sandbox" style="margin-bottom:14px;"></div></div>
+        <div id="sh-inference-wrap" style="display:none;"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">🤖 Inference Provider</div>
+        <div id="sh-inference" style="margin-bottom:14px;"></div></div>
+        <div id="sh-security-wrap" style="display:none;"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">🛡️ Security Posture</div>
+        <div id="sh-security" style="margin-bottom:14px;"></div></div>
       </div>
     </div>
 
@@ -4528,6 +4536,98 @@ def _record_heartbeat():
     global _last_heartbeat_ts, _heartbeat_silent_since
     _last_heartbeat_ts = time.time()
     _heartbeat_silent_since = 0  # reset silence tracker
+
+def _detect_sandbox_metadata():
+    """Detect sandbox environment metadata. Returns dict or None."""
+    sandbox = {}
+    # Check environment variables (set by container wrappers like NemoClaw, Docker, etc.)
+    name = os.environ.get('SANDBOX_NAME') or os.environ.get('CONTAINER_NAME')
+    stype = os.environ.get('SANDBOX_TYPE') or os.environ.get('CONTAINER_TYPE')
+    status = os.environ.get('SANDBOX_STATUS', 'running')
+    # Check if running inside Docker
+    in_docker = os.path.exists('/.dockerenv')
+    if not in_docker:
+        try:
+            with open('/proc/1/cgroup', 'r') as f:
+                in_docker = 'docker' in f.read() or 'containerd' in f.read()
+        except Exception:
+            pass
+    # Check openclaw.json for sandbox config
+    cfg = _load_gw_config()
+    sandbox_cfg = cfg.get('sandbox', {}) if isinstance(cfg, dict) else {}
+    if isinstance(sandbox_cfg, dict) and sandbox_cfg:
+        name = name or sandbox_cfg.get('name')
+        stype = stype or sandbox_cfg.get('type')
+        status = sandbox_cfg.get('status', status)
+    if name or stype or in_docker:
+        sandbox['name'] = name or ('Docker Container' if in_docker else 'Unknown')
+        sandbox['type'] = stype or ('docker' if in_docker else 'unknown')
+        sandbox['status'] = status
+        return sandbox
+    return None
+
+
+def _detect_inference_metadata():
+    """Detect inference provider metadata. Returns dict or None."""
+    provider = os.environ.get('INFERENCE_PROVIDER')
+    model = os.environ.get('INFERENCE_MODEL')
+    # Check openclaw.json
+    cfg = _load_gw_config()
+    if isinstance(cfg, dict):
+        inf_cfg = cfg.get('inference', {})
+        if isinstance(inf_cfg, dict) and inf_cfg:
+            provider = provider or inf_cfg.get('provider')
+            model = model or inf_cfg.get('model')
+        # Also check default model from standard config
+        if not model:
+            model = cfg.get('model') or cfg.get('default_model')
+        if not provider and model:
+            # Infer provider from model name
+            m = (model or '').lower()
+            if 'claude' in m or 'anthropic' in m:
+                provider = 'Anthropic'
+            elif 'gpt' in m or 'o1' in m or 'o3' in m or 'o4' in m:
+                provider = 'OpenAI'
+            elif 'gemini' in m:
+                provider = 'Google'
+            elif 'llama' in m or 'mistral' in m or 'mixtral' in m:
+                provider = 'Local/Ollama'
+    if provider or model:
+        return {'provider': provider, 'model': model}
+    return None
+
+
+def _detect_security_metadata():
+    """Detect security posture metadata. Returns dict or None."""
+    security = {}
+    cfg = _load_gw_config()
+    if isinstance(cfg, dict):
+        sec_cfg = cfg.get('security', {})
+        if isinstance(sec_cfg, dict):
+            if 'sandbox_enabled' in sec_cfg:
+                security['sandbox_enabled'] = sec_cfg['sandbox_enabled']
+            if 'network_policy' in sec_cfg:
+                security['network_policy'] = sec_cfg['network_policy']
+        # Check exec security mode
+        exec_cfg = cfg.get('exec', {})
+        if isinstance(exec_cfg, dict) and exec_cfg.get('security'):
+            security['exec_security'] = exec_cfg['security']
+        # Check if auth is configured
+        if cfg.get('auth') or cfg.get('token'):
+            security['auth_enabled'] = True
+        # Check bind address
+        bind = cfg.get('bind') or cfg.get('host')
+        if bind:
+            security['bind_address'] = bind
+            security['localhost_only'] = bind in ('127.0.0.1', 'localhost', '::1')
+    # Check Docker sandbox
+    if os.path.exists('/.dockerenv'):
+        security['sandbox_enabled'] = True
+        security['sandbox_type'] = 'docker'
+    if security:
+        return security
+    return None
+
 
 def _get_heartbeat_status():
     """Return heartbeat gap status for the API."""
@@ -7236,6 +7336,12 @@ function clawmetryLogout(){
         <div id="sh-subagents" style="margin-bottom:14px;"></div>
         <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">Heartbeat</div>
         <div id="sh-heartbeat" style="margin-bottom:14px;"></div>
+        <div id="sh-sandbox-wrap" style="display:none;"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">🔒 Sandbox</div>
+        <div id="sh-sandbox" style="margin-bottom:14px;"></div></div>
+        <div id="sh-inference-wrap" style="display:none;"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">🤖 Inference Provider</div>
+        <div id="sh-inference" style="margin-bottom:14px;"></div></div>
+        <div id="sh-security-wrap" style="display:none;"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">🛡️ Security Posture</div>
+        <div id="sh-security" style="margin-bottom:14px;"></div></div>
       </div>
     </div>
 
@@ -10527,6 +10633,48 @@ async function loadSystemHealth() {
           + '</div>';
       }
     } catch(e) {}
+
+    // Sandbox Status (conditional)
+    var sbWrap = document.getElementById('sh-sandbox-wrap');
+    var sbEl = document.getElementById('sh-sandbox');
+    if (d.sandbox && sbEl) {
+      var sb = d.sandbox;
+      var sbDot = sb.status === 'running' ? '🟢' : (sb.status === 'error' ? '🔴' : '🟡');
+      var sbColor = sb.status === 'running' ? 'var(--text-success,#22c55e)' : (sb.status === 'error' ? 'var(--text-error,#dc2626)' : '#d97706');
+      sbEl.innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:var(--bg-secondary);border-radius:8px;border:1px solid var(--border-secondary);font-size:13px;">'
+        + sbDot + ' <span style="font-weight:600;color:' + sbColor + ';">' + (sb.name || 'Sandbox') + '</span>'
+        + '<span style="color:var(--text-muted);font-size:11px;margin-left:auto;">' + (sb.type || '') + '</span></div>';
+      if (sbWrap) sbWrap.style.display = '';
+    } else if (sbWrap) { sbWrap.style.display = 'none'; }
+
+    // Inference Provider (conditional)
+    var infWrap = document.getElementById('sh-inference-wrap');
+    var infEl = document.getElementById('sh-inference');
+    if (d.inference && infEl) {
+      var inf = d.inference;
+      infEl.innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:var(--bg-secondary);border-radius:8px;border:1px solid var(--border-secondary);font-size:13px;">'
+        + '🤖 <span style="font-weight:600;color:var(--text-primary);">' + (inf.provider || 'Unknown') + '</span>'
+        + (inf.model ? '<span style="color:var(--text-muted);font-size:11px;margin-left:auto;font-family:monospace;">' + inf.model + '</span>' : '')
+        + '</div>';
+      if (infWrap) infWrap.style.display = '';
+    } else if (infWrap) { infWrap.style.display = 'none'; }
+
+    // Security Posture (conditional)
+    var secWrap = document.getElementById('sh-security-wrap');
+    var secEl = document.getElementById('sh-security');
+    if (d.security && secEl) {
+      var sec = d.security;
+      var badges = '';
+      if (sec.sandbox_enabled) badges += '<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(34,197,94,0.15);color:#22c55e;margin-right:4px;">🔒 Sandboxed</span>';
+      if (sec.auth_enabled) badges += '<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(34,197,94,0.15);color:#22c55e;margin-right:4px;">🔑 Auth</span>';
+      if (sec.localhost_only) badges += '<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(34,197,94,0.15);color:#22c55e;margin-right:4px;">🏠 Localhost</span>';
+      else if (sec.bind_address) badges += '<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(220,38,38,0.15);color:#dc2626;margin-right:4px;">⚠️ ' + sec.bind_address + '</span>';
+      if (sec.exec_security) badges += '<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(59,130,246,0.15);color:#3b82f6;margin-right:4px;">Exec: ' + sec.exec_security + '</span>';
+      if (sec.network_policy) badges += '<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(59,130,246,0.15);color:#3b82f6;margin-right:4px;">Net: ' + sec.network_policy + '</span>';
+      if (!badges) badges = '<span style="color:var(--text-muted);font-size:12px;">No security metadata detected</span>';
+      secEl.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:4px;padding:8px 10px;background:var(--bg-secondary);border-radius:8px;border:1px solid var(--border-secondary);">' + badges + '</div>';
+      if (secWrap) secWrap.style.display = '';
+    } else if (secWrap) { secWrap.style.display = 'none'; }
 
     return true;
   } catch(e) {
@@ -20611,6 +20759,9 @@ def api_system_health():
         'crons': {'enabled': cron_enabled, 'ok24h': cron_ok_24h, 'failed': cron_failed},
         'subagents': {'runs': sa_runs, 'successPct': sa_pct},
         'heartbeat': _get_heartbeat_status(),
+        'sandbox': _detect_sandbox_metadata(),
+        'inference': _detect_inference_metadata(),
+        'security': _detect_security_metadata(),
     })
 
 
