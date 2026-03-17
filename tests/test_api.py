@@ -265,6 +265,27 @@ class TestHeartbeatStatus:
         hb = d["heartbeat"]
         assert_keys(hb, "status", "interval_seconds")
 
+    def test_system_health_includes_sandbox_field(self, api, base_url):
+        """System health endpoint includes sandbox field (may be null)."""
+        d = assert_ok(get(api, base_url, "/api/system-health"))
+        assert "sandbox" in d, "system-health should include sandbox key"
+        # sandbox is null when not in a sandboxed environment
+        if d["sandbox"] is not None:
+            assert "name" in d["sandbox"]
+            assert "status" in d["sandbox"]
+
+    def test_system_health_includes_inference_field(self, api, base_url):
+        """System health endpoint includes inference field (may be null)."""
+        d = assert_ok(get(api, base_url, "/api/system-health"))
+        assert "inference" in d, "system-health should include inference key"
+        if d["inference"] is not None:
+            assert "provider" in d["inference"] or "model" in d["inference"]
+
+    def test_system_health_includes_security_field(self, api, base_url):
+        """System health endpoint includes security field (may be null)."""
+        d = assert_ok(get(api, base_url, "/api/system-health"))
+        assert "security" in d, "system-health should include security key"
+
 
 # ---------------------------------------------------------------------------
 # Security

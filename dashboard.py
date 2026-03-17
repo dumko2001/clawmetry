@@ -2750,6 +2750,14 @@ function clawmetryLogout(){
         <div id="sh-crons" style="margin-bottom:14px;"></div>
         <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">Sub-Agents (24h)</div>
         <div id="sh-subagents" style="margin-bottom:14px;"></div>
+        <div id="sh-heartbeat-wrap" style="display:none;"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">Heartbeat</div>
+        <div id="sh-heartbeat" style="margin-bottom:14px;"></div></div>
+        <div id="sh-sandbox-wrap" style="display:none;"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">🔒 Sandbox</div>
+        <div id="sh-sandbox" style="margin-bottom:14px;"></div></div>
+        <div id="sh-inference-wrap" style="display:none;"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">🤖 Inference Provider</div>
+        <div id="sh-inference" style="margin-bottom:14px;"></div></div>
+        <div id="sh-security-wrap" style="display:none;"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">🛡️ Security Posture</div>
+        <div id="sh-security" style="margin-bottom:14px;"></div></div>
       </div>
     </div>
 
@@ -4531,6 +4539,98 @@ def _record_heartbeat():
     global _last_heartbeat_ts, _heartbeat_silent_since
     _last_heartbeat_ts = time.time()
     _heartbeat_silent_since = 0  # reset silence tracker
+
+def _detect_sandbox_metadata():
+    """Detect sandbox environment metadata. Returns dict or None."""
+    sandbox = {}
+    # Check environment variables (set by container wrappers like NemoClaw, Docker, etc.)
+    name = os.environ.get('SANDBOX_NAME') or os.environ.get('CONTAINER_NAME')
+    stype = os.environ.get('SANDBOX_TYPE') or os.environ.get('CONTAINER_TYPE')
+    status = os.environ.get('SANDBOX_STATUS', 'running')
+    # Check if running inside Docker
+    in_docker = os.path.exists('/.dockerenv')
+    if not in_docker:
+        try:
+            with open('/proc/1/cgroup', 'r') as f:
+                in_docker = 'docker' in f.read() or 'containerd' in f.read()
+        except Exception:
+            pass
+    # Check openclaw.json for sandbox config
+    cfg = _load_gw_config()
+    sandbox_cfg = cfg.get('sandbox', {}) if isinstance(cfg, dict) else {}
+    if isinstance(sandbox_cfg, dict) and sandbox_cfg:
+        name = name or sandbox_cfg.get('name')
+        stype = stype or sandbox_cfg.get('type')
+        status = sandbox_cfg.get('status', status)
+    if name or stype or in_docker:
+        sandbox['name'] = name or ('Docker Container' if in_docker else 'Unknown')
+        sandbox['type'] = stype or ('docker' if in_docker else 'unknown')
+        sandbox['status'] = status
+        return sandbox
+    return None
+
+
+def _detect_inference_metadata():
+    """Detect inference provider metadata. Returns dict or None."""
+    provider = os.environ.get('INFERENCE_PROVIDER')
+    model = os.environ.get('INFERENCE_MODEL')
+    # Check openclaw.json
+    cfg = _load_gw_config()
+    if isinstance(cfg, dict):
+        inf_cfg = cfg.get('inference', {})
+        if isinstance(inf_cfg, dict) and inf_cfg:
+            provider = provider or inf_cfg.get('provider')
+            model = model or inf_cfg.get('model')
+        # Also check default model from standard config
+        if not model:
+            model = cfg.get('model') or cfg.get('default_model')
+        if not provider and model:
+            # Infer provider from model name
+            m = (model or '').lower()
+            if 'claude' in m or 'anthropic' in m:
+                provider = 'Anthropic'
+            elif 'gpt' in m or 'o1' in m or 'o3' in m or 'o4' in m:
+                provider = 'OpenAI'
+            elif 'gemini' in m:
+                provider = 'Google'
+            elif 'llama' in m or 'mistral' in m or 'mixtral' in m:
+                provider = 'Local/Ollama'
+    if provider or model:
+        return {'provider': provider, 'model': model}
+    return None
+
+
+def _detect_security_metadata():
+    """Detect security posture metadata. Returns dict or None."""
+    security = {}
+    cfg = _load_gw_config()
+    if isinstance(cfg, dict):
+        sec_cfg = cfg.get('security', {})
+        if isinstance(sec_cfg, dict):
+            if 'sandbox_enabled' in sec_cfg:
+                security['sandbox_enabled'] = sec_cfg['sandbox_enabled']
+            if 'network_policy' in sec_cfg:
+                security['network_policy'] = sec_cfg['network_policy']
+        # Check exec security mode
+        exec_cfg = cfg.get('exec', {})
+        if isinstance(exec_cfg, dict) and exec_cfg.get('security'):
+            security['exec_security'] = exec_cfg['security']
+        # Check if auth is configured
+        if cfg.get('auth') or cfg.get('token'):
+            security['auth_enabled'] = True
+        # Check bind address
+        bind = cfg.get('bind') or cfg.get('host')
+        if bind:
+            security['bind_address'] = bind
+            security['localhost_only'] = bind in ('127.0.0.1', 'localhost', '::1')
+    # Check Docker sandbox
+    if os.path.exists('/.dockerenv'):
+        security['sandbox_enabled'] = True
+        security['sandbox_type'] = 'docker'
+    if security:
+        return security
+    return None
+
 
 def _get_heartbeat_status():
     """Return heartbeat gap status for the API."""
@@ -7242,6 +7342,12 @@ function clawmetryLogout(){
         <div id="sh-subagents" style="margin-bottom:14px;"></div>
         <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">Heartbeat</div>
         <div id="sh-heartbeat" style="margin-bottom:14px;"></div>
+        <div id="sh-sandbox-wrap" style="display:none;"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">🔒 Sandbox</div>
+        <div id="sh-sandbox" style="margin-bottom:14px;"></div></div>
+        <div id="sh-inference-wrap" style="display:none;"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">🤖 Inference Provider</div>
+        <div id="sh-inference" style="margin-bottom:14px;"></div></div>
+        <div id="sh-security-wrap" style="display:none;"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">🛡️ Security Posture</div>
+        <div id="sh-security" style="margin-bottom:14px;"></div></div>
       </div>
     </div>
 
@@ -10533,6 +10639,48 @@ async function loadSystemHealth() {
           + '</div>';
       }
     } catch(e) {}
+
+    // Sandbox Status (conditional)
+    var sbWrap = document.getElementById('sh-sandbox-wrap');
+    var sbEl = document.getElementById('sh-sandbox');
+    if (d.sandbox && sbEl) {
+      var sb = d.sandbox;
+      var sbDot = sb.status === 'running' ? '🟢' : (sb.status === 'error' ? '🔴' : '🟡');
+      var sbColor = sb.status === 'running' ? 'var(--text-success,#22c55e)' : (sb.status === 'error' ? 'var(--text-error,#dc2626)' : '#d97706');
+      sbEl.innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:var(--bg-secondary);border-radius:8px;border:1px solid var(--border-secondary);font-size:13px;">'
+        + sbDot + ' <span style="font-weight:600;color:' + sbColor + ';">' + (sb.name || 'Sandbox') + '</span>'
+        + '<span style="color:var(--text-muted);font-size:11px;margin-left:auto;">' + (sb.type || '') + '</span></div>';
+      if (sbWrap) sbWrap.style.display = '';
+    } else if (sbWrap) { sbWrap.style.display = 'none'; }
+
+    // Inference Provider (conditional)
+    var infWrap = document.getElementById('sh-inference-wrap');
+    var infEl = document.getElementById('sh-inference');
+    if (d.inference && infEl) {
+      var inf = d.inference;
+      infEl.innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:var(--bg-secondary);border-radius:8px;border:1px solid var(--border-secondary);font-size:13px;">'
+        + '🤖 <span style="font-weight:600;color:var(--text-primary);">' + (inf.provider || 'Unknown') + '</span>'
+        + (inf.model ? '<span style="color:var(--text-muted);font-size:11px;margin-left:auto;font-family:monospace;">' + inf.model + '</span>' : '')
+        + '</div>';
+      if (infWrap) infWrap.style.display = '';
+    } else if (infWrap) { infWrap.style.display = 'none'; }
+
+    // Security Posture (conditional)
+    var secWrap = document.getElementById('sh-security-wrap');
+    var secEl = document.getElementById('sh-security');
+    if (d.security && secEl) {
+      var sec = d.security;
+      var badges = '';
+      if (sec.sandbox_enabled) badges += '<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(34,197,94,0.15);color:#22c55e;margin-right:4px;">🔒 Sandboxed</span>';
+      if (sec.auth_enabled) badges += '<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(34,197,94,0.15);color:#22c55e;margin-right:4px;">🔑 Auth</span>';
+      if (sec.localhost_only) badges += '<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(34,197,94,0.15);color:#22c55e;margin-right:4px;">🏠 Localhost</span>';
+      else if (sec.bind_address) badges += '<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(220,38,38,0.15);color:#dc2626;margin-right:4px;">⚠️ ' + sec.bind_address + '</span>';
+      if (sec.exec_security) badges += '<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(59,130,246,0.15);color:#3b82f6;margin-right:4px;">Exec: ' + sec.exec_security + '</span>';
+      if (sec.network_policy) badges += '<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(59,130,246,0.15);color:#3b82f6;margin-right:4px;">Net: ' + sec.network_policy + '</span>';
+      if (!badges) badges = '<span style="color:var(--text-muted);font-size:12px;">No security metadata detected</span>';
+      secEl.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:4px;padding:8px 10px;background:var(--bg-secondary);border-radius:8px;border:1px solid var(--border-secondary);">' + badges + '</div>';
+      if (secWrap) secWrap.style.display = '';
+    } else if (secWrap) { secWrap.style.display = 'none'; }
 
     return true;
   } catch(e) {
@@ -20196,12 +20344,20 @@ def _scan_security_posture():
 
     Returns a list of checks with pass/fail/warn status, remediation hints,
     and an overall A-F security score.
+
+    Supports three config detection strategies:
+    1. Local filesystem (native install)
+    2. Docker container (reads config via docker exec/cp)
+    3. Live gateway API (works for any deployment, including Hostinger/VPS Docker)
     """
     checks = []
+    is_docker = False
 
     # --- Locate openclaw.json config ---
     config_data = None
     config_path = None
+
+    # Strategy 1: Local filesystem
     for cf in [
         os.path.expanduser('~/.openclaw/openclaw.json'),
         os.path.expanduser('~/.clawdbot/openclaw.json'),
@@ -20215,16 +20371,95 @@ def _scan_security_posture():
         except Exception:
             continue
 
+    # Strategy 2: Docker container (if not found locally)
+    if config_data is None:
+        try:
+            import subprocess as _sp
+            # Find OpenClaw containers
+            out = _sp.run(
+                ["docker", "ps", "--format", "{{.ID}}\t{{.Names}}\t{{.Image}}"],
+                capture_output=True, text=True, timeout=5)
+            if out.returncode == 0:
+                for line in out.stdout.strip().splitlines():
+                    parts = line.split("\t")
+                    if len(parts) < 3:
+                        continue
+                    cid, name, image = parts[0], parts[1], parts[2]
+                    if not any(k in (name + image).lower() for k in ["openclaw", "clawd", "claw"]):
+                        continue
+                    # Try to read config from inside container
+                    for container_path in [
+                        "/root/.openclaw/openclaw.json",
+                        "/home/node/.openclaw/openclaw.json",
+                        "/data/openclaw.json",
+                        "/app/openclaw.json",
+                    ]:
+                        try:
+                            cat_out = _sp.run(
+                                ["docker", "exec", cid, "cat", container_path],
+                                capture_output=True, text=True, timeout=5)
+                            if cat_out.returncode == 0 and cat_out.stdout.strip():
+                                config_data = json.loads(cat_out.stdout)
+                                config_path = f"docker:{cid[:12]}:{container_path}"
+                                is_docker = True
+                                break
+                        except Exception:
+                            continue
+                    if config_data:
+                        break
+        except (FileNotFoundError, Exception):
+            pass  # Docker not available
+
+    # Strategy 3: Live gateway API (works for any deployment including remote Docker)
+    if config_data is None:
+        try:
+            gw_cfg = _load_gw_config()
+            gw_url = gw_cfg.get('url', GATEWAY_URL)
+            gw_token = gw_cfg.get('token', GATEWAY_TOKEN)
+            if gw_url and gw_token:
+                import urllib.request
+                req = urllib.request.Request(
+                    f"{gw_url}/api/config",
+                    headers={"Authorization": f"Bearer {gw_token}", "Accept": "application/json"})
+                with urllib.request.urlopen(req, timeout=5) as resp:
+                    if resp.status == 200:
+                        config_data = json.loads(resp.read().decode())
+                        config_path = f"gateway:{gw_url}"
+                        # Check if gateway reports Docker environment
+                        runtime = config_data.get('runtime', {})
+                        if runtime.get('container') or os.path.exists('/.dockerenv'):
+                            is_docker = True
+        except Exception:
+            pass
+
     if config_data is None:
         return {
             'score': 'U',
             'score_label': 'Unknown',
             'score_color': '#64748b',
             'checks': [{'id': 'config_found', 'label': 'Configuration file', 'status': 'fail',
-                         'detail': 'No openclaw.json found', 'remediation': 'Ensure OpenClaw is installed and configured.',
+                         'detail': 'No openclaw.json found (checked local files, Docker containers, and gateway API)',
+                         'remediation': 'Ensure OpenClaw is installed and configured. For Docker: verify the container is running. For remote: configure GATEWAY_URL and GATEWAY_TOKEN.',
                          'severity': 'critical', 'weight': 20}],
             'passed': 0, 'failed': 1, 'warnings': 0, 'total': 1,
         }
+
+    # Config found — add pass check with source info
+    source_label = 'local file' if not config_path.startswith(('docker:', 'gateway:')) else (
+        'Docker container' if config_path.startswith('docker:') else 'gateway API')
+    checks.append({
+        'id': 'config_found', 'label': 'Configuration file', 'status': 'pass',
+        'detail': f'Config loaded from {source_label} ({config_path})',
+        'remediation': None, 'severity': 'critical', 'weight': 20,
+    })
+
+    # Docker-specific checks
+    if is_docker:
+        checks.append({
+            'id': 'docker_isolation', 'label': 'Container isolation', 'status': 'pass',
+            'detail': 'OpenClaw is running inside a Docker container (network/filesystem isolation).',
+            'remediation': None, 'severity': 'high', 'weight': 5,
+        })
 
     gateway = config_data.get('gateway', {})
     plugins = config_data.get('plugins', {})
@@ -20264,8 +20499,15 @@ def _scan_security_posture():
             })
 
     # Check 3: Gateway bind address (should be localhost, not 0.0.0.0)
+    # In Docker, binding to 0.0.0.0 is expected (Docker manages port exposure)
     bind_host = gateway.get('host') or gateway.get('bind') or '127.0.0.1'
-    if bind_host in ('0.0.0.0', '::'):
+    if bind_host in ('0.0.0.0', '::') and is_docker:
+        checks.append({
+            'id': 'bind_address', 'label': 'Gateway bind address', 'status': 'pass',
+            'detail': 'Gateway binds to {} inside Docker container (Docker manages network exposure via port mapping).'.format(bind_host),
+            'remediation': None, 'severity': 'critical', 'weight': 20,
+        })
+    elif bind_host in ('0.0.0.0', '::'):
         checks.append({
             'id': 'bind_address', 'label': 'Gateway bind address', 'status': 'fail',
             'detail': 'Gateway binds to {} (all interfaces). Exposed to the network.'.format(bind_host),
@@ -20312,6 +20554,13 @@ def _scan_security_posture():
             'id': 'tls_enabled', 'label': 'TLS encryption', 'status': 'pass',
             'detail': 'TLS is configured for the gateway.',
             'remediation': None, 'severity': 'high', 'weight': 10,
+        })
+    elif bind_host in ('0.0.0.0', '::') and is_docker:
+        checks.append({
+            'id': 'tls_enabled', 'label': 'TLS encryption', 'status': 'warn',
+            'detail': 'No TLS configured on gateway (Docker). TLS is typically handled by the hosting provider or reverse proxy.',
+            'remediation': 'Verify your hosting provider (Hostinger, etc.) or reverse proxy terminates TLS before reaching the container.',
+            'severity': 'high', 'weight': 10,
         })
     elif bind_host in ('0.0.0.0', '::'):
         checks.append({
@@ -20449,6 +20698,7 @@ def _scan_security_posture():
         'warnings': warnings,
         'total': len(checks),
         'config_path': config_path,
+        'is_docker': is_docker,
         'scanned_at': datetime.now().isoformat(),
     }
 
@@ -20617,6 +20867,9 @@ def api_system_health():
         'crons': {'enabled': cron_enabled, 'ok24h': cron_ok_24h, 'failed': cron_failed},
         'subagents': {'runs': sa_runs, 'successPct': sa_pct},
         'heartbeat': _get_heartbeat_status(),
+        'sandbox': _detect_sandbox_metadata(),
+        'inference': _detect_inference_metadata(),
+        'security': _detect_security_metadata(),
     })
 
 
