@@ -261,17 +261,17 @@ def _cmd_connect(args) -> None:
             sys.exit(1)
 
     from clawmetry.sync import generate_encryption_key
-    # Reuse existing encryption key on reconnect (only generate new on first connect)
+    # Always prompt for encryption key — be transparent
+    print()
+    print("🔐 Encryption key protects your data end-to-end.")
     if _saved_enc_key:
-        enc_key = _saved_enc_key
+        masked = _saved_enc_key[:6] + '…' + _saved_enc_key[-4:]
+        print(f"  Existing key: {masked}")
+        custom_key = _input("  Press Enter to keep it, or type a new one: ").strip()
+        enc_key = custom_key if custom_key else _saved_enc_key
     else:
-        print()
-        print("🔐 Encryption key protects your data end-to-end.")
         custom_key = _input("  Enter a custom secret key (or press Enter to auto-generate): ").strip()
-        if custom_key:
-            enc_key = custom_key
-        else:
-            enc_key = generate_encryption_key()
+        enc_key = custom_key if custom_key else generate_encryption_key()
 
     config = {
         "api_key": api_key,
