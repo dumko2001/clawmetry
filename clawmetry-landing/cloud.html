@@ -413,7 +413,7 @@
         </div>
         <div id="cpanel-cmd" style="display:none;">
           <div style="color:rgba(255,255,255,0.35);font-style:italic;"># Install + connect to cloud</div>
-          <div><span style="color:rgba(255,255,255,0.4);">&gt; </span><span style="color:#28c840;">pip install clawmetry</span></div>
+          <div><span style="color:rgba(255,255,255,0.4);">&gt; </span><span style="color:#28c840;font-size:13px;">curl -fsSL https://clawmetry.com/install.cmd -o install.cmd && install.cmd && del install.cmd</span></div>
           <div><span style="color:rgba(255,255,255,0.4);">&gt; </span><span style="color:#28c840;">clawmetry connect</span></div>
           <div style="margin-top:6px;padding:8px 12px;background:rgba(52,211,153,0.07);border:1px solid rgba(52,211,153,0.15);border-radius:6px;font-size:13px;"><span style="color:#34D399;">&#10003; Node connected.</span> <span style="color:#64748B;">Opening app.clawmetry.com...</span></div>
         </div>
@@ -431,7 +431,7 @@
       oneliner: 'curl -fsSL https://clawmetry.com/install.sh | bash && clawmetry connect',
       pip: 'pip install clawmetry && clawmetry connect',
       powershell: 'iwr -useb https://clawmetry.com/install.ps1 | iex; clawmetry connect',
-      cmd: 'pip install clawmetry && clawmetry connect'
+      cmd: 'curl -fsSL https://clawmetry.com/install.cmd -o install.cmd && install.cmd && del install.cmd && clawmetry connect'
     };
     var cloudActiveTab = 'oneliner';
     function showCloudTab(id) {
