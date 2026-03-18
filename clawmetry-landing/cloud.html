@@ -382,7 +382,7 @@
           <div style="width:12px;height:12px;border-radius:50%;background:#28c840;"></div>
         </div>
         <div style="display:flex;gap:2px;margin-left:8px;flex-wrap:wrap;">
-          <button onclick="showCloudTab('oneliner')" id="ctab-oneliner" style="padding:5px 14px;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;background:#28c840;color:#000;font-family:'JetBrains Mono',monospace;transition:all 0.15s;">One-liner</button>
+          <button onclick="showCloudTab('curl')" id="ctab-curl" style="padding:5px 14px;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;background:#28c840;color:#000;font-family:'JetBrains Mono',monospace;transition:all 0.15s;">curl</button>
           <button onclick="showCloudTab('pip')" id="ctab-pip" style="padding:5px 14px;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;background:transparent;color:rgba(255,255,255,0.5);font-family:'JetBrains Mono',monospace;transition:all 0.15s;">pip</button>
           <button onclick="showCloudTab('powershell')" id="ctab-powershell" style="padding:5px 14px;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;background:transparent;color:rgba(255,255,255,0.5);font-family:'JetBrains Mono',monospace;transition:all 0.15s;">PowerShell</button>
           <button onclick="showCloudTab('cmd')" id="ctab-cmd" style="padding:5px 14px;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;background:transparent;color:rgba(255,255,255,0.5);font-family:'JetBrains Mono',monospace;transition:all 0.15s;">CMD</button>
@@ -393,7 +393,7 @@
         </div>
       </div>
       <div style="padding:20px 24px;font-family:'JetBrains Mono',monospace;font-size:14px;line-height:2;">
-        <div id="cpanel-oneliner">
+        <div id="cpanel-curl">
           <div style="color:rgba(255,255,255,0.35);font-style:italic;"># Install + connect to cloud</div>
           <div><span style="color:rgba(255,255,255,0.4);">$ </span><span style="color:#28c840;">curl -fsSL https://clawmetry.com/install.sh | bash</span></div>
           <div><span style="color:rgba(255,255,255,0.4);">$ </span><span style="color:#28c840;">clawmetry connect</span></div>
@@ -428,15 +428,15 @@
     <p style="text-align:center;color:var(--text-dim);font-size:13px;margin-top:16px;">macOS, Linux, Windows. Two commands to full cloud visibility.</p>
     <script>
     var cloudCmds = {
-      oneliner: 'curl -fsSL https://clawmetry.com/install.sh | bash && clawmetry connect',
+      curl: 'curl -fsSL https://clawmetry.com/install.sh | bash && clawmetry connect',
       pip: 'pip install clawmetry && clawmetry connect',
       powershell: 'iwr -useb https://clawmetry.com/install.ps1 | iex; clawmetry connect',
       cmd: 'curl -fsSL https://clawmetry.com/install.cmd -o install.cmd && install.cmd && del install.cmd && clawmetry connect'
     };
-    var cloudActiveTab = 'oneliner';
+    var cloudActiveTab = 'curl';
     function showCloudTab(id) {
       cloudActiveTab = id;
-      ['oneliner','pip','powershell','cmd','macos'].forEach(function(t) {
+      ['curl','pip','powershell','cmd','macos'].forEach(function(t) {
         var panel = document.getElementById('cpanel-'+t);
         if(panel) panel.style.display = t===id ? 'block' : 'none';
         var tab = document.getElementById('ctab-'+t);
