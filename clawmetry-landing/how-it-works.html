@@ -365,6 +365,14 @@
       display: grid; grid-template-columns: repeat(2, 1fr);
       gap: 8px;
     }
+    @media (max-width: 600px) {
+      .fleet-grid { grid-template-columns: 1fr; max-width: 200px; margin: 0 auto; }
+      .fleet-diagram { flex-direction: column; align-items: center; text-align: center; }
+      .fleet-connector-col { padding: 16px 0; }
+      .fleet-left { width: 100%; display: flex; justify-content: center; }
+      .cloud-arch-section .section-inner { padding: 0 16px; }
+      .callout-grid { grid-template-columns: 1fr !important; }
+    }
     .fleet-node {
       background: var(--bg-card); border: 1px solid rgba(59,130,246,0.2);
       border-radius: 10px; padding: 10px 12px;
@@ -572,7 +580,7 @@
 <section class="cloud-arch-section" id="cloud-arch">
   <div class="section-inner">
     <div class="cloud-badge">ClawMetry Cloud</div>
-    <h2 class="section-title">Monitor a fleet of Mac Minis — from anywhere</h2>
+    <h2 class="section-title">Monitor a fleet of Mac Minis from anywhere</h2>
     <p class="section-sub">Each node encrypts its data locally before sending. ClawMetry Cloud never sees plaintext. You see every machine in one dashboard, wherever you are.</p>
 
     <div class="fleet-diagram">
