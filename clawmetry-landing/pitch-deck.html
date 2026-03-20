@@ -91,11 +91,11 @@
     <p class="tagline">Real-time observability for OpenClaw AI agents. See what your agents are doing, how much they cost, and whether they're working — from anywhere.</p>
     <div style="margin-top: 48px; display: flex; gap: 48px;">
       <div>
-        <div class="big-number">75k+</div>
-        <div class="big-label">Installs in 4 weeks</div>
+        <div class="big-number" id="pd-installs">75k+</div>
+        <div class="big-label">Installs</div>
       </div>
       <div>
-        <div class="big-number">400+</div>
+        <div class="big-number" id="pd-subscribers">400+</div>
         <div class="big-label">Cloud subscribers</div>
       </div>
       <div>
@@ -215,7 +215,7 @@
     <h2>75,000 installs. Zero marketing spend.</h2>
     <div class="grid-3" style="margin-bottom: 40px;">
       <div class="card" style="text-align: center;">
-        <div class="num">75k+</div>
+        <div class="num" id="pd-traction-installs">75k+</div>
         <div class="desc">Total installs (pip + curl) since Feb 18, 2026</div>
       </div>
       <div class="card" style="text-align: center;">
@@ -223,7 +223,7 @@
         <div class="desc">New installs per week, growing</div>
       </div>
       <div class="card" style="text-align: center;">
-        <div class="num">100+</div>
+        <div class="num" id="pd-traction-countries">100+</div>
         <div class="desc">Countries with active installations</div>
       </div>
     </div>
@@ -246,7 +246,7 @@
       <div class="bar-row">
         <div class="bar-label">Week 4 (Mar 18)</div>
         <div class="bar-track"><div class="bar-fill" style="width:100%"></div></div>
-        <div class="bar-val">75k+</div>
+        <div class="bar-val" id="pd-bar-latest">75k+</div>
       </div>
     </div>
     <p style="margin-top: 24px; font-size: 15px; color: #4A5568;">Growth driven entirely by word-of-mouth in the OpenClaw community (r/openclaw, Discord, Twitter)</p>
@@ -333,7 +333,7 @@
       </div>
     </div>
     <div style="margin-top: 32px; padding: 24px; background: #131929; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06);">
-      <p style="font-size: 15px;"><span style="color: #E2E8F0; font-weight: 700;">Path to $1M ARR:</span> <span style="color: #64748B;">If 1% of 75k installs convert to cloud at $5/mo average 3 nodes = 750 paying customers × $15/mo = <span style="color: #E5443A; font-weight: 700;">$100k ARR</span>. 10% conversion = $1M ARR. Industry SaaS conversion from OSS is typically 3-8%.</span></p>
+      <p style="font-size: 15px;"><span style="color: #E2E8F0; font-weight: 700;">Path to $1M ARR:</span> <span style="color: #64748B;">If 1% of <span id="pd-arr-installs">75k</span> installs convert to cloud at $5/mo average 3 nodes = 750 paying customers × $15/mo = <span style="color: #E5443A; font-weight: 700;">$100k ARR</span>. 10% conversion = $1M ARR. Industry SaaS conversion from OSS is typically 3-8%.</span></p>
     </div>
   </div>
 </div>
@@ -394,7 +394,7 @@
         <div class="team-bio">
           AI Engineering @ Booking.com, managing 15,000+ agent systems at scale.<br><br>
           Previously built ClassKlap (500k+ students, acquired).<br><br>
-          Based in Amsterdam. Shipped ClawMetry from 0 to 75k installs in 4 weeks with zero marketing.
+          Based in Amsterdam. Shipped ClawMetry from 0 to <span id="pd-bio-installs">75k</span> installs with zero marketing.
         </div>
       </div>
       <div style="display: flex; flex-direction: column; gap: 16px;">
@@ -482,5 +482,23 @@
   </div>
 </div>
 
+
+<script>
+fetch('/api/hero-stats').then(r=>r.json()).then(d=>{
+  var dl = d.downloads || '75k';
+  var ct = d.countries || '100';
+  var stars = d.stars || '149';
+  // Cover slide
+  var e1 = document.getElementById('pd-installs'); if(e1) e1.textContent = dl + '+';
+  // Traction slide
+  var e2 = document.getElementById('pd-traction-installs'); if(e2) e2.textContent = dl + '+';
+  var e3 = document.getElementById('pd-traction-countries'); if(e3) e3.textContent = ct + '+';
+  var e4 = document.getElementById('pd-bar-latest'); if(e4) e4.textContent = dl + '+';
+  // Founder bio
+  var e5 = document.getElementById('pd-bio-installs'); if(e5) e5.textContent = dl;
+  // ARR math
+  var e6 = document.getElementById('pd-arr-installs'); if(e6) e6.textContent = dl;
+}).catch(function(){});
+</script>
 </body>
 </html>
