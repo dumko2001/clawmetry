@@ -61,6 +61,17 @@
     .nav-links { display: flex; align-items: center; gap: 20px; }
     .nav-links a { color: var(--text-muted); font-size: 14px; font-weight: 500; transition: color 0.2s; }
     .nav-links a:hover, .nav-links a.active { color: var(--text); }
+    @media (max-width: 768px) {
+      .nav-links { gap: 12px; }
+      .nav-links a { font-size: 12px; }
+      .nav-links .nav-gh { display: none; }
+      .nav-logo-text { font-size: 15px; }
+      nav .nav-inner { padding: 0 12px; }
+    }
+    @media (max-width: 480px) {
+      .nav-links a { font-size: 11px; padding: 2px 0; }
+      .nav-links { gap: 8px; }
+    }
     .nav-gh {
       border: 1px solid var(--border); border-radius: 8px;
       padding: 6px 14px; display: flex; align-items: center; gap: 6px;
@@ -458,7 +469,7 @@
 <div class="hero">
   <div class="hero-badge">Self-Hosted &amp; Cloud</div>
   <h1>One command.<br><span>Full visibility.</span></h1>
-  <p>Install ClawMetry locally for free, or connect a fleet of Mac Minis to ClawMetry Cloud — E2E encrypted, one dashboard for everything.</p>
+  <p>Install ClawMetry locally for free, or connect a fleet of Mac Minis to ClawMetry Cloud. E2E encrypted, one dashboard for everything.</p>
   <div class="hero-cta">
     <a href="/#get-started" class="btn-primary">Get started free</a>
     <a href="/showcase" class="btn-secondary">See it in action</a>
