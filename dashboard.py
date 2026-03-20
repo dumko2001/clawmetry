@@ -10848,8 +10848,114 @@ async function loadSystemHealth() {
 }
 function startSystemHealthRefresh() {
   loadSystemHealth();
+  loadServiceStatus();
   if (window._sysHealthTimer) clearInterval(window._sysHealthTimer);
-  window._sysHealthTimer = setInterval(loadSystemHealth, 30000);
+  window._sysHealthTimer = setInterval(function() {
+    loadSystemHealth();
+    loadServiceStatus();
+  }, 30000);
+}
+
+// ===== Service Status Bar =====
+async function loadServiceStatus() {
+  try {
+    var d = await fetch('/api/service-status').then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    });
+
+    // Helper: status -> color/dot
+    function statusColor(st) {
+      if (st === 'healthy' || st === 'active') return '#22c55e';
+      if (st === 'degraded' || st === 'warning' || st === 'configured') return '#f59e0b';
+      if (st === 'down' || st === 'critical') return '#dc2626';
+      return '#6b7280'; // unknown
+    }
+    function statusDot(st) {
+      var c = statusColor(st);
+      return '<span style="width:8px;height:8px;border-radius:50%;background:' + c + ';display:inline-block;flex-shrink:0;"></span>';
+    }
+    function statusPill(label, status, detail) {
+      var c = statusColor(status);
+      var title = detail ? escHtml(detail) : escHtml(status);
+      return '<div title="' + title + '" style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;'
+        + 'background:var(--bg-secondary);border:1px solid var(--border-secondary);border-radius:20px;'
+        + 'font-size:11px;cursor:default;white-space:nowrap;">'
+        + statusDot(status)
+        + '<span style="font-weight:600;color:var(--text-primary);">' + escHtml(label) + '</span>'
+        + '</div>';
+    }
+
+    // --- Gateway pill ---
+    var gw = d.gateway || {};
+    var barHtml = statusPill('Gateway', gw.status || 'unknown', gw.detail || '');
+
+    // --- Sync daemon pill ---
+    var sync = d.sync || {};
+    var syncLabel = 'Sync Daemon';
+    if (sync.status === 'unknown' && sync.detail && sync.detail.indexOf('local mode') !== -1) {
+      // In local-only mode, sync daemon not needed - show as n/a
+      syncLabel = 'Local Mode';
+    }
+    barHtml += statusPill(syncLabel, sync.status || 'unknown', sync.detail || '');
+
+    // --- Uptime ---
+    if (d.uptime) {
+      barHtml += '<div style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;'
+        + 'background:var(--bg-secondary);border:1px solid var(--border-secondary);border-radius:20px;'
+        + 'font-size:11px;white-space:nowrap;">'
+        + '<span style="color:var(--text-muted);">⏱️</span>'
+        + '<span style="font-weight:600;color:var(--text-primary);">Up ' + escHtml(d.uptime) + '</span>'
+        + '</div>';
+    }
+
+    // --- Resources ---
+    var res = d.resources || {};
+    if (res.ram_pct != null) {
+      var ramStatus = res.ram_status || 'healthy';
+      var ramLabel = 'RAM ' + res.ram_pct + '%';
+      barHtml += statusPill(ramLabel, ramStatus, res.ram_used_mb + 'MB / ' + res.ram_total_mb + 'MB');
+    }
+    if (res.cpu_pct != null) {
+      var cpuStatus = res.cpu_status || 'healthy';
+      barHtml += statusPill('CPU ' + res.cpu_pct + '%', cpuStatus, 'CPU utilization');
+    }
+
+    var statusBarWrap = document.getElementById('sh-status-bar-wrap');
+    var statusBar = document.getElementById('sh-status-bar');
+    if (statusBar) {
+      statusBar.innerHTML = barHtml || '<span style="color:var(--text-muted);font-size:12px;">No data</span>';
+      if (statusBarWrap) statusBarWrap.style.display = '';
+    }
+
+    // --- Channel pills ---
+    var channels = Array.isArray(d.channels) ? d.channels : [];
+    var chWrap = document.getElementById('sh-channels-wrap');
+    var chEl = document.getElementById('sh-channels');
+    if (channels.length > 0 && chEl) {
+      var chHtml = '';
+      channels.forEach(function(ch) {
+        var label = ch.name.charAt(0).toUpperCase() + ch.name.slice(1);
+        var detail = ch.status === 'active'
+          ? (ch.message_count_24h + ' msg today' + (ch.last_seen_ago != null ? ', last ' + _fmtAgo(ch.last_seen_ago) : ''))
+          : ch.status;
+        chHtml += statusPill(label, ch.status, detail);
+      });
+      chEl.innerHTML = chHtml;
+      if (chWrap) chWrap.style.display = '';
+    } else if (chWrap) {
+      chWrap.style.display = 'none';
+    }
+  } catch(e) {
+    // Silently fail - service status is non-critical
+    console.debug('Service status load failed', e);
+  }
+}
+function _fmtAgo(secs) {
+  if (!secs) return 'now';
+  if (secs < 60) return secs + 's ago';
+  if (secs < 3600) return Math.floor(secs/60) + 'm ago';
+  return Math.floor(secs/3600) + 'h ago';
 }
 
 // ===== Activity Heatmap =====
@@ -16755,7 +16861,7 @@ FLEET_HTML = r"""
   .search { margin-bottom: 16px; }
   .search input { background: #1a1d27; border: 1px solid #2a2d37; border-radius: 8px; padding: 10px 16px; color: #e0e0e0; font-size: 14px; width: 300px; outline: none; }
   .search input:focus { border-color: #0f6fff; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
   .node-card { background: #1a1d27; border: 1px solid #2a2d37; border-radius: 12px; padding: 20px; cursor: pointer; transition: border-color 0.2s, transform 0.1s; }
   .node-card:hover { border-color: #0f6fff; transform: translateY(-2px); }
   .node-card .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
@@ -16765,18 +16871,57 @@ FLEET_HTML = r"""
   .node-card .status.offline { background: #2d1515; color: #ef4444; }
   .node-card .status.unknown { background: #2a2a1a; color: #eab308; }
   .node-card .meta { font-size: 12px; color: #667; margin-bottom: 12px; }
-  .node-card .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .node-card .metric { }
+  .node-card .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
   .node-card .metric .ml { font-size: 11px; color: #667; }
   .node-card .metric .mv { font-size: 15px; font-weight: 600; }
   .empty { text-align: center; padding: 60px; color: #667; }
   .empty h2 { font-size: 20px; margin-bottom: 8px; color: #888; }
   .empty code { background: #1a1d27; padding: 2px 8px; border-radius: 4px; font-size: 13px; }
+
+  /* StatusIndicator dot */
+  .si-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; position: relative; }
+  .si-dot.healthy { background: #22c55e; box-shadow: 0 0 5px rgba(34,197,94,0.6); }
+  .si-dot.degraded { background: #f59e0b; box-shadow: 0 0 5px rgba(245,158,11,0.6); }
+  .si-dot.down { background: #ef4444; box-shadow: 0 0 5px rgba(239,68,68,0.6); }
+  .si-dot.unknown { background: #555; }
+
+  /* StatusBar (row of indicators on a card) */
+  .status-bar { display: flex; align-items: center; gap: 10px; padding: 8px 0 2px; border-top: 1px solid #2a2d37; flex-wrap: wrap; }
+  .status-bar .si { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #aaa; position: relative; cursor: default; }
+  .status-bar .si:hover .si-tooltip { display: block; }
+  .si-tooltip { display: none; position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+    background: #1a1d27; border: 1px solid #3a3d47; border-radius: 8px; padding: 8px 12px; font-size: 11px;
+    color: #ddd; white-space: nowrap; z-index: 100; min-width: 140px; pointer-events: none; }
+  .si-tooltip .tip-label { font-weight: 700; color: #fff; margin-bottom: 3px; }
+  .si-tooltip .tip-detail { color: #aaa; }
+  .si-tooltip .tip-children { margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
+  .si-tooltip .tip-child { display: flex; align-items: center; gap: 5px; }
+  .si-loading { color: #444; font-size: 10px; font-style: italic; }
+
+  /* Drill-down modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: #1a1d27; border: 1px solid #3a3d47; border-radius: 16px; padding: 28px; min-width: 420px; max-width: 560px; max-height: 80vh; overflow-y: auto; position: relative; }
+  .modal-close { position: absolute; top: 16px; right: 20px; background: none; border: none; color: #667; font-size: 20px; cursor: pointer; padding: 4px; }
+  .modal-close:hover { color: #fff; }
+  .modal h2 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .modal .modal-sub { font-size: 12px; color: #667; margin-bottom: 20px; }
+  .svc-row { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid #2a2d37; }
+  .svc-row:last-child { border-bottom: none; }
+  .svc-row .svc-dot-wrap { padding-top: 2px; }
+  .svc-row .svc-info { flex: 1; }
+  .svc-row .svc-label { font-size: 13px; font-weight: 600; color: #e0e0e0; }
+  .svc-row .svc-detail { font-size: 11px; color: #778; margin-top: 2px; }
+  .svc-row .svc-children { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+  .svc-row .svc-child { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #aaa; }
+  .svc-row .svc-child .svc-child-detail { color: #666; }
+  .refresh-hint { font-size: 11px; color: #444; margin-top: 16px; text-align: center; }
+  .modal-loading { text-align: center; padding: 30px; color: #667; font-size: 13px; }
 </style>
 </head>
 <body>
 <div class="header">
-  <a href="/" class="back">< Dashboard</a>
+  <a href="/" class="back">&lt; Dashboard</a>
   <h1><span>ClawMetry</span> Fleet</h1>
 </div>
 <div class="summary" id="summary"></div>
@@ -16788,6 +16933,15 @@ FLEET_HTML = r"""
   <p style="margin-top:12px"><code>curl -X POST -H "X-Fleet-Key: YOUR_KEY" -H "Content-Type: application/json" \<br>
   -d '{"node_id":"my-node","name":"My Agent"}' http://THIS_HOST/api/nodes/register</code></p>
 </div>
+
+<!-- Drill-down modal -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal-body">
+    <button class="modal-close" onclick="closeModal()">&times;</button>
+    <div id="modal-content"><div class="modal-loading">Loading service status...</div></div>
+  </div>
+</div>
+
 <script>
 window.onerror = function(msg, src, line, col, err) {
   if(window._jsErrSent) return;
@@ -16804,6 +16958,54 @@ window.addEventListener('unhandledrejection', function(e){
     body: JSON.stringify({message: e.reason ? String(e.reason) : 'unhandledrejection', source:'promise', lineno:0, colno:0, stack:'', url:location.href, node_id:(localStorage.getItem('cm_node_id')||'')})
   }).catch(function(){});
 });
+
+// --- StatusIndicator helpers ---
+const STATUS_COLORS = {healthy:'#22c55e', degraded:'#f59e0b', down:'#ef4444', unknown:'#555'};
+const STATUS_LABELS = {healthy:'Healthy', degraded:'Degraded', down:'Down', unknown:'Unknown'};
+
+function dot(status) {
+  return `<span class="si-dot ${status||'unknown'}"></span>`;
+}
+
+function statusBar(nodeId, services) {
+  if (!services || !services.length) {
+    return `<div class="status-bar"><span class="si-loading">Loading service status...</span></div>`;
+  }
+  const items = services.map(svc => {
+    const childTips = (svc.children||[]).map(c =>
+      `<div class="tip-child">${dot(c.status)}<span>${esc(c.label)}: ${esc(c.detail||STATUS_LABELS[c.status]||'')}</span></div>`
+    ).join('');
+    const tooltip = `<div class="si-tooltip">
+      <div class="tip-label">${esc(svc.label)}</div>
+      <div class="tip-detail">${esc(svc.detail||STATUS_LABELS[svc.status]||'')}</div>
+      ${childTips ? `<div class="tip-children">${childTips}</div>` : ''}
+    </div>`;
+    return `<span class="si">${dot(svc.status)}<span>${esc(svc.label)}</span>${tooltip}</span>`;
+  }).join('');
+  return `<div class="status-bar" id="sbar-${nodeId}">${items}</div>`;
+}
+
+// Cache for service statuses
+const svcCache = {};
+
+async function loadServiceStatus(nodeId) {
+  try {
+    const r = await fetch(`/api/nodes/${nodeId}/service-status`);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
+    svcCache[nodeId] = d.services || [];
+    // Update the status bar in the card if visible
+    const el = document.getElementById('sbar-' + nodeId);
+    if (el) {
+      el.outerHTML = statusBar(nodeId, svcCache[nodeId]);
+    }
+    return svcCache[nodeId];
+  } catch(e) {
+    svcCache[nodeId] = [];
+    return [];
+  }
+}
+
 let allNodes = [];
 async function load() {
   const r = await fetch('/api/nodes');
@@ -16818,7 +17020,10 @@ async function load() {
     <div class="stat-card"><div class="label">Sessions Today</div><div class="value">${s.total_sessions_today||0}</div></div>
   `;
   renderNodes(allNodes);
+  // Load service statuses in parallel (non-blocking)
+  allNodes.forEach(n => loadServiceStatus(n.node_id));
 }
+
 function renderNodes(nodes) {
   const grid = document.getElementById('grid');
   const empty = document.getElementById('empty');
@@ -16831,7 +17036,8 @@ function renderNodes(nodes) {
     const sessions = (m.sessions && m.sessions.total_today) || 0;
     const model = m.model || 'unknown';
     const disk = (m.health && m.health.disk_pct) ? m.health.disk_pct.toFixed(0)+'%' : '-';
-    return `<div class="node-card" onclick="location.href='/api/nodes/${n.node_id}'">
+    const cachedSvc = svcCache[n.node_id] || null;
+    return `<div class="node-card" onclick="openDrilldown('${esc(n.node_id)}', '${esc(n.name||n.node_id)}')">
       <div class="top"><div class="name">${esc(n.name||n.node_id)}</div><div class="status ${n.status}">${n.status}</div></div>
       <div class="meta">${esc(n.hostname||'')} - last seen ${ago}</div>
       <div class="metrics">
@@ -16840,20 +17046,64 @@ function renderNodes(nodes) {
         <div class="metric"><div class="ml">Model</div><div class="mv">${esc(model)}</div></div>
         <div class="metric"><div class="ml">Disk</div><div class="mv">${disk}</div></div>
       </div>
+      ${statusBar(n.node_id, cachedSvc)}
     </div>`;
   }).join('');
 }
+
 function filterNodes() {
   const q = document.getElementById('search').value.toLowerCase();
   renderNodes(allNodes.filter(n => (n.name||'').toLowerCase().includes(q) || (n.node_id||'').includes(q) || (n.hostname||'').toLowerCase().includes(q) || JSON.stringify(n.tags||[]).toLowerCase().includes(q)));
 }
+
+// --- Drill-down modal ---
+async function openDrilldown(nodeId, nodeName) {
+  document.getElementById('modal-content').innerHTML = '<div class="modal-loading">Loading service status...</div>';
+  document.getElementById('modal-overlay').classList.add('open');
+  const services = await loadServiceStatus(nodeId);
+  renderModal(nodeId, nodeName, services);
+}
+
+function renderModal(nodeId, nodeName, services) {
+  if (!services || !services.length) {
+    document.getElementById('modal-content').innerHTML = `<h2>${esc(nodeName)}</h2><div class="modal-sub">No service data available.</div>`;
+    return;
+  }
+  const rows = services.map(svc => {
+    const children = (svc.children||[]).map(c =>
+      `<div class="svc-child">${dot(c.status)}<span>${esc(c.label)}</span><span class="svc-child-detail">${esc(c.detail||'')}</span></div>`
+    ).join('');
+    return `<div class="svc-row">
+      <div class="svc-dot-wrap">${dot(svc.status)}</div>
+      <div class="svc-info">
+        <div class="svc-label">${esc(svc.label)} <span style="font-weight:400;font-size:11px;color:${STATUS_COLORS[svc.status]||'#555'}">${STATUS_LABELS[svc.status]||''}</span></div>
+        ${svc.detail ? `<div class="svc-detail">${esc(svc.detail)}</div>` : ''}
+        ${children ? `<div class="svc-children">${children}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('modal-content').innerHTML = `
+    <h2>${esc(nodeName)}</h2>
+    <div class="modal-sub">Service status for node <code>${esc(nodeId)}</code></div>
+    ${rows}
+    <div class="refresh-hint">Auto-refreshes every 30s</div>
+  `;
+}
+
+function closeModal(e) {
+  if (e && e.target !== document.getElementById('modal-overlay')) return;
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
 function timeSince(ts) {
   const s = Math.floor(Date.now()/1000 - ts);
   if (s<60) return s+'s ago'; if (s<3600) return Math.floor(s/60)+'m ago';
   if (s<86400) return Math.floor(s/3600)+'h ago'; return Math.floor(s/86400)+'d ago';
 }
-function esc(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
-load(); setInterval(load, 30000);
+function esc(s) { const d=document.createElement('div'); d.textContent=String(s||''); return d.innerHTML; }
+
+load();
+setInterval(load, 30000);
 </script>
 </body>
 </html>
