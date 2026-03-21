@@ -2569,6 +2569,21 @@ def how_it_works():
 def showcase():
     return send_from_directory(".", "showcase.html")
 
+@app.route("/blog")
+@app.route("/blog/")
+def blog_index():
+    return send_from_directory("blog", "index.html")
+
+@app.route("/blog/<slug>")
+def blog_post(slug):
+    """Serve a blog post by slug."""
+    if not re.match(r'^[a-z0-9_-]+$', slug):
+        return "Not Found", 404
+    filepath = os.path.join("blog", f"{slug}.html")
+    if not os.path.isfile(filepath):
+        return "Not Found", 404
+    return send_from_directory("blog", f"{slug}.html")
+
 
 @app.route("/mac")
 def mac_app():

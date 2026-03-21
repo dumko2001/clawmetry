@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How to Install NemoClaw on a Hostinger VPS (Step-by-Step Guide) | ClawMetry</title>
+<meta name="description" content="Complete step-by-step guide to installing NVIDIA NemoClaw on a Hostinger VPS. Set up a secured OpenClaw instance with Docker, OpenShell, Caddy, and connect OpenAI or Claude in under 15 minutes.">
+<meta name="keywords" content="NemoClaw, Hostinger VPS, OpenClaw, NVIDIA OpenShell, Docker, AI agent setup, secured AI assistant, Caddy reverse proxy, ClawMetry">
+<meta name="author" content="ClawMetry">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://clawmetry.com/blog/nemoclaw-hostinger-setup">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+<!-- Open Graph -->
+<meta property="og:title" content="How to Install NemoClaw on a Hostinger VPS (Step-by-Step Guide)">
+<meta property="og:description" content="Set up a secured OpenClaw instance with NVIDIA NemoClaw on Hostinger. Docker, OpenShell, Caddy, and AI model configuration in under 15 minutes.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://clawmetry.com/blog/nemoclaw-hostinger-setup">
+<meta property="og:site_name" content="ClawMetry">
+<meta property="og:image" content="https://clawmetry.com/dashboard-overview-og.png">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="How to Install NemoClaw on a Hostinger VPS">
+<meta name="twitter:description" content="Complete guide to running a secured OpenClaw instance with NemoClaw on Hostinger. 15-minute setup.">
+<meta name="twitter:image" content="https://clawmetry.com/dashboard-overview-og.png">
+
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #0a0a0a; color: #e0e0e0;
+  line-height: 1.7; font-size: 17px;
+}
+a { color: #E5443A; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.header {
+  border-bottom: 1px solid #1a1a1a;
+  padding: 16px 0;
+  position: sticky; top: 0; background: #0a0a0a; z-index: 100;
+}
+.header-inner {
+  max-width: 720px; margin: 0 auto; padding: 0 24px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.header .logo { font-size: 18px; font-weight: 700; color: #fff; text-decoration: none; }
+.header .logo span { color: #E5443A; }
+.header nav a { color: #888; font-size: 14px; margin-left: 24px; text-decoration: none; }
+.header nav a:hover { color: #fff; }
+
+article {
+  max-width: 720px; margin: 0 auto; padding: 48px 24px 80px;
+}
+h1 {
+  font-size: 36px; font-weight: 800; color: #fff;
+  line-height: 1.2; margin-bottom: 16px;
+  letter-spacing: -0.5px;
+}
+.meta {
+  color: #666; font-size: 14px; margin-bottom: 40px;
+  border-bottom: 1px solid #1a1a1a; padding-bottom: 24px;
+}
+.meta time { color: #888; }
+
+h2 {
+  font-size: 24px; font-weight: 700; color: #fff;
+  margin: 48px 0 16px; padding-top: 16px;
+  border-top: 1px solid #141414;
+}
+h2:first-of-type { border-top: none; margin-top: 0; }
+
+h3 {
+  font-size: 19px; font-weight: 600; color: #ddd;
+  margin: 32px 0 12px;
+}
+
+p { margin-bottom: 16px; color: #ccc; }
+
+ul, ol {
+  margin: 0 0 16px 24px; color: #ccc;
+}
+li { margin-bottom: 8px; }
+
+pre {
+  background: #111; border: 1px solid #222; border-radius: 8px;
+  padding: 16px 20px; overflow-x: auto; margin: 16px 0 24px;
+  font-size: 14px; line-height: 1.6;
+}
+code {
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  color: #e8e8e8;
+}
+p code, li code {
+  background: #1a1a1a; padding: 2px 6px; border-radius: 4px;
+  font-size: 15px; color: #E5443A;
+}
+
+.callout {
+  background: #1a0d0d; border-left: 3px solid #E5443A;
+  padding: 16px 20px; border-radius: 0 8px 8px 0;
+  margin: 24px 0;
+}
+.callout p { margin: 0; color: #d4a0a0; }
+.callout strong { color: #E5443A; }
+
+.warning {
+  background: #1a1408; border-left: 3px solid #f59e0b;
+}
+.warning p { color: #d4b87a; }
+.warning strong { color: #f59e0b; }
+
+.step-num {
+  display: inline-block; background: #E5443A; color: #fff;
+  font-weight: 700; font-size: 13px; width: 28px; height: 28px;
+  text-align: center; line-height: 28px; border-radius: 50%;
+  margin-right: 8px; vertical-align: middle;
+}
+
+.toc {
+  background: #111; border: 1px solid #1a1a1a; border-radius: 8px;
+  padding: 24px; margin: 0 0 40px;
+}
+.toc h4 { color: #fff; font-size: 15px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
+.toc ol { margin: 0 0 0 20px; }
+.toc li { margin-bottom: 4px; }
+.toc a { color: #E5443A; font-size: 15px; }
+
+.arch-diagram {
+  background: #111; border: 1px solid #222; border-radius: 8px;
+  padding: 24px; margin: 24px 0; font-family: monospace;
+  font-size: 13px; line-height: 1.8; color: #888; text-align: center;
+  overflow-x: auto;
+}
+.arch-diagram span { color: #E5443A; }
+
+.cta-box {
+  background: linear-gradient(135deg, #1a0d0d 0%, #0a0a0a 100%);
+  border: 1px solid #3a1a1a; border-radius: 12px;
+  padding: 32px; text-align: center; margin: 48px 0;
+}
+.cta-box h3 { color: #fff; margin: 0 0 12px; }
+.cta-box p { color: #a08080; margin-bottom: 20px; }
+.cta-box a.btn {
+  display: inline-block; background: #E5443A; color: #fff;
+  font-weight: 700; padding: 12px 28px; border-radius: 8px;
+  text-decoration: none; font-size: 15px;
+}
+.cta-box a.btn:hover { background: #ff5a50; }
+
+.footer {
+  border-top: 1px solid #1a1a1a; padding: 24px;
+  text-align: center; color: #444; font-size: 13px;
+}
+
+@media (max-width: 600px) {
+  h1 { font-size: 26px; }
+  h2 { font-size: 20px; }
+  pre { font-size: 12px; padding: 12px; }
+  article { padding: 32px 16px 60px; }
+}
+</style>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  "name": "How to Install NemoClaw on a Hostinger VPS",
+  "description": "Step-by-step guide to installing NVIDIA NemoClaw on a Hostinger VPS with Docker, OpenShell, Caddy reverse proxy, and AI model configuration.",
+  "totalTime": "PT15M",
+  "tool": [
+    { "@type": "HowToTool", "name": "Hostinger VPS (KVM2 or higher)" },
+    { "@type": "HowToTool", "name": "NVIDIA API Key (free)" },
+    { "@type": "HowToTool", "name": "OpenAI or Anthropic API Key" }
+  ],
+  "step": [
+    { "@type": "HowToStep", "name": "Provision a Hostinger VPS", "text": "Set up a Hostinger VPS with Docker pre-installed and configure the firewall." },
+    { "@type": "HowToStep", "name": "Install Docker, OpenShell, and NemoClaw", "text": "Install Docker engine, NVIDIA OpenShell runtime, and NemoClaw plugin." },
+    { "@type": "HowToStep", "name": "Set up Caddy reverse proxy", "text": "Configure Caddy for HTTPS access using your Hostinger subdomain." },
+    { "@type": "HowToStep", "name": "Connect AI models", "text": "Configure OpenAI or Claude as the inference provider through OpenShell." },
+    { "@type": "HowToStep", "name": "Monitor with ClawMetry", "text": "Install ClawMetry for real-time observability of your NemoClaw instance." }
+  ],
+  "author": {
+    "@type": "Organization",
+    "name": "ClawMetry",
+    "url": "https://clawmetry.com"
+  },
+  "datePublished": "2026-03-21",
+  "publisher": {
+    "@type": "Organization",
+    "name": "ClawMetry",
+    "url": "https://clawmetry.com"
+  }
+}
+</script>
+
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <a href="/" class="logo">Claw<span>Metry</span></a>
+    <nav>
+      <a href="/">Home</a>
+      <a href="https://github.com/vivekchand/clawmetry">GitHub</a>
+      <a href="/blog">Blog</a>
+    </nav>
+  </div>
+</div>
+
+<article>
+
+<h1>How to Install NemoClaw on a Hostinger VPS (Step-by-Step Guide)</h1>
+
+<div class="meta">
+  <time datetime="2026-03-21">March 21, 2026</time> &middot; 12 min read &middot; By ClawMetry Team
+</div>
+
+<p>NVIDIA NemoClaw wraps OpenClaw inside a secured, sandboxed container. Every network call, file access, and AI request goes through a security layer you control. Your API keys never touch the inside of the container.</p>
+
+<p>The official docs call it a "one-line install." Reality is a bit messier, especially on a cloud server. This guide walks you through every step, from provisioning the VPS to chatting with your secured AI agent.</p>
+
+<p><strong>Total time:</strong> about 15 minutes.</p>
+
+<div class="toc">
+  <h4>What we'll cover</h4>
+  <ol>
+    <li><a href="#architecture">Architecture overview</a></li>
+    <li><a href="#prerequisites">Prerequisites</a></li>
+    <li><a href="#step1">Provision a Hostinger VPS</a></li>
+    <li><a href="#step2">Configure the firewall</a></li>
+    <li><a href="#step3">Install Docker, OpenShell, and NemoClaw</a></li>
+    <li><a href="#step4">Get your gateway token</a></li>
+    <li><a href="#step5">Set up Caddy for HTTPS</a></li>
+    <li><a href="#step6">Connect OpenAI or Claude</a></li>
+    <li><a href="#step7">Access and test your instance</a></li>
+    <li><a href="#monitoring">Monitor with ClawMetry</a></li>
+    <li><a href="#next-steps">Next steps</a></li>
+  </ol>
+</div>
+
+
+<h2 id="architecture">Architecture Overview</h2>
+
+<p>Before we start, here's what we're building. Understanding the layers will make every step make sense.</p>
+
+<div class="arch-diagram">
+<span>Browser / Telegram / Apps</span><br>
+&darr;<br>
+<span>Hostinger Firewall</span> (ports 80 + 443)<br>
+&darr;<br>
+<span>Caddy</span> (HTTPS reverse proxy)<br>
+&darr; localhost:18789<br>
+&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;<br>
+&#9474; <span>OpenShell Sandbox</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#9474;<br>
+&#9474;&nbsp;&nbsp;Policy Engine + Privacy Router&nbsp;&nbsp;&#9474;<br>
+&#9474;&nbsp;&nbsp;<span>OpenClaw Gateway</span> (:18789)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#9474;<br>
+&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;<br>
+&uarr; API keys stored <em>outside</em> sandbox<br>
+<span>OpenShell Provider System</span>
+</div>
+
+<p>OpenClaw is the AI agent (the thing you chat with). NemoClaw is the OpenClaw plugin for NVIDIA OpenShell that runs it inside a secured container. All communication goes through OpenShell's policy engine and privacy router.</p>
+
+<div class="callout">
+  <p><strong>Why Hostinger over NVIDIA's platform?</strong> NVIDIA's hosted option costs about $43/month for a comparable VM (8 GB RAM, 2 vCPUs at $0.06/hour). Hostinger's KVM2 plan gives you similar specs for around $10/month.</p>
+</div>
+
+
+<h2 id="prerequisites">Prerequisites</h2>
+
+<p>You'll need three things before starting:</p>
+
+<ol>
+  <li><strong>Hostinger VPS account</strong> with a KVM2 plan or higher</li>
+  <li><strong>NVIDIA API key</strong> (free) from <a href="https://build.nvidia.com" target="_blank" rel="noopener">build.nvidia.com</a></li>
+  <li><strong>OpenAI or Anthropic API key</strong> (if you want to use GPT or Claude instead of NVIDIA Nemotron)</li>
+</ol>
+
+
+<h2 id="step1"><span class="step-num">1</span> Provision a Hostinger VPS</h2>
+
+<p>Head to <a href="https://www.hostinger.com/vps" target="_blank" rel="noopener">Hostinger VPS</a> and set up a new server:</p>
+
+<ol>
+  <li>Select <strong>KVM2</strong> or higher (recommended for meaningful AI workloads)</li>
+  <li>Choose your billing period</li>
+  <li>Make sure <strong>Docker</strong> is selected as the pre-installed application</li>
+  <li>Complete payment and set a <strong>root password</strong></li>
+  <li>Wait for the VPS to provision, then click <strong>Manage VPS</strong></li>
+</ol>
+
+<p>While that's setting up, grab your free NVIDIA API key:</p>
+
+<ol>
+  <li>Go to <a href="https://build.nvidia.com" target="_blank" rel="noopener">build.nvidia.com</a> and create a free account</li>
+  <li>Click your profile, then <strong>API Keys</strong></li>
+  <li>Generate a new key and save it somewhere safe</li>
+</ol>
+
+
+<h2 id="step2"><span class="step-num">2</span> Configure the Firewall</h2>
+
+<p>Hostinger drops all incoming traffic by default. We need to open ports 80 (HTTP) and 443 (HTTPS).</p>
+
+<ol>
+  <li>In your Hostinger dashboard, click <strong>Security</strong> then <strong>Firewall</strong></li>
+  <li>Click <strong>Create Firewall</strong> and name it (e.g., <code>nemoclaw-firewall</code>)</li>
+  <li>Click <strong>Edit</strong> and add two rules:
+    <ul>
+      <li>Protocol: <code>TCP</code>, Port: <code>80</code>, Source: <code>Anywhere</code></li>
+      <li>Protocol: <code>TCP</code>, Port: <code>443</code>, Source: <code>Anywhere</code></li>
+    </ul>
+  </li>
+  <li>Go back, <strong>activate</strong> the firewall, then click the three dots and <strong>Synchronize</strong></li>
+</ol>
+
+<div class="callout warning">
+  <p><strong>Don't skip the sync.</strong> Adding the rules isn't enough. You must click Synchronize for the changes to actually apply to your VPS.</p>
+</div>
+
+
+<h2 id="step3"><span class="step-num">3</span> Install Docker, OpenShell, and NemoClaw</h2>
+
+<p>Open the VPS terminal from your Hostinger dashboard (or SSH in as root). Then run these commands in order:</p>
+
+<h3>3a. Install Docker</h3>
+
+<pre><code>apt update && apt upgrade -y && \
+curl -fsSL https://get.docker.com | sh && \
+systemctl enable docker && systemctl start docker && \
+usermod -aG docker $USER && newgrp docker</code></pre>
+
+<div class="callout">
+  <p><strong>Tip:</strong> If the upgrade prompts about existing config files (like SSHD), keep the local version.</p>
+</div>
+
+<h3>3b. Install OpenShell</h3>
+
+<pre><code>curl -fsSL https://raw.githubusercontent.com/NVIDIA/openshell/main/install.sh | bash</code></pre>
+
+<h3>3c. Install NemoClaw</h3>
+
+<pre><code>curl -fsSL https://raw.githubusercontent.com/NVIDIA/nemoclaw/main/install.sh | bash</code></pre>
+
+<p>The NemoClaw installer will walk you through a setup wizard:</p>
+
+<ol>
+  <li><strong>Sandbox name:</strong> Enter something like <code>nemoclaw-sandbox</code></li>
+  <li><strong>NVIDIA API key:</strong> Paste the key you generated earlier</li>
+  <li><strong>Model:</strong> Select Nemotron for now (we'll switch to OpenAI/Claude later)</li>
+  <li><strong>Policy presets:</strong> Select <code>list</code> mode and add: <code>py npm slack telegram</code></li>
+</ol>
+
+<p>Wait for the sandbox to build. You'll see a summary screen when it's done.</p>
+
+
+<h3>3d. Fix PATH for new sessions</h3>
+
+<p>NemoClaw and OpenShell binaries might not be found in new terminal sessions. Run this once to fix it:</p>
+
+<pre><code># Add OpenShell + NemoClaw to PATH permanently
+echo 'export PATH="$PATH:/opt/openshell/bin:/opt/nemoclaw/bin"' >> ~/.bashrc
+source ~/.bashrc</code></pre>
+
+
+<h2 id="step4"><span class="step-num">4</span> Get Your Gateway Token</h2>
+
+<p>You'll need the OpenClaw gateway token to access the web UI. Get it by entering the sandbox:</p>
+
+<pre><code># Enter the sandbox
+nemoclaw connect
+
+# Inside the sandbox, get the token
+cat /root/.config/openclaw/gateway.yaml | grep token
+
+# Exit the sandbox
+exit</code></pre>
+
+<p>Save this token somewhere safe. You'll need it to connect to the dashboard.</p>
+
+
+<h2 id="step5"><span class="step-num">5</span> Set Up Caddy for HTTPS</h2>
+
+<p>Caddy gives you a clean HTTPS address instead of typing <code>IP:port</code>. When you created your Hostinger VPS, you got a free subdomain (visible at the top of your dashboard).</p>
+
+<h3>5a. Install Caddy</h3>
+
+<pre><code>apt install -y debian-keyring debian-archive-keyring apt-transport-https
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | \
+  gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | \
+  tee /etc/apt/sources.list.d/caddy-stable.list
+apt update && apt install -y caddy</code></pre>
+
+<div class="callout warning">
+  <p><strong>Important:</strong> Run these commands on the VPS host, <em>not</em> inside the sandbox.</p>
+</div>
+
+<h3>5b. Configure Caddy</h3>
+
+<p>Replace <code>YOUR_SUBDOMAIN.hstgr.cloud</code> with your actual Hostinger subdomain:</p>
+
+<pre><code>cat > /etc/caddy/Caddyfile << 'EOF'
+YOUR_SUBDOMAIN.hstgr.cloud {
+    reverse_proxy localhost:18789
+}
+EOF
+
+systemctl restart caddy</code></pre>
+
+<h3>5c. Enable port forwarding</h3>
+
+<p>OpenShell needs to forward traffic from Caddy to the OpenClaw gateway inside the sandbox:</p>
+
+<pre><code># Reconnect the sandbox (may be needed after installing Caddy)
+nemoclaw connect
+
+# Exit and then set up forwarding
+exit
+
+# Enable the port forwarding
+openshell network forward --sandbox nemoclaw-sandbox --port 18789</code></pre>
+
+<h3>5d. Allow your domain in OpenClaw</h3>
+
+<pre><code># Enter the sandbox
+nemoclaw connect
+
+# Add your subdomain to allowed origins
+openclaw config set gateway.allowedOrigins '["https://YOUR_SUBDOMAIN.hstgr.cloud"]'
+
+# Restart the gateway
+openclaw gateway restart
+
+# Exit
+exit</code></pre>
+
+
+<h2 id="step6"><span class="step-num">6</span> Connect OpenAI or Claude</h2>
+
+<p>NemoClaw defaults to NVIDIA Nemotron. To switch to OpenAI or Claude, use OpenShell's secure provider system. API keys are stored <em>outside</em> the sandbox, so they're never exposed to the AI agent.</p>
+
+<h3>Option A: OpenAI</h3>
+
+<pre><code># On the VPS host (NOT inside the sandbox)
+export OPENAI_API_KEY="sk-your-key-here"
+
+# Create the provider
+openshell provider create openai --api-key "$OPENAI_API_KEY"
+
+# Point inference to OpenAI with your preferred model
+openshell inference set --provider openai --model gpt-5.1
+
+# Verify
+openshell inference get</code></pre>
+
+<h3>Option B: Anthropic (Claude)</h3>
+
+<pre><code># On the VPS host (NOT inside the sandbox)
+export ANTHROPIC_API_KEY="sk-ant-your-key-here"
+
+# Create the provider
+openshell provider create anthropic --api-key "$ANTHROPIC_API_KEY"
+
+# Point inference to Claude
+openshell inference set --provider anthropic --model claude-sonnet-4-20250514
+
+# Verify
+openshell inference get</code></pre>
+
+<h3>Add models to OpenClaw config</h3>
+
+<p>After setting the provider, add the models to OpenClaw's config inside the sandbox:</p>
+
+<pre><code># Enter sandbox
+nemoclaw connect
+
+# Add OpenAI models
+openclaw config set models.openai.apiKey "FROM_OPENSHELL"
+openclaw config set models.openai.baseUrl "https://inference.local/v1"
+
+# Or add Anthropic models
+openclaw config set models.anthropic.apiKey "FROM_OPENSHELL"
+openclaw config set models.anthropic.baseUrl "https://inference.local/v1"
+
+# Restart gateway to pick up changes
+openclaw gateway restart
+
+exit</code></pre>
+
+
+<h2 id="step7"><span class="step-num">7</span> Access and Test</h2>
+
+<p>Open your browser and navigate to <code>https://YOUR_SUBDOMAIN.hstgr.cloud</code>. You should see the OpenClaw dashboard.</p>
+
+<ol>
+  <li>Go to <strong>Overview</strong></li>
+  <li>Enter your <strong>gateway token</strong> (from step 4)</li>
+  <li>Click <strong>Connect</strong></li>
+  <li>Start a new session and send a message</li>
+</ol>
+
+<p>To verify your model, ask: <em>"Which model are you using?"</em></p>
+
+<p>You can switch models anytime through the OpenClaw UI: go to config (raw mode), find the models section, and change the primary model.</p>
+
+<div class="callout">
+  <p><strong>Telegram ready:</strong> Since we added <code>telegram</code> to the policy presets, your agent can connect to Telegram right away. Just ask it: <em>"How do I connect to Telegram?"</em> and it'll walk you through the setup.</p>
+</div>
+
+
+<h2 id="monitoring">Monitor Your NemoClaw Instance with ClawMetry</h2>
+
+<p>Your NemoClaw instance is running. But how do you know what it's actually doing? Which tools it's calling, how many tokens it's burning, whether sub-agents are stuck?</p>
+
+<p><a href="https://clawmetry.com">ClawMetry</a> gives you real-time observability for your OpenClaw agents. It works with standard OpenClaw and NemoClaw alike.</p>
+
+<h3>Install ClawMetry (inside the sandbox)</h3>
+
+<pre><code># Enter the sandbox
+nemoclaw connect
+
+# Install ClawMetry
+pip install clawmetry
+
+# Run it
+clawmetry
+
+exit</code></pre>
+
+<h3>Connect to ClawMetry Cloud</h3>
+
+<p>For monitoring from anywhere (phone, laptop, another machine), connect to ClawMetry Cloud:</p>
+
+<pre><code># Inside the sandbox
+clawmetry cloud connect</code></pre>
+
+<p>This gives you a web dashboard at <a href="https://app.clawmetry.com">app.clawmetry.com</a> where you can:</p>
+
+<ul>
+  <li><strong>See every sub-agent</strong> and what it's doing in real time</li>
+  <li><strong>Track token costs</strong> per session, per model, per tool</li>
+  <li><strong>Monitor system health</strong> (cron jobs, uptime, disk usage)</li>
+  <li><strong>Review session history</strong> with full tool call traces</li>
+  <li><strong>Get alerts</strong> when something goes wrong</li>
+</ul>
+
+<div class="cta-box">
+  <h3>See what your NemoClaw agents are doing</h3>
+  <p>Free, open source, works with standard OpenClaw and NemoClaw. One command to install.</p>
+  <a href="https://clawmetry.com" class="btn">Get ClawMetry</a>
+</div>
+
+
+<h2 id="next-steps">What's Next</h2>
+
+<p>What we set up today is the foundation. OpenShell's policies are still minimal (deny-all by default). To expand your agent's capabilities:</p>
+
+<ul>
+  <li><strong>Connect more channels:</strong> Add Gmail, WhatsApp, Discord, etc. by adding them to the security policy first</li>
+  <li><strong>Configure policies:</strong> Fine-tune what your agent can access through OpenShell's policy system</li>
+  <li><strong>Use OpenShell's live dashboard:</strong> See exactly what network calls and file accesses your AI is making</li>
+  <li><strong>Set up ClawMetry alerts:</strong> Get notified when sessions get stuck or costs spike</li>
+</ul>
+
+
+<h2>Quick Reference: All Commands</h2>
+
+<p>Here's every command from this guide in one block for easy copy-paste:</p>
+
+<pre><code># 1. Install Docker
+apt update && apt upgrade -y
+curl -fsSL https://get.docker.com | sh
+systemctl enable docker && systemctl start docker
+
+# 2. Install OpenShell
+curl -fsSL https://raw.githubusercontent.com/NVIDIA/openshell/main/install.sh | bash
+
+# 3. Install NemoClaw
+curl -fsSL https://raw.githubusercontent.com/NVIDIA/nemoclaw/main/install.sh | bash
+
+# 4. Get gateway token
+nemoclaw connect
+cat /root/.config/openclaw/gateway.yaml | grep token
+exit
+
+# 5. Install and configure Caddy
+apt install -y debian-keyring debian-archive-keyring apt-transport-https
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | \
+  gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | \
+  tee /etc/apt/sources.list.d/caddy-stable.list
+apt update && apt install -y caddy
+
+# Edit /etc/caddy/Caddyfile with your subdomain
+systemctl restart caddy
+
+# 6. Set up AI provider (OpenAI example)
+export OPENAI_API_KEY="sk-your-key-here"
+openshell provider create openai --api-key "$OPENAI_API_KEY"
+openshell inference set --provider openai --model gpt-5.1
+
+# 7. Install ClawMetry
+nemoclaw connect
+pip install clawmetry && clawmetry
+clawmetry cloud connect
+exit</code></pre>
+
+</article>
+
+<div class="footer">
+  &copy; 2026 ClawMetry &middot; <a href="https://clawmetry.com">clawmetry.com</a> &middot; <a href="https://github.com/vivekchand/clawmetry">Open Source</a>
+</div>
+
+</body>
+</html>
