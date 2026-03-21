@@ -10550,11 +10550,15 @@ async function loadSessions() {
   
   mainSessions.forEach(function(s) {
     var anomaly = anomalySet[s.sessionId];
+    var sid = s.sessionId || s.id || s.key || '';
     html += '<div class="session-item" style="border-left:3px solid var(--bg-accent);padding-left:16px;">';
-    html += '<div class="session-name">🖥️ ' + escHtml(s.displayName || s.key) + ' <span style="font-size:11px;color:var(--text-muted);font-weight:400;">Main Session</span>';
+    html += '<div class="session-name" style="display:flex;justify-content:space-between;align-items:center;gap:8px;">';
+    html += '<span>🖥️ ' + escHtml(s.displayName || s.key) + ' <span style="font-size:11px;color:var(--text-muted);font-weight:400;">Main Session</span>';
     if (anomaly) {
       html += '<span class="session-anomaly" title="Cost anomaly: $' + Number(anomaly.cost_usd || 0).toFixed(4) + ' (' + Number(anomaly.ratio || 0).toFixed(2) + 'x rolling avg)">&#9888;&#65039;</span>';
     }
+    html += '</span>';
+    html += '<button onclick="event.stopPropagation();stopSession(\'' + escHtml(sid).replace(/'/g, "\\\\'") + '\')" style="background:#b91c1c;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">⏹ Emergency Stop</button>';
     html += '</div>';
     html += '<div class="session-meta">';
     html += '<span><span class="badge model">' + (s.model||'default') + '</span></span>';
@@ -10601,6 +10605,21 @@ async function loadSessions() {
   }
   
   document.getElementById('sessions-list').innerHTML = html || '<div style="padding:16px;color:var(--text-muted);">No sessions found</div>';
+}
+
+async function stopSession(sessionId) {
+  var sid = String(sessionId || '').trim();
+  if (!sid) return;
+  if (!confirm('Emergency stop session "' + sid + '"?')) return;
+  try {
+    var r = await fetch('/api/sessions/' + encodeURIComponent(sid) + '/stop', {method:'POST'});
+    var data = await r.json();
+    if (!r.ok || !data.ok) throw new Error((data && data.error) || 'Stop failed');
+    alert('Emergency stop signal sent for session: ' + sid);
+    loadSessions();
+  } catch(e) {
+    alert('Emergency stop failed: ' + e.message);
+  }
 }
 
 var _cronJobs = [];
