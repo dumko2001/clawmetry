@@ -304,10 +304,35 @@
     </p>
     <div class="hero-buttons">
       <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
-        <a href="https://clawmetry.com/connect" class="btn-primary">Get Started</a>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center;">
+          <a href="https://clawmetry.com/connect" class="btn-primary">Get Started</a>
+          <button onclick="openDemoVideo()" class="btn-secondary" style="display:inline-flex;align-items:center;gap:8px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            View Demo
+          </button>
+        </div>
         <p style="font-size:13px;color:rgba(255,255,255,0.45);margin:0;text-align:center;">7-day free trial &middot; No credit card required</p>
       </div>
     </div>
+
+    <!-- Video modal -->
+    <div id="demo-modal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:9999;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);align-items:center;justify-content:center;cursor:pointer;" onclick="closeDemoVideo()">
+      <div style="width:90%;max-width:900px;aspect-ratio:16/9;position:relative;" onclick="event.stopPropagation()">
+        <iframe id="demo-iframe" width="100%" height="100%" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border-radius:12px;"></iframe>
+        <button onclick="closeDemoVideo()" style="position:absolute;top:-40px;right:0;background:none;border:none;color:#fff;font-size:28px;cursor:pointer;padding:8px;">&times;</button>
+      </div>
+    </div>
+    <script>
+    function openDemoVideo(){
+      document.getElementById('demo-iframe').src='https://www.youtube.com/embed/9yKerItVC2A?autoplay=1';
+      document.getElementById('demo-modal').style.display='flex';
+    }
+    function closeDemoVideo(){
+      document.getElementById('demo-iframe').src='';
+      document.getElementById('demo-modal').style.display='none';
+    }
+    document.addEventListener('keydown',function(e){if(e.key==='Escape')closeDemoVideo();});
+    </script>
 
     <!-- Social proof (dynamic from /api/hero-stats) -->
     <div style="display:flex;justify-content:center;gap:24px;flex-wrap:wrap;margin-top:40px;">
