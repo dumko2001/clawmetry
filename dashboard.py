@@ -11523,7 +11523,10 @@ async function loadHeatmap() {
 // ===== Usage / Token Tracking =====
 async function loadUsage() {
   try {
-    var data = await fetch('/api/usage').then(r => r.json());
+    var [data, byPlugin] = await Promise.all([
+      fetch('/api/usage').then(r => r.json()),
+      fetch('/api/usage/by-plugin').then(r => r.json()).catch(function(){ return {plugins: []}; })
+    ]);
     function fmtTokens(n) { return n >= 1000000 ? (n/1000000).toFixed(1) + 'M' : n >= 1000 ? (n/1000).toFixed(0) + 'K' : String(n); }
     function fmtCost(c) { return c >= 0.01 ? '$' + c.toFixed(2) : c > 0 ? '<$0.01' : '$0.00'; }
     document.getElementById('usage-today').textContent = fmtTokens(data.today);
@@ -11591,9 +11594,71 @@ async function loadUsage() {
     } else {
       otelExtra.style.display = 'none';
     }
+    renderPluginPieChart(byPlugin.plugins || []);
   } catch(e) {
     document.getElementById('usage-chart').innerHTML = '<span style="color:#555">No usage data available</span>';
   }
+}
+
+function renderPluginPieChart(rows) {
+  var canvas = document.getElementById('usage-plugin-pie');
+  var legend = document.getElementById('usage-plugin-legend');
+  if (!canvas || !legend) return;
+
+  var data = (rows || []).filter(function(r){ return (r.total_tokens || 0) > 0; }).slice(0, 8);
+  if (!data.length) {
+    var ctxEmpty = canvas.getContext('2d');
+    ctxEmpty.clearRect(0, 0, canvas.width, canvas.height);
+    legend.innerHTML = '<div style="color:var(--text-muted);">No plugin tool-call attribution detected yet.</div>';
+    return;
+  }
+
+  var palette = ['#0ea5e9','#22c55e','#f59e0b','#ef4444','#8b5cf6','#14b8a6','#f97316','#84cc16'];
+  var total = data.reduce(function(acc, r){ return acc + (r.total_tokens || 0); }, 0) || 1;
+  var cx = canvas.width / 2;
+  var cy = canvas.height / 2;
+  var radius = 110;
+  var start = -Math.PI / 2;
+  var ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  data.forEach(function(r, i) {
+    var slice = ((r.total_tokens || 0) / total) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, radius, start, start + slice);
+    ctx.closePath();
+    ctx.fillStyle = palette[i % palette.length];
+    ctx.fill();
+    start += slice;
+  });
+
+  // Center cutout to create donut.
+  ctx.beginPath();
+  ctx.arc(cx, cy, 52, 0, Math.PI * 2);
+  ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--bg-secondary') || '#111';
+  ctx.fill();
+  ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-primary') || '#fff';
+  ctx.font = '700 13px Manrope, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Plugins', cx, cy - 2);
+  ctx.font = '600 12px Manrope, sans-serif';
+  ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-muted') || '#aaa';
+  ctx.fillText((total >= 1000 ? (total/1000).toFixed(1) + 'K' : total) + ' tok', cx, cy + 16);
+
+  var lhtml = '';
+  data.forEach(function(r, i) {
+    lhtml += '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--border-secondary);">';
+    lhtml += '<div style="display:flex;align-items:center;gap:8px;min-width:0;">';
+    lhtml += '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + palette[i % palette.length] + ';"></span>';
+    lhtml += '<span style="font-weight:600;color:var(--text-primary);">' + escHtml(r.plugin) + '</span>';
+    lhtml += '</div>';
+    lhtml += '<div style="text-align:right;">';
+    lhtml += '<div style="font-size:12px;">' + (r.pct_of_total || 0).toFixed(1) + '%</div>';
+    lhtml += '<div style="font-size:11px;color:var(--text-muted);">' + (r.total_tokens || 0).toLocaleString() + ' tok • $' + Number(r.cost_usd || 0).toFixed(4) + '</div>';
+    lhtml += '</div></div>';
+  });
+  legend.innerHTML = lhtml;
 }
 
 function displayCostWarnings(warnings) {
