@@ -16220,6 +16220,7 @@ def api_crons():
 
         cost_by_job = defaultdict(float)
         count_by_job = defaultdict(int)
+        session_ids_by_job = defaultdict(list)
 
         for sess in sessions:
             best_idx = None
@@ -16233,6 +16234,8 @@ def api_crons():
                 cost = float(sess.get('cost_usd', 0.0) or 0.0)
                 cost_by_job[best_idx] += cost
                 count_by_job[best_idx] += 1
+                if len(session_ids_by_job[best_idx]) < 10:
+                    session_ids_by_job[best_idx].append(sess.get('session_id', ''))
 
         out = []
         for idx, job in enumerate(jobs):
@@ -16242,6 +16245,7 @@ def api_crons():
             j2 = dict(job)
             j2['cost_usd'] = round(cost_by_job.get(idx, 0.0), 6)
             j2['cost_session_count'] = int(count_by_job.get(idx, 0))
+            j2['cost_session_ids'] = session_ids_by_job.get(idx, [])
             out.append(j2)
         return out
 
