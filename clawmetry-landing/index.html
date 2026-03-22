@@ -1148,11 +1148,13 @@ function managedResendOtp() {
   <!-- Screenshot tab selector -->
   <div style="display:flex;justify-content:center;gap:6px;margin-bottom:16px;flex-wrap:wrap;">
     <button onclick="showScreenshot('flow',true)" id="ss-tab-flow" class="ss-tab active" style="padding:6px 16px;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;background:#28c840;color:#000;font-family:'Inter',sans-serif;transition:all 0.15s;">Flow</button>
+    <button onclick="showScreenshot('brain',true)" id="ss-tab-brain" class="ss-tab" style="padding:6px 16px;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);font-family:'Inter',sans-serif;transition:all 0.15s;">Brain</button>
     <button onclick="showScreenshot('overview',true)" id="ss-tab-overview" class="ss-tab" style="padding:6px 16px;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);font-family:'Inter',sans-serif;transition:all 0.15s;">Overview</button>
     <button onclick="showScreenshot('subagent',true)" id="ss-tab-subagent" class="ss-tab" style="padding:6px 16px;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);font-family:'Inter',sans-serif;transition:all 0.15s;">Sub-Agent</button>
     <button onclick="showScreenshot('summary',true)" id="ss-tab-summary" class="ss-tab" style="padding:6px 16px;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);font-family:'Inter',sans-serif;transition:all 0.15s;">Summary</button>
     <button onclick="showScreenshot('crons',true)" id="ss-tab-crons" class="ss-tab" style="padding:6px 16px;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);font-family:'Inter',sans-serif;transition:all 0.15s;">Crons</button>
     <button onclick="showScreenshot('memory',true)" id="ss-tab-memory" class="ss-tab" style="padding:6px 16px;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);font-family:'Inter',sans-serif;transition:all 0.15s;">Memory</button>
+    <button onclick="showScreenshot('security',true)" id="ss-tab-security" class="ss-tab" style="padding:6px 16px;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);font-family:'Inter',sans-serif;transition:all 0.15s;">Security</button>
   </div>
 
   <div class="demo-container">
@@ -1166,7 +1168,7 @@ function managedResendOtp() {
   </div>
 
   <script>
-  var ssNames = ['flow','overview','subagent','summary','crons','memory'];
+  var ssNames = ['flow','brain','overview','subagent','summary','crons','memory','security'];
   var ssIndex = 0;
   var ssAutoPlay = null;
   var ssPaused = false;
