@@ -42,9 +42,6 @@ Opens at **http://localhost:8900** and you're done.
 ### ⚡ Flow — Real-time tool call feed
 ![Flow tab](screenshots/flow.png)
 
-### ⏰ Crons — Scheduled job monitor
-![Crons tab](screenshots/crons.png)
-
 ### 💰 Tokens — Cost breakdown by model & session
 ![Tokens tab](screenshots/tokens.png)
 
