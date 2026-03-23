@@ -2758,6 +2758,7 @@ function clawmetryLogout(){
     <div class="nav-tab" onclick="switchTab('usage')">Tokens</div>
     <div class="nav-tab" onclick="switchTab('memory')">Memory</div>
     <div class="nav-tab" onclick="switchTab('security')">Security</div>
+    <div class="nav-tab" id="anomalies-nav-tab" onclick="switchTab('anomalies')" style="position:relative;">&#9888;&#65039; Anomalies<span id="anomaly-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;border-radius:10px;font-size:10px;font-weight:700;padding:1px 5px;min-width:16px;text-align:center;line-height:16px;"></span></div>
     <!-- History tab hidden until mature -->
     <!-- <div class="nav-tab" onclick="switchTab('history')">History</div> -->
   </div>
@@ -3103,11 +3104,24 @@ function clawmetryLogout(){
   <div class="refresh-bar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
     <button class="refresh-btn" onclick="loadCrons()">&#x21bb; Refresh</button>
     <button class="refresh-btn" onclick="cronCreateNew()" style="background:#6366f1;color:#fff;border-color:#6366f1;">+ New Job</button>
+    <button class="refresh-btn" onclick="loadCronHealth()" style="margin-left:8px;">&#x2665; Health Monitor</button>
     <label class="modal-auto-refresh" style="margin-left:auto;">
       <input type="checkbox" id="cron-auto-refresh" onchange="toggleCronAutoRefresh()" checked> Auto-refresh (30s)
     </label>
   </div>
   <div id="crons-multi-node" style="display:none;margin-bottom:12px;"></div>
+  <!-- Cron Health Monitor Panel -->
+  <div id="cron-health-panel" style="display:none;margin-bottom:16px;">
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div style="padding:14px 16px;border-bottom:1px solid var(--border-primary);display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-weight:700;font-size:15px;color:var(--text-primary);">&#x2665; Cron Health Monitor <span style="font-size:12px;font-weight:400;color:var(--text-muted);margin-left:8px;">Last 7 days</span></div>
+        <button onclick="document.getElementById('cron-health-panel').style.display='none'" style="background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;padding:0 4px;">&times;</button>
+      </div>
+      <div id="cron-health-content" style="padding:8px 0;">
+        <div style="padding:16px;color:var(--text-muted);text-align:center;">Loading health data...</div>
+      </div>
+    </div>
+  </div>
   <div class="card" id="crons-list">Loading...</div>
 </div>
 
@@ -6583,6 +6597,7 @@ def detect_config(args=None):
 
     # ── Register blueprints (Phase 4) ───────────────────────────────────────
     app.register_blueprint(bp_alerts)
+    app.register_blueprint(bp_anomalies)
     app.register_blueprint(bp_auth)
     app.register_blueprint(bp_brain)
     app.register_blueprint(bp_budget)
@@ -6602,6 +6617,8 @@ def detect_config(args=None):
     app.register_blueprint(bp_sessions)
     app.register_blueprint(bp_usage)
     app.register_blueprint(bp_version)
+    # Init anomaly DB table
+    _anomaly_init_db()
     # ────────────────────────────────────────────────────────────────────────
 
 
@@ -7874,6 +7891,7 @@ function clawmetryLogout(){
     <div class="nav-tab" onclick="switchTab('usage')">Tokens</div>
     <div class="nav-tab" onclick="switchTab('memory')">Memory</div>
     <div class="nav-tab" onclick="switchTab('security')">Security</div>
+    <div class="nav-tab" id="anomalies-nav-tab" onclick="switchTab('anomalies')" style="position:relative;">&#9888;&#65039; Anomalies<span id="anomaly-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;border-radius:10px;font-size:10px;font-weight:700;padding:1px 5px;min-width:16px;text-align:center;line-height:16px;"></span></div>
     <!-- History tab hidden until mature -->
     <!-- <div class="nav-tab" onclick="switchTab('history')">History</div> -->
   <div id="cloud-cta-btn" onclick="openCloudModal()" style="display:none;margin-left:8px;cursor:pointer;padding:6px 12px;border:1px solid rgba(96,165,250,0.5);border-radius:8px;font-size:12px;font-weight:600;color:#60a5fa;white-space:nowrap;transition:all 0.2s;user-select:none;" onmouseover="this.style.background='rgba(96,165,250,0.1)'" onmouseout="this.style.background='transparent'"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Enable Cloud Sync</div>
@@ -8256,6 +8274,29 @@ function clawmetryLogout(){
     <div class="card"><table class="usage-table" id="usage-model-table"><tbody><tr><td colspan="2" style="color:#666;">No model data</td></tr></tbody></table></div>
     <div style="margin-top:12px;padding:8px 12px;background:#1a3a2a;border:1px solid #2a5a3a;border-radius:8px;font-size:12px;color:#60ff80;">📡 Data source: OpenTelemetry OTLP - real-time metrics from OpenClaw</div>
   </div>
+  <!-- Model Attribution Section (GH #305) -->
+  <div class="section-title">🤖 Model Attribution</div>
+  <div id="model-attribution-panel">
+    <div class="card" style="margin-bottom:12px;">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
+        <span style="font-size:13px;font-weight:600;color:var(--text-primary);">Turn Distribution by Model</span>
+        <span id="model-attr-switch-badge" style="display:none;margin-left:auto;padding:2px 8px;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);border-radius:12px;font-size:11px;color:#f59e0b;"></span>
+      </div>
+      <div id="model-attr-bars" style="display:flex;flex-direction:column;gap:6px;">
+        <div style="color:var(--text-muted);font-size:12px;">Loading...</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="card">
+        <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Per-Session Models (recent)</div>
+        <div id="model-attr-sessions" style="font-size:12px;color:var(--text-secondary);max-height:200px;overflow-y:auto;">Loading...</div>
+      </div>
+      <div class="card">
+        <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Model Switch Events</div>
+        <div id="model-attr-switches" style="font-size:12px;color:var(--text-secondary);max-height:200px;overflow-y:auto;">Loading...</div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- CRONS -->
@@ -8263,11 +8304,24 @@ function clawmetryLogout(){
   <div class="refresh-bar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
     <button class="refresh-btn" onclick="loadCrons()">&#x21bb; Refresh</button>
     <button class="refresh-btn" onclick="cronCreateNew()" style="background:#6366f1;color:#fff;border-color:#6366f1;">+ New Job</button>
+    <button class="refresh-btn" onclick="loadCronHealth()" style="margin-left:8px;">&#x2665; Health Monitor</button>
     <label class="modal-auto-refresh" style="margin-left:auto;">
       <input type="checkbox" id="cron-auto-refresh" onchange="toggleCronAutoRefresh()" checked> Auto-refresh (30s)
     </label>
   </div>
   <div id="crons-multi-node" style="display:none;margin-bottom:12px;"></div>
+  <!-- Cron Health Monitor Panel -->
+  <div id="cron-health-panel" style="display:none;margin-bottom:16px;">
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div style="padding:14px 16px;border-bottom:1px solid var(--border-primary);display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-weight:700;font-size:15px;color:var(--text-primary);">&#x2665; Cron Health Monitor <span style="font-size:12px;font-weight:400;color:var(--text-muted);margin-left:8px;">Last 7 days</span></div>
+        <button onclick="document.getElementById('cron-health-panel').style.display='none'" style="background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;padding:0 4px;">&times;</button>
+      </div>
+      <div id="cron-health-content" style="padding:8px 0;">
+        <div style="padding:16px;color:var(--text-muted);text-align:center;">Loading health data...</div>
+      </div>
+    </div>
+  </div>
   <div class="card" id="crons-list">Loading...</div>
 </div>
 
@@ -11547,8 +11601,100 @@ async function loadUsage() {
       var el = document.getElementById('usage-session-cost-table');
       if (el) el.innerHTML = '<span style="color:var(--text-muted)">No session cost data available</span>';
     });
+    // Load model attribution (GH #305)
+    loadModelAttribution().catch(function(e) { console.warn('model attribution load failed', e); });
+    // Load 30-day activity heatmap (GH #69)
+    loadHeatmap().catch(function(e) { console.warn('heatmap load failed', e); });
   } catch(e) {
     document.getElementById('usage-chart').innerHTML = '<span style="color:#555">No usage data available</span>';
+  }
+}
+
+async function loadModelAttribution() {
+  var barsEl = document.getElementById('model-attr-bars');
+  var sessionsEl = document.getElementById('model-attr-sessions');
+  var switchesEl = document.getElementById('model-attr-switches');
+  var badgeEl = document.getElementById('model-attr-switch-badge');
+  if (!barsEl) return;
+
+  try {
+    var data = await fetch('/api/usage/model-attribution').then(function(r) { return r.json(); });
+    var models = data.models || [];
+    var palette = ['#6366f1','#22c55e','#f59e0b','#ef4444','#14b8a6','#a855f7','#f97316','#0ea5e9'];
+
+    // Render horizontal bar chart
+    if (!models.length) {
+      barsEl.innerHTML = '<div style="color:var(--text-muted);font-size:12px;">No model data found in transcripts yet.</div>';
+    } else {
+      var maxTurns = Math.max.apply(null, models.map(function(m) { return m.turns || 0; })) || 1;
+      var barsHtml = '';
+      models.forEach(function(m, i) {
+        var pct = Math.max(2, Math.round((m.turns / maxTurns) * 100));
+        var color = palette[i % palette.length];
+        var shortModel = (m.model || '').split('/').pop() || m.model;
+        barsHtml += '<div style="display:flex;align-items:center;gap:8px;">';
+        barsHtml += '<div style="width:160px;font-size:11px;color:var(--text-secondary);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + escHtml(m.model) + '">' + escHtml(shortModel) + '</div>';
+        barsHtml += '<div style="flex:1;background:var(--bg-secondary);border-radius:4px;height:18px;position:relative;">';
+        barsHtml += '<div style="width:' + pct + '%;background:' + color + ';border-radius:4px;height:100%;opacity:0.85;"></div>';
+        barsHtml += '</div>';
+        barsHtml += '<div style="width:80px;font-size:11px;color:var(--text-muted);">' + m.turns + ' turns (' + m.pct_turns + '%)</div>';
+        barsHtml += '</div>';
+      });
+      barsEl.innerHTML = barsHtml;
+    }
+
+    // Switch events badge
+    if (data.switchCount > 0 && badgeEl) {
+      badgeEl.style.display = '';
+      badgeEl.textContent = data.switchCount + ' switch event' + (data.switchCount !== 1 ? 's' : '');
+    }
+
+    // Per-session table
+    var sessionRows = data.sessionModels || [];
+    if (!sessionRows.length) {
+      if (sessionsEl) sessionsEl.innerHTML = '<div style="color:var(--text-muted);">No session data yet.</div>';
+    } else {
+      var sHtml = '<table style="width:100%;border-collapse:collapse;">';
+      sHtml += '<thead><tr style="color:var(--text-muted);font-size:10px;text-transform:uppercase;"><th style="text-align:left;padding:3px 6px;">Session</th><th style="text-align:left;padding:3px 6px;">Model</th><th style="text-align:center;padding:3px 6px;">Mixed?</th><th style="text-align:left;padding:3px 6px;">Date</th></tr></thead><tbody>';
+      sessionRows.slice().reverse().slice(0, 15).forEach(function(s) {
+        var multi = s.multi_model ? '<span style="color:#f59e0b;font-size:10px;">⚡ yes</span>' : '<span style="color:var(--text-muted);font-size:10px;">no</span>';
+        var shortModel = (s.primary_model || '').split('/').pop() || s.primary_model;
+        sHtml += '<tr style="border-top:1px solid var(--border-secondary);">';
+        sHtml += '<td style="padding:3px 6px;font-family:monospace;font-size:10px;color:var(--text-muted);">' + escHtml(s.session_short) + '</td>';
+        sHtml += '<td style="padding:3px 6px;font-size:11px;" title="' + escHtml(s.primary_model) + '">' + escHtml(shortModel) + '</td>';
+        sHtml += '<td style="padding:3px 6px;text-align:center;">' + multi + '</td>';
+        sHtml += '<td style="padding:3px 6px;font-size:10px;color:var(--text-muted);">' + escHtml(s.day || '') + '</td>';
+        sHtml += '</tr>';
+      });
+      sHtml += '</tbody></table>';
+      if (sessionsEl) sessionsEl.innerHTML = sHtml;
+    }
+
+    // Switch events list
+    var switches = data.switchEvents || [];
+    if (!switches.length) {
+      if (switchesEl) switchesEl.innerHTML = '<div style="color:var(--text-muted);">No model switches detected.</div>';
+    } else {
+      var swHtml = '<div style="display:flex;flex-direction:column;gap:6px;">';
+      switches.slice(0, 10).forEach(function(sw) {
+        var fromShort = (sw.from_model || '').split('/').pop() || sw.from_model;
+        var toShort = (sw.to_model || '').split('/').pop() || sw.to_model;
+        swHtml += '<div style="padding:4px 6px;background:var(--bg-secondary);border-radius:6px;border-left:3px solid #f59e0b;">';
+        swHtml += '<div style="font-size:11px;color:var(--text-primary);">';
+        swHtml += '<span style="color:#ef4444;">' + escHtml(fromShort) + '</span>';
+        swHtml += ' <span style="color:var(--text-muted);">→</span> ';
+        swHtml += '<span style="color:#22c55e;">' + escHtml(toShort) + '</span>';
+        swHtml += '</div>';
+        swHtml += '<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">';
+        swHtml += escHtml(sw.ts_str || '') + ' · session …' + escHtml(sw.session_short || '');
+        swHtml += '</div>';
+        swHtml += '</div>';
+      });
+      swHtml += '</div>';
+      if (switchesEl) switchesEl.innerHTML = swHtml;
+    }
+  } catch(e) {
+    if (barsEl) barsEl.innerHTML = '<div style="color:var(--text-muted);font-size:12px;">Model attribution unavailable.</div>';
   }
 }
 
@@ -15603,6 +15749,7 @@ def _gw_invoke_docker(tool, args=None, token=None):
 # ── Flask Blueprints (Phase 4) ────────────────────────────────────────────────
 from flask import Blueprint as _Blueprint
 bp_alerts = _Blueprint('alerts', __name__)
+bp_anomalies = _Blueprint('anomalies', __name__)
 bp_auth = _Blueprint('auth', __name__)
 bp_brain = _Blueprint('brain', __name__)
 bp_budget = _Blueprint('budget', __name__)
@@ -16520,6 +16667,169 @@ def api_cron_runs(job_id):
     if result is None:
         return jsonify({'error': 'Gateway unavailable'}), 502
     return jsonify(result)
+
+
+# ── Cron Health Monitor ────────────────────────────────────────────────────────
+
+def _cron_runs_dir():
+    """Return the cron runs directory path (tries openclaw and clawdbot locations)."""
+    candidates = [
+        os.path.expanduser('~/.openclaw/cron/runs'),
+        os.path.expanduser('~/.clawdbot/cron/runs'),
+    ]
+    data_dir = os.environ.get('OPENCLAW_DATA_DIR', '')
+    if data_dir:
+        candidates.insert(0, os.path.join(data_dir, 'cron', 'runs'))
+    for d in candidates:
+        if os.path.isdir(d):
+            return d
+    return None
+
+
+def _read_local_cron_runs(job_id, limit=50):
+    """Read run records from local ~/.openclaw/cron/runs/<job_id>.jsonl file."""
+    runs_dir = _cron_runs_dir()
+    if not runs_dir:
+        return []
+    fpath = os.path.join(runs_dir, f'{job_id}.jsonl')
+    if not os.path.isfile(fpath):
+        return []
+    runs = []
+    try:
+        with open(fpath, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    obj = json.loads(line)
+                    runs.append(obj)
+                except Exception:
+                    pass
+    except Exception:
+        pass
+    # Return most recent first, limited
+    return list(reversed(runs))[:limit]
+
+
+def _compute_cron_health(job_id, runs, days=7):
+    """Compute health metrics for a single cron job from its run records."""
+    now_ms = int(time.time() * 1000)
+    cutoff_ms = now_ms - days * 86400 * 1000
+
+    # Recent runs within window
+    recent = [r for r in runs if r.get('ts', r.get('runAtMs', 0)) >= cutoff_ms]
+    total = len(recent)
+    ok_count = sum(1 for r in recent if r.get('status') == 'ok')
+    err_count = total - ok_count
+    success_rate = round(ok_count / total * 100, 1) if total > 0 else None
+
+    # Sparkline: daily success counts over last 7 days (Sunday-to-Saturday style, just linear)
+    daily_ok = {}
+    daily_total = {}
+    for r in recent:
+        ts_ms = r.get('ts', r.get('runAtMs', 0))
+        day = datetime.fromtimestamp(ts_ms / 1000, tz=timezone.utc).strftime('%Y-%m-%d')
+        daily_total[day] = daily_total.get(day, 0) + 1
+        if r.get('status') == 'ok':
+            daily_ok[day] = daily_ok.get(day, 0) + 1
+
+    sparkline = []
+    for i in range(days - 1, -1, -1):
+        d = (datetime.now(tz=timezone.utc) - timedelta(days=i)).strftime('%Y-%m-%d')
+        sparkline.append({
+            'date': d,
+            'total': daily_total.get(d, 0),
+            'ok': daily_ok.get(d, 0),
+        })
+
+    # Cost per run (from session transcripts via cost_session_ids on the job)
+    # Runs don't store cost directly, but duration is available
+    run_history = []
+    for r in runs[:20]:  # last 20 for history table
+        run_history.append({
+            'ts': r.get('ts', r.get('runAtMs', 0)),
+            'status': r.get('status', 'unknown'),
+            'durationMs': r.get('durationMs'),
+            'error': r.get('error'),
+            'summary': (r.get('summary', '') or '')[:120],
+            'nextRunAtMs': r.get('nextRunAtMs'),
+        })
+
+    return {
+        'jobId': job_id,
+        'totalRuns7d': total,
+        'okRuns7d': ok_count,
+        'errRuns7d': err_count,
+        'successRate7d': success_rate,
+        'sparkline': sparkline,
+        'runHistory': run_history,
+    }
+
+
+@bp_crons.route('/api/cron/health')
+def api_cron_health():
+    """Return health metrics for all cron jobs (run history, success rate, sparkline)."""
+    # Get all jobs
+    gw_data = _gw_invoke('cron', {'action': 'list', 'includeDisabled': True})
+    if gw_data and 'jobs' in gw_data:
+        jobs = gw_data['jobs']
+    else:
+        jobs = _get_crons()
+
+    runs_dir = _cron_runs_dir()
+    result = []
+    for job in jobs:
+        if not isinstance(job, dict):
+            continue
+        job_id = job.get('id', '')
+        if not job_id:
+            continue
+        runs = _read_local_cron_runs(job_id, limit=100)
+        health = _compute_cron_health(job_id, runs, days=7)
+        health['name'] = job.get('name', job_id)
+        health['enabled'] = job.get('enabled', True)
+        health['schedule'] = job.get('schedule', {})
+        health['lastStatus'] = (job.get('state') or {}).get('lastStatus')
+        health['lastRunAtMs'] = (job.get('state') or {}).get('lastRunAtMs')
+        health['lastDurationMs'] = (job.get('state') or {}).get('lastDurationMs')
+        health['costUsd'] = job.get('cost_usd', 0.0)
+        health['costSessionCount'] = job.get('cost_session_count', 0)
+        result.append(health)
+
+    # Sort: enabled first, then by lastRunAtMs desc
+    result.sort(key=lambda x: (0 if x.get('enabled') else 1, -(x.get('lastRunAtMs') or 0)))
+    return jsonify({'jobs': result})
+
+
+@bp_crons.route('/api/cron/<job_id>/kill', methods=['POST'])
+def api_cron_kill(job_id):
+    """Kill/pause a running or scheduled cron job by disabling it."""
+    if not job_id:
+        return jsonify({'error': 'Missing job ID'}), 400
+    # Disable the job via gateway (acts as kill switch)
+    result = _gw_invoke('cron', {'action': 'update', 'jobId': job_id, 'patch': {'enabled': False}})
+    if result is None:
+        # Fallback: update local jobs.json directly
+        for crons_file in [
+            os.path.expanduser('~/.openclaw/cron/jobs.json'),
+            os.path.expanduser('~/.clawdbot/cron/jobs.json'),
+        ]:
+            if os.path.isfile(crons_file):
+                try:
+                    with open(crons_file) as f:
+                        data = json.load(f)
+                    jobs = data.get('jobs', data) if isinstance(data, dict) else data
+                    for j in jobs:
+                        if isinstance(j, dict) and j.get('id') == job_id:
+                            j['enabled'] = False
+                    with open(crons_file, 'w') as f:
+                        json.dump(data, f, indent=2)
+                    return jsonify({'ok': True, 'message': 'Job disabled (local file)', 'jobId': job_id})
+                except Exception as e:
+                    return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Gateway unavailable and no local file found'}), 502
+    return jsonify({'ok': True, 'message': 'Job disabled (kill switch activated)', 'jobId': job_id})
 
 
 def _find_log_file(ds):
@@ -18610,6 +18920,9 @@ def _compute_transcript_analytics():
     daily_tokens = {}
     daily_cost = {}
     model_usage = {}
+    # Model attribution: per-turn counts and switching events
+    model_turns = {}     # model -> turn count
+    model_switches = []  # [{session_id, from_model, to_model, ts_ms}]
 
     if os.path.isdir(sessions_dir):
         for fname in os.listdir(sessions_dir):
@@ -18626,6 +18939,7 @@ def _compute_transcript_analytics():
             s_end = None
             search_parts = []
             explicit_cron_refs = set()
+            s_model_turns = {}  # model -> turn count within this session
 
             try:
                 with open(fpath, 'r') as f:
@@ -18653,7 +18967,18 @@ def _compute_transcript_analytics():
                         message = obj.get('message', {}) if isinstance(obj.get('message'), dict) else {}
                         model = message.get('model') or obj.get('model')
                         if model:
+                            # Track model turns and switching events
+                            if model != s_model and s_model != 'unknown':
+                                ts_ms = int(ts.timestamp() * 1000) if ts else 0
+                                model_switches.append({
+                                    'session_id': sid,
+                                    'from_model': s_model,
+                                    'to_model': model,
+                                    'ts_ms': ts_ms,
+                                })
                             s_model = model
+                            s_model_turns[model] = s_model_turns.get(model, 0) + 1
+                            model_turns[model] = model_turns.get(model, 0) + 1
 
                         usage_metrics = _extract_usage_metrics(obj)
                         tokens = usage_metrics['tokens']
@@ -18705,6 +19030,7 @@ def _compute_transcript_analytics():
                     'tokens': s_tokens,
                     'cost_usd': s_cost,
                     'model': s_model,
+                    'model_turns': s_model_turns,
                     'start_ts': s_start.timestamp() if s_start else 0,
                     'end_ts': s_end.timestamp() if s_end else 0,
                     'day': day,
@@ -18716,12 +19042,16 @@ def _compute_transcript_analytics():
                 continue
 
     summaries.sort(key=lambda s: s.get('start_ts', 0))
+    # Sort model_switches by timestamp descending (most recent first)
+    model_switches.sort(key=lambda x: x.get('ts_ms', 0), reverse=True)
     result = {
         'sessions': summaries,
         'plugin_stats': plugin_stats,
         'daily_tokens': daily_tokens,
         'daily_cost': daily_cost,
         'model_usage': model_usage,
+        'model_turns': model_turns,
+        'model_switches': model_switches[:50],
     }
     _transcript_analytics_cache['data'] = result
     _transcript_analytics_cache['ts'] = now
@@ -18887,6 +19217,9 @@ def _compute_transcript_analytics():
     daily_tokens = {}
     daily_cost = {}
     model_usage = {}
+    # Model attribution: per-turn counts and switching events
+    model_turns = {}     # model -> turn count
+    model_switches = []  # [{session_id, from_model, to_model, ts_ms}]
 
     if os.path.isdir(sessions_dir):
         for fname in os.listdir(sessions_dir):
@@ -18903,6 +19236,7 @@ def _compute_transcript_analytics():
             s_end = None
             search_parts = []
             explicit_cron_refs = set()
+            s_model_turns = {}  # model -> turn count within this session
 
             try:
                 with open(fpath, 'r') as f:
@@ -18930,7 +19264,18 @@ def _compute_transcript_analytics():
                         message = obj.get('message', {}) if isinstance(obj.get('message'), dict) else {}
                         model = message.get('model') or obj.get('model')
                         if model:
+                            # Track model turns and switching events
+                            if model != s_model and s_model != 'unknown':
+                                ts_ms = int(ts.timestamp() * 1000) if ts else 0
+                                model_switches.append({
+                                    'session_id': sid,
+                                    'from_model': s_model,
+                                    'to_model': model,
+                                    'ts_ms': ts_ms,
+                                })
                             s_model = model
+                            s_model_turns[model] = s_model_turns.get(model, 0) + 1
+                            model_turns[model] = model_turns.get(model, 0) + 1
 
                         usage_metrics = _extract_usage_metrics(obj)
                         tokens = usage_metrics['tokens']
@@ -18982,6 +19327,7 @@ def _compute_transcript_analytics():
                     'tokens': s_tokens,
                     'cost_usd': s_cost,
                     'model': s_model,
+                    'model_turns': s_model_turns,
                     'start_ts': s_start.timestamp() if s_start else 0,
                     'end_ts': s_end.timestamp() if s_end else 0,
                     'day': day,
@@ -18993,12 +19339,16 @@ def _compute_transcript_analytics():
                 continue
 
     summaries.sort(key=lambda s: s.get('start_ts', 0))
+    # Sort model_switches by timestamp descending (most recent first)
+    model_switches.sort(key=lambda x: x.get('ts_ms', 0), reverse=True)
     result = {
         'sessions': summaries,
         'plugin_stats': plugin_stats,
         'daily_tokens': daily_tokens,
         'daily_cost': daily_cost,
         'model_usage': model_usage,
+        'model_turns': model_turns,
+        'model_switches': model_switches[:50],
     }
     _transcript_analytics_cache['data'] = result
     _transcript_analytics_cache['ts'] = now
@@ -19266,6 +19616,88 @@ def api_usage_export():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+@bp_usage.route('/api/usage/model-attribution')
+def api_usage_model_attribution():
+    """Return per-turn model attribution data: turn counts, switching events, and per-session breakdown."""
+    try:
+        analytics = _compute_transcript_analytics()
+        model_turns = analytics.get('model_turns', {})
+        model_switches = analytics.get('model_switches', [])
+        sessions = analytics.get('sessions', [])
+        model_usage = analytics.get('model_usage', {})
+
+        # Total turns across all models
+        total_turns = sum(model_turns.values()) or 1
+
+        # Build model distribution (turns + token share)
+        total_tokens = sum(model_usage.values()) or 1
+        models = []
+        all_models = set(list(model_turns.keys()) + list(model_usage.keys()))
+        for m in all_models:
+            if not m or m == 'unknown':
+                continue
+            turns = model_turns.get(m, 0)
+            tokens = model_usage.get(m, 0)
+            # Heuristic: first model in sessions = primary, others = fallback/switched
+            models.append({
+                'model': m,
+                'turns': turns,
+                'tokens': int(tokens),
+                'pct_turns': round((turns / total_turns) * 100, 1),
+                'pct_tokens': round((tokens / total_tokens) * 100, 1),
+            })
+        models.sort(key=lambda x: x['turns'], reverse=True)
+
+        # Per-session model info (most recent 30 sessions)
+        session_models = []
+        for s in reversed(sessions[-50:]):
+            sid = s.get('session_id', '')
+            m = s.get('model', 'unknown')
+            mt = s.get('model_turns', {})
+            if not m or m == 'unknown':
+                continue
+            session_models.append({
+                'session_id': sid,
+                'session_short': sid[-12:],
+                'primary_model': m,
+                'model_turns': mt,
+                'multi_model': len(mt) > 1,
+                'day': s.get('day', ''),
+                'tokens': s.get('tokens', 0),
+            })
+        session_models = session_models[-30:]
+
+        # Switch events — include human-readable timestamp
+        switches_out = []
+        for sw in model_switches[:20]:
+            ts_ms = sw.get('ts_ms', 0)
+            try:
+                ts_str = datetime.fromtimestamp(ts_ms / 1000).strftime('%Y-%m-%d %H:%M') if ts_ms else ''
+            except Exception:
+                ts_str = ''
+            switches_out.append({
+                'session_id': sw.get('session_id', ''),
+                'session_short': sw.get('session_id', '')[-12:],
+                'from_model': sw.get('from_model', ''),
+                'to_model': sw.get('to_model', ''),
+                'ts_ms': ts_ms,
+                'ts_str': ts_str,
+            })
+
+        return jsonify({
+            'models': models,
+            'totalTurns': total_turns,
+            'totalTokens': int(total_tokens),
+            'switchEvents': switches_out,
+            'switchCount': len(model_switches),
+            'sessionModels': session_models,
+            'primaryModel': models[0]['model'] if models else 'unknown',
+        })
+    except Exception as e:
+        return jsonify({'error': str(e), 'models': [], 'switchEvents': [], 'sessionModels': []}), 500
+
 
 @bp_sessions.route('/api/transcripts')
 def api_transcripts():
@@ -24715,6 +25147,419 @@ def main():
         except (ValueError, OSError):
             pass
         _run_server(args)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# ── Anomaly Detection Engine (closes #304) ──────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════════════
+
+_ANOMALY_THRESHOLDS = {
+    'token_spike_multiplier': 3.0,    # 1 turn uses 3x per-turn rolling avg
+    'cost_spike_multiplier': 2.0,     # daily cost > 2x rolling 7-day avg
+    'session_freq_multiplier': 5.0,   # sessions/day > 5x rolling 7-day avg
+    'cost_per_session_multiplier': 2.0, # single session > 2x rolling avg
+    'min_baseline_samples': 3,         # need ≥3 data points for a baseline
+    'auto_expire_hours': 24,           # anomalies auto-expire after 24h
+}
+
+
+def _anomaly_db_path():
+    """Return path to the anomaly state SQLite db (reuses fleet.db dir)."""
+    fleet = _fleet_db_path()
+    return os.path.join(os.path.dirname(fleet), 'anomalies.db')
+
+
+def _anomaly_db():
+    """Open a SQLite connection to the anomaly database."""
+    import sqlite3 as _sq
+    path = _anomaly_db_path()
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    conn = _sq.connect(path, timeout=10)
+    conn.row_factory = _sq.Row
+    return conn
+
+
+def _anomaly_init_db():
+    """Create the anomaly_events table if it doesn't exist."""
+    try:
+        db = _anomaly_db()
+        db.executescript("""
+            CREATE TABLE IF NOT EXISTS anomaly_events (
+                id TEXT PRIMARY KEY,
+                type TEXT NOT NULL,
+                severity TEXT NOT NULL,
+                message TEXT NOT NULL,
+                actual REAL NOT NULL,
+                expected REAL NOT NULL,
+                ratio REAL NOT NULL,
+                session_id TEXT,
+                metadata TEXT,
+                detected_at REAL NOT NULL,
+                acknowledged INTEGER DEFAULT 0,
+                ack_at REAL,
+                expires_at REAL NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_anomaly_detected
+                ON anomaly_events(detected_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_anomaly_ack
+                ON anomaly_events(acknowledged, expires_at);
+        """)
+        db.commit()
+        db.close()
+    except Exception as _e:
+        import sys as _sys
+        print(f"[anomaly] DB init error: {_e}", file=_sys.stderr)
+
+
+def _rolling_avg(values):
+    """Return average of a list, or 0.0 if empty."""
+    if not values:
+        return 0.0
+    return sum(values) / len(values)
+
+
+def _detect_and_persist_anomalies():
+    """
+    Compute anomalies from current session data, persist new ones to DB.
+    Skips events already recorded (deduped by composite key).
+    Returns list of new anomaly dicts.
+    """
+    import hashlib as _hl
+    import uuid as _uuid
+
+    now_ts = time.time()
+    expire_ts = now_ts + _ANOMALY_THRESHOLDS['auto_expire_hours'] * 3600
+    thr = _ANOMALY_THRESHOLDS
+    min_samples = thr['min_baseline_samples']
+    new_anomalies = []
+
+    try:
+        analytics = _compute_transcript_analytics()
+        sessions = analytics.get('sessions', [])
+    except Exception:
+        sessions = []
+
+    # ── 1. Per-session cost anomaly (single session > 2x rolling avg) ─────
+    sessions_sorted = sorted(sessions, key=lambda s: float(s.get('start_ts', 0) or 0))
+    for i, sess in enumerate(sessions_sorted):
+        sess_ts = float(sess.get('start_ts', 0) or 0)
+        sess_cost = float(sess.get('cost_usd', 0) or 0)
+        if sess_cost <= 0:
+            continue
+        # Only flag sessions from last 24h
+        if sess_ts < now_ts - 86400:
+            continue
+        window_start = sess_ts - 7 * 86400
+        baseline = [
+            float(s.get('cost_usd', 0) or 0)
+            for s in sessions_sorted[:i]
+            if float(s.get('start_ts', 0) or 0) >= window_start and float(s.get('cost_usd', 0) or 0) > 0
+        ]
+        if len(baseline) < min_samples:
+            continue
+        avg = _rolling_avg(baseline)
+        if avg <= 0:
+            continue
+        ratio = sess_cost / avg
+        if ratio >= thr['cost_per_session_multiplier']:
+            sid = sess.get('session_id', '')
+            dedup_key = _hl.md5(f"cost_spike:{sid}:{int(sess_ts)}".encode()).hexdigest()[:16]
+            severity = 'critical' if ratio >= 5 else ('high' if ratio >= 3 else 'medium')
+            new_anomalies.append({
+                'id': dedup_key,
+                'type': 'cost_spike',
+                'severity': severity,
+                'message': f'Session cost ${sess_cost:.4f} is {ratio:.1f}x the 7-day average (${avg:.4f}/session)',
+                'actual': sess_cost,
+                'expected': avg,
+                'ratio': ratio,
+                'session_id': sid,
+                'metadata': json.dumps({'session_id': sid, 'window_samples': len(baseline)}),
+                'detected_at': sess_ts,
+                'expires_at': expire_ts,
+            })
+
+    # ── 2. Daily cost anomaly (today > 2x 7-day rolling avg) ─────────────
+    daily_cost = analytics.get('daily_cost', {}) if 'analytics' in dir() else {}
+    try:
+        daily_cost = _compute_transcript_analytics().get('daily_cost', {})
+    except Exception:
+        daily_cost = {}
+    today_str = datetime.now().strftime('%Y-%m-%d')
+    today_cost = float(daily_cost.get(today_str, 0) or 0)
+    if today_cost > 0:
+        # last 7 days excluding today
+        week_costs = []
+        for i in range(1, 8):
+            d = (datetime.now() - timedelta(days=i)).strftime('%Y-%m-%d')
+            v = float(daily_cost.get(d, 0) or 0)
+            if v > 0:
+                week_costs.append(v)
+        if len(week_costs) >= min_samples:
+            week_avg = _rolling_avg(week_costs)
+            if week_avg > 0:
+                ratio = today_cost / week_avg
+                if ratio >= thr['cost_spike_multiplier']:
+                    dedup_key = _hl.md5(f"daily_cost:{today_str}".encode()).hexdigest()[:16]
+                    severity = 'critical' if ratio >= 5 else ('high' if ratio >= 3 else 'medium')
+                    new_anomalies.append({
+                        'id': dedup_key,
+                        'type': 'daily_cost_spike',
+                        'severity': severity,
+                        'message': f'Daily cost ${today_cost:.4f} is {ratio:.1f}x the 7-day average (${week_avg:.4f}/day)',
+                        'actual': today_cost,
+                        'expected': week_avg,
+                        'ratio': ratio,
+                        'session_id': None,
+                        'metadata': json.dumps({'date': today_str, 'window_days': len(week_costs)}),
+                        'detected_at': now_ts,
+                        'expires_at': expire_ts,
+                    })
+
+    # ── 3. Session frequency anomaly (today count > 5x rolling avg) ──────
+    try:
+        sessions_today = sum(
+            1 for s in sessions
+            if datetime.fromtimestamp(float(s.get('start_ts', 0) or 0)).strftime('%Y-%m-%d') == today_str
+        )
+        # Count sessions per day for last 7 days
+        daily_counts = {}
+        for s in sessions:
+            ts = float(s.get('start_ts', 0) or 0)
+            if ts <= 0:
+                continue
+            day = datetime.fromtimestamp(ts).strftime('%Y-%m-%d')
+            daily_counts[day] = daily_counts.get(day, 0) + 1
+        week_day_counts = [
+            daily_counts.get((datetime.now() - timedelta(days=i)).strftime('%Y-%m-%d'), 0)
+            for i in range(1, 8)
+            if (datetime.now() - timedelta(days=i)).strftime('%Y-%m-%d') in daily_counts
+        ]
+        if len(week_day_counts) >= min_samples and sessions_today > 0:
+            freq_avg = _rolling_avg(week_day_counts)
+            if freq_avg > 0:
+                freq_ratio = sessions_today / freq_avg
+                if freq_ratio >= thr['session_freq_multiplier']:
+                    dedup_key = _hl.md5(f"session_freq:{today_str}".encode()).hexdigest()[:16]
+                    severity = 'high' if freq_ratio >= 10 else 'medium'
+                    new_anomalies.append({
+                        'id': dedup_key,
+                        'type': 'session_frequency',
+                        'severity': severity,
+                        'message': f'{sessions_today} sessions today is {freq_ratio:.1f}x the 7-day average ({freq_avg:.1f}/day)',
+                        'actual': float(sessions_today),
+                        'expected': freq_avg,
+                        'ratio': freq_ratio,
+                        'session_id': None,
+                        'metadata': json.dumps({'date': today_str, 'today_sessions': sessions_today}),
+                        'detected_at': now_ts,
+                        'expires_at': expire_ts,
+                    })
+    except Exception:
+        pass
+
+    # ── 4. Token-per-turn spike (single assistant turn >> rolling avg) ────
+    try:
+        sessions_dir = SESSIONS_DIR or os.path.expanduser('~/.openclaw/agents/main/sessions')
+        turn_tokens = []  # rolling baseline: all assistant turn tokens from last 7 days
+        today_turns = []  # turns from last 24h
+
+        if os.path.isdir(sessions_dir):
+            cutoff_7d = now_ts - 7 * 86400
+            cutoff_24h = now_ts - 86400
+            for fname in sorted(os.listdir(sessions_dir))[-30:]:
+                if not fname.endswith('.jsonl'):
+                    continue
+                fpath = os.path.join(sessions_dir, fname)
+                try:
+                    fmtime = os.path.getmtime(fpath)
+                    if fmtime < cutoff_7d:
+                        continue
+                    with open(fpath, errors='replace') as _f:
+                        for raw in _f:
+                            try:
+                                ev = json.loads(raw.strip())
+                                if ev.get('type') != 'message':
+                                    continue
+                                msg = ev.get('message', {})
+                                if msg.get('role') != 'assistant':
+                                    continue
+                                usage = msg.get('usage') or ev.get('usage') or {}
+                                if not usage:
+                                    continue
+                                tok_in = (usage.get('input') or usage.get('inputTokens') or usage.get('input_tokens') or 0)
+                                tok_out = (usage.get('output') or usage.get('outputTokens') or usage.get('output_tokens') or 0)
+                                total = int(tok_in) + int(tok_out)
+                                if total <= 0:
+                                    continue
+                                ev_ts_str = ev.get('timestamp', '')
+                                ev_ts = 0.0
+                                if ev_ts_str:
+                                    try:
+                                        ev_ts = datetime.fromisoformat(ev_ts_str.replace('Z', '+00:00')).timestamp()
+                                    except Exception:
+                                        pass
+                                if ev_ts >= cutoff_7d:
+                                    turn_tokens.append((ev_ts, total, fname.replace('.jsonl', '')))
+                                if ev_ts >= cutoff_24h:
+                                    today_turns.append((ev_ts, total, fname.replace('.jsonl', '')))
+                            except Exception:
+                                continue
+                except Exception:
+                    continue
+
+        if len(turn_tokens) >= min_samples and today_turns:
+            baseline_vals = [t for _, t, _ in turn_tokens]
+            avg_tokens_per_turn = _rolling_avg(baseline_vals)
+            if avg_tokens_per_turn > 0:
+                for ev_ts, tok_total, sess_id in today_turns:
+                    ratio = tok_total / avg_tokens_per_turn
+                    if ratio >= thr['token_spike_multiplier']:
+                        dedup_key = _hl.md5(
+                            f"token_spike:{sess_id}:{int(ev_ts)}:{tok_total}".encode()
+                        ).hexdigest()[:16]
+                        severity = 'critical' if ratio >= 10 else ('high' if ratio >= 5 else 'medium')
+                        new_anomalies.append({
+                            'id': dedup_key,
+                            'type': 'token_spike',
+                            'severity': severity,
+                            'message': f'Turn used {tok_total:,} tokens — {ratio:.1f}x the rolling average ({avg_tokens_per_turn:,.0f}/turn)',
+                            'actual': float(tok_total),
+                            'expected': avg_tokens_per_turn,
+                            'ratio': ratio,
+                            'session_id': sess_id,
+                            'metadata': json.dumps({'tokens': tok_total, 'baseline_samples': len(baseline_vals)}),
+                            'detected_at': ev_ts,
+                            'expires_at': expire_ts,
+                        })
+    except Exception:
+        pass
+
+    # ── Persist new anomalies (skip duplicates by id) ─────────────────────
+    if new_anomalies:
+        try:
+            db = _anomaly_db()
+            for ev in new_anomalies:
+                try:
+                    db.execute("""
+                        INSERT OR IGNORE INTO anomaly_events
+                        (id, type, severity, message, actual, expected, ratio,
+                         session_id, metadata, detected_at, acknowledged, expires_at)
+                        VALUES (?,?,?,?,?,?,?,?,?,?,0,?)
+                    """, (
+                        ev['id'], ev['type'], ev['severity'], ev['message'],
+                        ev['actual'], ev['expected'], ev['ratio'],
+                        ev.get('session_id'), ev.get('metadata'),
+                        ev['detected_at'], ev['expires_at'],
+                    ))
+                except Exception:
+                    pass
+            db.commit()
+            db.close()
+        except Exception:
+            pass
+
+    return new_anomalies
+
+
+def _get_active_anomalies():
+    """Return unacknowledged, non-expired anomaly events from DB."""
+    try:
+        db = _anomaly_db()
+        now_ts = time.time()
+        rows = db.execute("""
+            SELECT * FROM anomaly_events
+            WHERE acknowledged = 0 AND expires_at > ?
+            ORDER BY detected_at DESC
+            LIMIT 200
+        """, (now_ts,)).fetchall()
+        db.close()
+        result = []
+        for r in rows:
+            meta = {}
+            try:
+                meta = json.loads(r['metadata'] or '{}')
+            except Exception:
+                pass
+            result.append({
+                'id': r['id'],
+                'type': r['type'],
+                'severity': r['severity'],
+                'message': r['message'],
+                'actual': r['actual'],
+                'expected': r['expected'],
+                'ratio': r['ratio'],
+                'session_id': r['session_id'],
+                'metadata': meta,
+                'detected_at': int(r['detected_at'] * 1000),
+                'expires_at': int(r['expires_at'] * 1000),
+            })
+        return result
+    except Exception:
+        return []
+
+
+# ── Anomaly API routes ──────────────────────────────────────────────────────
+
+@bp_anomalies.route('/api/anomalies')
+def api_anomalies():
+    """
+    Detect and return current anomalies.
+    Query param: ?detect=1 (default) forces re-detection.
+    """
+    try:
+        _detect_and_persist_anomalies()
+    except Exception:
+        pass
+    events = _get_active_anomalies()
+    return jsonify({
+        'anomalies': events,
+        'count': len(events),
+        'thresholds': {
+            k: v for k, v in _ANOMALY_THRESHOLDS.items()
+            if isinstance(v, (int, float))
+        },
+    })
+
+
+@bp_anomalies.route('/api/anomalies/<anomaly_id>/ack', methods=['POST'])
+def api_anomaly_ack(anomaly_id):
+    """Acknowledge (dismiss) a specific anomaly."""
+    try:
+        db = _anomaly_db()
+        db.execute(
+            "UPDATE anomaly_events SET acknowledged=1, ack_at=? WHERE id=?",
+            (time.time(), anomaly_id)
+        )
+        db.commit()
+        db.close()
+        return jsonify({'ok': True, 'id': anomaly_id})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+
+@bp_anomalies.route('/api/anomalies/ack-all', methods=['POST'])
+def api_anomaly_ack_all():
+    """Acknowledge all active anomalies."""
+    try:
+        db = _anomaly_db()
+        db.execute(
+            "UPDATE anomaly_events SET acknowledged=1, ack_at=? WHERE acknowledged=0",
+            (time.time(),)
+        )
+        db.commit()
+        count = db.execute("SELECT changes()").fetchone()[0]
+        db.close()
+        return jsonify({'ok': True, 'cleared': count})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+
+@bp_anomalies.route('/api/anomalies/count')
+def api_anomaly_count():
+    """Return just the count of active anomalies (for nav badge)."""
+    events = _get_active_anomalies()
+    return jsonify({'count': len(events)})
 
 
 if __name__ == '__main__':
