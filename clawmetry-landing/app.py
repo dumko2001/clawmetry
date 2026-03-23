@@ -129,6 +129,52 @@ def enforce_https():
         return redirect(request.url.replace("http://", "https://", 1), code=301)
 app.secret_key = os.environ.get("SECRET_KEY", "clawmetry-secret-key-2026-xk9m")
 
+# ─── Admin OTP Auth ─────────────────────────────────────────────────────────
+
+_admin_otps = {}  # email -> {otp, expires_at}
+ADMIN_EMAIL = "vivekchand19@gmail.com"
+
+
+def _generate_otp(email):
+    otp = str(secrets.randbelow(900000) + 100000)  # 6 digits
+    _admin_otps[email] = {'otp': otp, 'expires_at': time.time() + 600}
+    return otp
+
+
+def _verify_otp(email, otp):
+    record = _admin_otps.get(email)
+    if not record:
+        return False
+    if time.time() > record['expires_at']:
+        del _admin_otps[email]
+        return False
+    if record['otp'] != otp:
+        return False
+    del _admin_otps[email]
+    return True
+
+
+def _send_otp_email(email, otp):
+    import urllib.request, json as _j
+    payload = {
+        "from": "ClawMetry <hello@clawmetry.com>",
+        "to": [email],
+        "subject": f"Your ClawMetry admin OTP: {otp}",
+        "html": f"<p>Your one-time code is: <strong style='font-size:24px;letter-spacing:4px;'>{otp}</strong></p><p>Valid for 10 minutes.</p>"
+    }
+    req = urllib.request.Request(
+        "https://api.resend.com/emails",
+        data=_j.dumps(payload).encode(),
+        headers={"Authorization": "Bearer re_jWLL59fj_PBctxiwxDLFiWjBZ9MiJ4ems", "Content-Type": "application/json"},
+        method="POST"
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as r:
+            return r.status == 200
+    except Exception as e:
+        log.error(f"[otp-email] send failed: {e}")
+        return False
+
 # Force logs to stdout for Cloud Run
 logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 log = logging.getLogger("clawmetry")
@@ -475,7 +521,30 @@ button{width:100%;padding:12px;border-radius:8px;border:none;background:#E5443A;
 <div class="box">
 <h1>ClawMetry Admin</h1>
 {% if error %}<p class="err">{{ error }}</p>{% endif %}
-<form method="POST"><input type="password" name="password" placeholder="Password" autofocus><button type="submit">Login</button></form>
+<form method="POST"><input type="email" name="email" placeholder="your@email.com" autofocus required><button type="submit">Send OTP</button></form>
+</div></body></html>
+"""
+
+VERIFY_PAGE = """
+<!DOCTYPE html><html><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Verify OTP — ClawMetry Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0B0F1A;color:#E5E7EB;display:flex;align-items:center;justify-content:center;min-height:100vh}
+.box{background:#111827;border:1px solid #1F2937;border-radius:16px;padding:40px;width:360px;text-align:center}
+h1{font-size:20px;margin-bottom:8px}
+p.sub{color:#9CA3AF;font-size:13px;margin-bottom:24px}
+input{width:100%;padding:12px;border-radius:8px;border:1px solid #1F2937;background:#0B0F1A;color:#E5E7EB;font-size:20px;letter-spacing:8px;text-align:center;margin-bottom:16px}
+button{width:100%;padding:12px;border-radius:8px;border:none;background:#E5443A;color:#fff;font-size:14px;font-weight:600;cursor:pointer}
+.err{color:#fca5a5;font-size:13px;margin-bottom:12px}
+</style></head><body>
+<div class="box">
+<h1>Enter OTP</h1>
+<p class="sub">Check your email for the 6-digit code.</p>
+{% if error %}<p class="err">{{ error }}</p>{% endif %}
+<form method="POST"><input type="text" name="otp" placeholder="000000" maxlength="6" autofocus required><button type="submit">Verify</button></form>
 </div></body></html>
 """
 
@@ -1596,11 +1665,26 @@ def api_connect():
 def admin_login():
     error = ""
     if request.method == "POST":
-        if request.form.get("password") == ADMIN_PASSWORD:
+        email = (request.form.get("email") or "").strip().lower()
+        if email != ADMIN_EMAIL:
+            error = "Access denied."
+        else:
+            otp = _generate_otp(email)
+            _send_otp_email(email, otp)
+            return redirect("/admin/verify")
+    return render_template_string(LOGIN_PAGE, error=error)
+
+
+@app.route("/admin/verify", methods=["GET", "POST"])
+def admin_verify():
+    error = ""
+    if request.method == "POST":
+        otp = (request.form.get("otp") or "").strip()
+        if _verify_otp(ADMIN_EMAIL, otp):
             session["admin"] = True
             return redirect("/admin")
-        error = "Wrong password"
-    return render_template_string(LOGIN_PAGE, error=error)
+        error = "Invalid or expired code."
+    return render_template_string(VERIFY_PAGE, error=error)
 
 
 @app.route("/admin/logout")
