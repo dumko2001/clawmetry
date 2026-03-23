@@ -270,25 +270,159 @@ def _find_openclaw_dirs(root, max_depth=4):
     return sessions_dir, workspace_dir
 
 
+def _is_running_in_container() -> bool:
+    """Detect whether ClawMetry itself is running inside a Docker/OpenShell container."""
+    # Check for /.dockerenv (present in Docker containers)
+    if os.path.exists("/.dockerenv"):
+        return True
+    # Check cgroup for container indicators
+    try:
+        with open("/proc/1/cgroup", "r") as f:
+            cgroup = f.read()
+        if any(k in cgroup for k in ("docker", "kubepods", "containerd", "lxc", "opencontainer")):
+            return True
+    except Exception:
+        pass
+    return False
+
+
+def _detect_nemoclaw() -> dict:
+    """Detect NemoClaw (NVIDIA's OpenClaw wrapper) presence on the host.
+
+    Returns a dict with fields:
+      detected (bool), binary (str), version (str),
+      sandbox_name (str), sandbox_status (str), sandbox_type (str),
+      inference_provider (str), inference_model (str),
+      security_sandbox_enabled (bool), security_network_policy (bool)
+    """
+    import subprocess, shutil
+    result: dict = {"detected": False}
+
+    # 1. Check for the nemoclaw binary
+    nemo_bin = shutil.which("nemoclaw")
+    if not nemo_bin:
+        for candidate in ["/usr/local/bin/nemoclaw", "/opt/nemoclaw/bin/nemoclaw",
+                          "/usr/bin/nemoclaw"]:
+            if os.path.isfile(candidate):
+                nemo_bin = candidate
+                break
+
+    if not nemo_bin:
+        # Also accept NEMOCLAW_SANDBOX env as a hint even without binary
+        if not os.environ.get("NEMOCLAW_SANDBOX"):
+            return result
+
+    result["detected"] = True
+    result["binary"] = nemo_bin or "(env-only)"
+
+    # 2. Get version
+    if nemo_bin:
+        try:
+            ver = subprocess.check_output([nemo_bin, "--version"], stderr=subprocess.DEVNULL,
+                                          timeout=5).decode().strip()
+            result["version"] = ver
+        except Exception:
+            result["version"] = "unknown"
+
+    # 3. Collect sandbox status via `nemoclaw status`
+    sandbox_name = os.environ.get("NEMOCLAW_SANDBOX", "")
+    result["sandbox_name"] = sandbox_name
+    result["sandbox_type"] = "nemoclaw"
+    result["security_sandbox_enabled"] = True
+    result["security_network_policy"] = True
+
+    if nemo_bin:
+        try:
+            status_out = subprocess.check_output(
+                [nemo_bin, "status", "--json"] + ([sandbox_name] if sandbox_name else []),
+                stderr=subprocess.DEVNULL, timeout=10).decode()
+            import json as _j
+            status_data = _j.loads(status_out)
+            result["sandbox_status"] = status_data.get("status", "unknown")
+            result["inference_provider"] = status_data.get("inferenceProvider", "")
+            result["inference_model"] = status_data.get("inferenceModel", "")
+            if not sandbox_name:
+                result["sandbox_name"] = status_data.get("name", "")
+        except Exception:
+            result["sandbox_status"] = "unknown"
+            result["inference_provider"] = ""
+            result["inference_model"] = ""
+    else:
+        result["sandbox_status"] = "unknown"
+        result["inference_provider"] = ""
+        result["inference_model"] = ""
+
+    # 4. Try `openshell sandbox list` as alternative discovery
+    openshell_bin = _find_openshell_bin()
+    if openshell_bin and not result.get("sandbox_name"):
+        try:
+            import json as _j
+            sb_out = subprocess.check_output(
+                [openshell_bin, "sandbox", "list", "--json"],
+                stderr=subprocess.DEVNULL, timeout=10).decode()
+            sandboxes = _j.loads(sb_out)
+            for sb in (sandboxes if isinstance(sandboxes, list) else []):
+                if any(k in (sb.get("image", "") + sb.get("name", "")).lower()
+                       for k in ("openclaw", "clawd", "nemoclaw")):
+                    result["sandbox_name"] = sb.get("name", "")
+                    result["sandbox_status"] = sb.get("status", "unknown")
+                    break
+        except Exception:
+            pass
+
+    return result
+
+
+def _find_openshell_bin() -> str | None:
+    """Find the openshell CLI binary."""
+    import shutil
+    for name in ("openshell", "openshell-cli"):
+        p = shutil.which(name)
+        if p:
+            return p
+    for candidate in ["/usr/local/bin/openshell", "/opt/openshell/bin/openshell",
+                      "/usr/bin/openshell"]:
+        if os.path.isfile(candidate):
+            return candidate
+    return None
+
+
 def _detect_docker_openclaw() -> dict:
-    """Auto-detect OpenClaw running in Docker and find its data paths on the host."""
+    """Auto-detect OpenClaw running in Docker and find its data paths on the host.
+
+    Detects both standard OpenClaw containers and NemoClaw/OpenShell sandboxes
+    (ghcr.io/nvidia/openshell-community/* images).
+    """
     import subprocess, json as _json
     result = {}
     try:
-        # Find containers with openclaw/clawd in name or image
+        # Find containers with openclaw/clawd/nemoclaw/openshell/nvidia in name or image
         out = subprocess.run(
-            ["docker", "ps", "--format", "{{.ID}}	{{.Names}}	{{.Image}}	{{.Mounts}}"],
+            ["docker", "ps", "--format", "{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Mounts}}"],
             capture_output=True, text=True, timeout=5)
         if out.returncode != 0:
             return {}
         for line in out.stdout.strip().splitlines():
-            parts = line.split("	")
+            parts = line.split("\t")
             if len(parts) < 3:
                 continue
             cid, name, image = parts[0], parts[1], parts[2]
-            if not any(k in (name + image).lower() for k in ["openclaw", "clawd", "claw"]):
+            if not any(k in (name + image).lower() for k in [
+                    "openclaw", "clawd", "claw", "nemoclaw", "openshell", "nvidia"]):
                 continue
-            log.info(f"Found OpenClaw Docker container: {name} ({image}) id={cid}")
+
+            # Determine runtime: nemoclaw/openshell vs plain docker
+            is_nemoclaw = any(k in (name + image).lower()
+                              for k in ("nemoclaw", "openshell", "nvidia"))
+            runtime_tag = "nemoclaw" if is_nemoclaw else "docker"
+            log.info(f"Found {runtime_tag} container: {name} ({image}) id={cid}")
+
+            # NemoClaw sessions live at /sandbox/.openclaw/ inside the container
+            # Plain OpenClaw containers use /root/.openclaw or /data
+            nemoclaw_paths = ["/sandbox/.openclaw", "/sandbox/agents/main/sessions"]
+            standard_paths = ["/root/.openclaw", "/data", "/app"]
+            preferred_paths = (nemoclaw_paths + standard_paths) if is_nemoclaw else standard_paths
+
             # Get volume mounts via docker inspect
             try:
                 insp = subprocess.run(
@@ -299,13 +433,14 @@ def _detect_docker_openclaw() -> dict:
                     src = m.get("Source", "")
                     dst = m.get("Destination", "")
                     # Look for data/workspace/sessions mounts
-                    if "agents" in dst or "sessions" in dst or "/data" == dst or "openclaw" in dst.lower():
+                    if "agents" in dst or "sessions" in dst or "/data" == dst or "openclaw" in dst.lower() \
+                            or "/sandbox" in dst:
                         log.info(f"  Mount: {src} -> {dst}")
                         if "sessions" in dst:
                             result["sessions_dir"] = src
                         elif "agents" in dst:
                             result["sessions_dir"] = os.path.join(src, "main", "sessions")
-                        elif dst in ("/data", "/app", "/home", "/root", "/opt"):
+                        elif dst in ("/data", "/app", "/home", "/root", "/opt", "/sandbox"):
                             # Search mount point for sessions + workspace (up to 3 levels deep)
                             _found_s, _found_w = _find_openclaw_dirs(src)
                             if _found_s:
@@ -321,23 +456,29 @@ def _detect_docker_openclaw() -> dict:
             # If no volume mounts found, try docker exec to find paths
             if not result:
                 try:
-                    for check_path in ["/root/.openclaw", "/data", "/app"]:
+                    for check_path in preferred_paths:
+                        sessions_path = (f"{check_path}/agents/main/sessions"
+                                         if not check_path.endswith("sessions")
+                                         else check_path)
                         chk = subprocess.run(
-                            ["docker", "exec", cid, "ls", f"{check_path}/agents/main/sessions"],
+                            ["docker", "exec", cid, "ls", sessions_path],
                             capture_output=True, text=True, timeout=5)
                         if chk.returncode == 0 and chk.stdout.strip():
                             log.info(f"  Found sessions inside container at {check_path}")
                             # Copy files out to host
-                            host_dir = Path.home() / ".clawmetry" / "docker-mirror"
+                            mirror_subdir = "nemoclaw-mirror" if is_nemoclaw else "docker-mirror"
+                            host_dir = Path.home() / ".clawmetry" / mirror_subdir
                             host_dir.mkdir(parents=True, exist_ok=True)
                             sessions_mirror = host_dir / "sessions"
                             workspace_mirror = host_dir / "workspace"
                             sessions_mirror.mkdir(exist_ok=True)
                             workspace_mirror.mkdir(exist_ok=True)
                             # rsync from container
-                            subprocess.run(["docker", "cp", f"{cid}:{check_path}/agents/main/sessions/.", str(sessions_mirror)],
+                            subprocess.run(["docker", "cp", f"{cid}:{sessions_path}/.", str(sessions_mirror)],
                                            capture_output=True, timeout=30)
-                            subprocess.run(["docker", "cp", f"{cid}:{check_path}/workspace/.", str(workspace_mirror)],
+                            workspace_root = check_path if check_path.endswith(".openclaw") \
+                                else os.path.dirname(check_path)
+                            subprocess.run(["docker", "cp", f"{cid}:{workspace_root}/workspace/.", str(workspace_mirror)],
                                            capture_output=True, timeout=30)
                             # Copy logs
                             for log_path in ["/tmp/openclaw", f"{check_path}/logs"]:
@@ -348,7 +489,9 @@ def _detect_docker_openclaw() -> dict:
                             result["log_dir"] = str(host_dir / "logs")
                             result["docker_container"] = cid
                             result["docker_path"] = check_path
-                            log.info(f"  Mirrored Docker data to {host_dir}")
+                            result["container_id"] = cid
+                            result["runtime"] = runtime_tag
+                            log.info(f"  Mirrored {runtime_tag} data to {host_dir}")
                             break
                 except Exception as e:
                     log.debug(f"Docker exec fallback error: {e}")
@@ -363,10 +506,10 @@ def _detect_docker_openclaw() -> dict:
 
 def detect_paths() -> dict:
     home = Path.home()
-    # Try Docker detection first (OpenClaw running in container)
+    # Try Docker/NemoClaw container detection first
     docker_paths = _detect_docker_openclaw()
     if docker_paths.get("sessions_dir"):
-        log.info(f"Using Docker-detected paths: {docker_paths}")
+        log.info(f"Using container-detected paths: {docker_paths}")
 
     sessions_candidates = [
         home / ".openclaw" / "agents" / "main" / "sessions",
@@ -374,10 +517,18 @@ def detect_paths() -> dict:
         Path("/app/agents/main/sessions"),
         Path("/root/.openclaw/agents/main/sessions"),
         Path("/opt/openclaw/agents/main/sessions"),
+        # NemoClaw/OpenShell sandbox paths (sessions live inside /sandbox)
+        Path("/sandbox/.openclaw/agents/main/sessions"),
+        Path("/sandbox/agents/main/sessions"),
     ]
     oc_home = os.environ.get("OPENCLAW_HOME", "")
     if oc_home:
         sessions_candidates.insert(0, Path(oc_home) / "agents" / "main" / "sessions")
+    # Support explicit NemoClaw sandbox name via env var
+    nemoclaw_sandbox = os.environ.get("NEMOCLAW_SANDBOX", "")
+    if nemoclaw_sandbox:
+        sessions_candidates.insert(0, Path(f"/sandbox/{nemoclaw_sandbox}/.openclaw/agents/main/sessions"))
+        sessions_candidates.insert(1, Path(f"/var/lib/openshell/sandboxes/{nemoclaw_sandbox}/.openclaw/agents/main/sessions"))
     found_sessions = docker_paths.get("sessions_dir") or next((str(p) for p in sessions_candidates if p.exists()), None)
     sessions_dir = found_sessions or str(sessions_candidates[0])
 
@@ -385,6 +536,17 @@ def detect_paths() -> dict:
         log.warning("OpenClaw not detected — no session directories found.")
         log.warning("  Install: npm install -g openclaw  (https://openclaw.ai/docs)")
         log.warning("  Daemon will keep retrying every 60s.")
+    else:
+        # Warn if NemoClaw is detected and sync daemon appears to be inside the sandbox
+        if _is_running_in_container():
+            log.warning("⚠️  NemoClaw/container detected: ClawMetry sync daemon appears to be running INSIDE the sandbox.")
+            log.warning("   Recommended: run the sync daemon on the HOST for unrestricted network access.")
+            log.warning("   If you must run inside the sandbox, add this to your NemoClaw network policy:")
+            log.warning("     network:")
+            log.warning("       egress:")
+            log.warning("         - host: ingest.clawmetry.com")
+            log.warning("           port: 443")
+            log.warning("           protocol: https")
 
     log_candidates = [Path("/tmp/openclaw"), home / ".openclaw" / "logs", Path("/data/logs")]
     log_dir = docker_paths.get("log_dir") or next((str(p) for p in log_candidates if p.exists()), "/tmp/openclaw")
@@ -1714,6 +1876,45 @@ def sync_system_snapshot(config: dict, state: dict, paths: dict) -> int:
         "machineInfo": _build_machine_info(),
         "channelList": _build_channel_list(config),
     }
+
+    # ── NemoClaw / sandbox enrichment ────────────────────────────────────────
+    # Detect NemoClaw and add optional sandbox metadata to the snapshot.
+    # The cloud stores this as generic key-value metadata — no NemoClaw-
+    # specific UI logic lives in the dashboard.
+    nemo = _detect_nemoclaw()
+    if nemo.get("detected"):
+        sandbox_meta = {
+            "sandbox.name": nemo.get("sandbox_name", ""),
+            "sandbox.status": nemo.get("sandbox_status", "unknown"),
+            "sandbox.type": nemo.get("sandbox_type", "nemoclaw"),
+            "inference.provider": nemo.get("inference_provider", ""),
+            "inference.model": nemo.get("inference_model", ""),
+            "security.sandbox_enabled": nemo.get("security_sandbox_enabled", True),
+            "security.network_policy": nemo.get("security_network_policy", True),
+        }
+        payload["sandbox"] = sandbox_meta
+        log.info(f"NemoClaw detected: sandbox={nemo.get('sandbox_name')} status={nemo.get('sandbox_status')}")
+    elif _is_running_in_container():
+        # Generic container (Docker without NemoClaw) — still tag it
+        payload["sandbox"] = {
+            "sandbox.name": "",
+            "sandbox.status": "running",
+            "sandbox.type": "docker",
+            "security.sandbox_enabled": True,
+            "security.network_policy": False,
+        }
+
+    # Propagate container_id + runtime tag from path detection (set by _detect_docker_openclaw)
+    docker_meta = _detect_docker_openclaw() if not nemo.get("detected") else {}
+    if docker_meta.get("container_id") or docker_meta.get("runtime"):
+        payload.setdefault("sandbox", {})
+        if docker_meta.get("container_id"):
+            payload["sandbox"]["container_id"] = docker_meta["container_id"]
+        if docker_meta.get("runtime"):
+            payload["sandbox"]["runtime"] = docker_meta["runtime"]
+    elif nemo.get("detected"):
+        payload.setdefault("sandbox", {})
+        payload["sandbox"]["runtime"] = "nemoclaw"
 
     log.info(f"System snapshot: {len(subagents_list)} subagents ({active_count} active)")
 
