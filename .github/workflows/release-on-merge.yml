@@ -31,12 +31,14 @@ jobs:
       - name: Bump patch version
         id: bump
         run: |
-          OLD=$(python3 -c "import re; print(re.search(r'__version__ = \"(.+?)\"', open('dashboard.py').read()).group(1))")
+          # Always bump from latest PyPI version — never from dashboard.py which
+          # can be stale when multiple [RELEASE] PRs merge in quick succession
+          OLD=$(curl -s https://pypi.org/pypi/clawmetry/json | python3 -c "import json,sys; print(json.load(sys.stdin)['info']['version'])")
           MAJOR=$(echo $OLD | cut -d. -f1)
           MINOR=$(echo $OLD | cut -d. -f2)
           PATCH=$(echo $OLD | cut -d. -f3)
           NEW="$MAJOR.$MINOR.$((PATCH + 1))"
-          sed -i "s/__version__ = \"$OLD\"/__version__ = \"$NEW\"/" dashboard.py
+          sed -i "s/__version__ = \".*\"/__version__ = \"$NEW\"/" dashboard.py
           echo "old=$OLD" >> $GITHUB_OUTPUT
           echo "new=$NEW" >> $GITHUB_OUTPUT
           echo "Bumped $OLD → $NEW"
@@ -59,13 +61,12 @@ jobs:
             --notes "Released via PR: ${{ github.event.pull_request.title }}" \
             --latest || echo "Release tag already exists, skipping"
 
-      - name: Open version bump PR
-        uses: peter-evans/create-pull-request@v6
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "chore: bump to v${{ steps.bump.outputs.new }} [skip ci]"
-          branch: "chore/bump-to-${{ steps.bump.outputs.new }}"
-          title: "chore: bump to v${{ steps.bump.outputs.new }}"
-          body: "Auto-generated after PyPI release of v${{ steps.bump.outputs.new }}."
-          labels: "automated"
-# test trigger
+      - name: Commit version bump directly to main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add dashboard.py
+          git commit -m "chore: bump to v${{ steps.bump.outputs.new }} [skip ci]"
+          git push origin main
