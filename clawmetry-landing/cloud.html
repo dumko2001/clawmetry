@@ -486,6 +486,7 @@
       });
     }
     function copyCloudCmd() {
+      if(cloudActiveTab==='macos'){window.location.href='https://github.com/vivekchand/clawmetry-mac/releases/download/v1.0.1/ClawMetry-2026-03-11.dmg';return;}
       var cmd = cloudCmds[cloudActiveTab];
       if(cmd) navigator.clipboard.writeText(cmd);
       var btn = document.getElementById('cloud-copy-btn');
