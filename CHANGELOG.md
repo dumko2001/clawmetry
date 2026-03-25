@@ -1,3 +1,41 @@
+## [0.12.77] — 2026-03-25
+
+### Added
+- **Agent delegation tree**: new `/api/delegation-tree` endpoint and Sub-Agents tab view showing parent→child agent relationships with cost and token attribution per node
+- **OTLP export**: sync daemon now forwards metrics to any OTLP-compatible backend (Prometheus, Grafana, etc.) via `OTLP_ENDPOINT` env var
+- **Provenance fields**: ingest events now carry `source_version`, `schema_version`, and `platform` fields for better data lineage
+
+### Fixed
+- Login screen: replaced broken lobster emoji with embedded ClawMetry SVG logo (works fully offline)
+- Brain stream now fills the full viewport height instead of cutting off at 600 px
+
+### Changed
+- `__version__` bumped to `0.12.77` in `dashboard.py`
+
+## [0.12.75] — 2026-03-24
+
+### Fixed
+- Memory sync blob: all workspace files are always included in the snapshot, even when content is unchanged
+- README image URLs are now absolute so screenshots render correctly on PyPI
+
+### Added
+- Brain tab backfills older sessions in the background so the most recent sessions appear first on load
+- Sync daemon validates log file offsets on startup, preventing silent data gaps after log rotation
+- Single-instance PID lock for the sync daemon — prevents duplicate daemon processes after restart
+
+## [0.12.72] — 2026-03-23
+
+### Security
+- Token staleness fix: gateway auth tokens are now invalidated after 24 h, preventing stale-token reuse
+- Docker config bleed fix: mounted Docker secrets no longer leak into the gateway snapshot payload
+- Gateway config file permissions set to `chmod 600` on write — closes world-readable config exposure
+
+### Added
+- Cron management UI: create, edit, enable/disable, and trigger cron jobs directly from the dashboard (GH #253); multi-node view shows all scheduled jobs across nodes
+
+### Fixed
+- One-liner install is now the recommended method in README and docs (`curl -sSL … | bash`)
+
 ## v0.12.63 (2026-03-22)
 - fix: robust Ollama detection -- PATH fallback + HTTP ping to localhost:11434
 - feat: sync daemon heartbeat includes ollama status (installed, running, models)
