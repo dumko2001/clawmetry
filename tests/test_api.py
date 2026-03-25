@@ -443,3 +443,52 @@ class TestMemoryAnalytics:
             assert f["status"] in ("ok", "warning", "critical")
 
 
+
+
+class TestQuickActions:
+    """Tests for Quick Actions panel (GH #252)."""
+
+    def test_actions_history_returns_200(self, api, base_url):
+        """Actions history endpoint returns 200 with expected keys."""
+        d = assert_ok(get(api, base_url, "/api/actions/history"))
+        assert "actions" in d, "Missing 'actions' key"
+        assert "total" in d, "Missing 'total' key"
+        assert isinstance(d["actions"], list), "actions should be a list"
+
+    def test_actions_run_health_check(self, api, base_url):
+        """Health check action returns ok + output."""
+        r = api.post(f"{base_url}/api/actions/run",
+                     json={"action": "health-check"}, timeout=15)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}"
+        d = r.json()
+        assert "ok" in d, "Missing 'ok' key"
+        assert "output" in d, "Missing 'output' key"
+        assert "duration_ms" in d, "Missing 'duration_ms' key"
+        assert isinstance(d["duration_ms"], int), "duration_ms should be int"
+
+    def test_actions_run_clear_cache(self, api, base_url):
+        """Clear cache action returns ok."""
+        r = api.post(f"{base_url}/api/actions/run",
+                     json={"action": "clear-cache"}, timeout=15)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}"
+        d = r.json()
+        assert d.get("ok") is True, f"Expected ok=True, got {d}"
+
+    def test_actions_run_invalid_action(self, api, base_url):
+        """Invalid action returns 400."""
+        r = api.post(f"{base_url}/api/actions/run",
+                     json={"action": "delete-everything"}, timeout=5)
+        assert r.status_code == 400, f"Expected 400, got {r.status_code}"
+        d = r.json()
+        assert d.get("ok") is False
+
+    def test_actions_run_logs_to_history(self, api, base_url):
+        """Running an action appears in history."""
+        # Run clear-cache
+        api.post(f"{base_url}/api/actions/run",
+                 json={"action": "clear-cache"}, timeout=15)
+        # Check history
+        d = assert_ok(get(api, base_url, "/api/actions/history"))
+        actions = d["actions"]
+        assert any(a.get("action") == "clear-cache" for a in actions), \
+            "clear-cache not found in history"
