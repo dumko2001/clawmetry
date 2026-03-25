@@ -169,7 +169,15 @@ function sendOtp(resend) {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({email: _email})
-  }).then(function(r){ return r.json(); }).then(function(d){
+  }).then(function(r){
+    if (r.status === 429) {
+      btn.disabled = false; btn.textContent = 'Send code';
+      showErr('step1-err', 'Too many requests — please wait a minute and try again.');
+      return null;
+    }
+    return r.json();
+  }).then(function(d){
+    if (!d) return;
     btn.disabled = false; btn.textContent = 'Send code';
     if (d.ok) {
       document.getElementById('email-display').textContent = _email;
@@ -200,7 +208,15 @@ function verifyOtp() {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({email: _email, otp: otp, ref: new URLSearchParams(window.location.search).get('ref') || localStorage.getItem('cm_ref') || ''})
-  }).then(function(r){ return r.json(); }).then(function(d){
+  }).then(function(r){
+    if (r.status === 429) {
+      _verifying = false; btn.disabled = false; btn.textContent = 'Verify';
+      showErr('step2-err', 'Too many attempts — please wait a minute and try again.');
+      return null;
+    }
+    return r.json();
+  }).then(function(d){
+    if (!d) return;
     _verifying = false; btn.disabled = false; btn.textContent = 'Verify';
     if (d.ok && d.api_key) {
       _apiKey = d.api_key;
