@@ -20,7 +20,17 @@ import sys
 import glob
 import json
 import socket
+<<<<<<< Updated upstream
 from collections import deque
+=======
+from collections import deque, defaultdict
+
+# In-process ring-buffer for quick action history (last 50 entries)
+_quick_action_log = deque(maxlen=50)
+# Track node IDs that already received a stale alert (reset on restart)
+_stale_alerted_nodes: set = set()
+
+>>>>>>> Stashed changes
 import argparse
 import subprocess
 import time
@@ -9608,6 +9618,7 @@ def _auto_discover_gateway(token):
         pass
     return None
 
+<<<<<<< Updated upstream
 @app.route('/api/auth/check')
 def api_auth_check():
     """Check if auth is required and validate token."""
@@ -9619,6 +9630,109 @@ def api_auth_check():
     if token == GATEWAY_TOKEN:
         return jsonify({'authRequired': True, 'valid': True})
     return jsonify({'authRequired': True, 'valid': False})
+=======
+@bp_fleet.route('/api/nodes/stale')
+def api_nodes_stale():
+    """Return nodes whose last heartbeat is older than FLEET_NODE_TIMEOUT.
+
+    Also sends a one-shot Resend email alert per newly-stale node.
+    """
+    cutoff = time.time() - FLEET_NODE_TIMEOUT
+    with _fleet_db_lock:
+        db = _fleet_db()
+        rows = db.execute(
+            "SELECT node_id, name, hostname, last_seen_at, status FROM nodes WHERE last_seen_at < ? ORDER BY last_seen_at",
+            (cutoff,)
+        ).fetchall()
+        db.close()
+
+    stale = [dict(r) for r in rows]
+    now = time.time()
+    for node in stale:
+        node['stale_seconds'] = int(now - node['last_seen_at'])
+
+    # Fire Resend alerts for newly-stale nodes (best-effort, no crash if it fails)
+    for node in stale:
+        nid = node['node_id']
+        if nid not in _stale_alerted_nodes:
+            _stale_alerted_nodes.add(nid)
+            try:
+                _send_stale_node_alert(node)
+            except Exception as _exc:
+                import logging as _logging
+                _logging.getLogger(__name__).warning(f"Stale-node alert failed for {nid}: {_exc}")
+
+    return jsonify({'stale_nodes': stale, 'count': len(stale)})
+
+
+def _send_stale_node_alert(node: dict) -> None:
+    """Send a Resend email when a node goes stale. Fire-and-forget."""
+    import urllib.request as _ureq
+    import json as _json
+
+    RESEND_API_KEY = 're_jWLL59fj_PBctxiwxDLFiWjBZ9MiJ4ems'
+    # Try to load alert recipient from config; skip if not set
+    try:
+        cfg = _load_gw_config()
+        to_email = cfg.get('alert_email') or cfg.get('email')
+    except Exception:
+        to_email = None
+    if not to_email:
+        return  # No recipient configured, skip silently
+
+    hostname = node.get('hostname') or node.get('name') or node.get('node_id', 'unknown')
+    last_seen = node.get('last_seen_at', 0)
+    import datetime as _dt
+    last_seen_str = _dt.datetime.utcfromtimestamp(last_seen).strftime('%Y-%m-%d %H:%M:%S UTC') if last_seen else 'unknown'
+    stale_sec = node.get('stale_seconds', 0)
+    stale_min = stale_sec // 60
+
+    html_body = f"""
+    <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:24px;">
+      <h2 style="color:#dc2626;">&#x26A0; Node stale: {hostname}</h2>
+      <p style="color:#374151;">A node registered with ClawMetry has stopped sending heartbeats.</p>
+      <table style="border-collapse:collapse;width:100%;margin:16px 0;">
+        <tr><td style="padding:6px 12px;color:#6b7280;font-size:13px;">Node</td>
+            <td style="padding:6px 12px;font-weight:600;">{hostname}</td></tr>
+        <tr style="background:#f9fafb;"><td style="padding:6px 12px;color:#6b7280;font-size:13px;">Last seen</td>
+            <td style="padding:6px 12px;">{last_seen_str}</td></tr>
+        <tr><td style="padding:6px 12px;color:#6b7280;font-size:13px;">Stale for</td>
+            <td style="padding:6px 12px;color:#dc2626;font-weight:600;">{stale_min} minute(s)</td></tr>
+      </table>
+      <p style="font-size:12px;color:#9ca3af;">This alert fires once per restart. Check your ClawMetry dashboard for details.</p>
+    </div>
+    """
+
+    payload = _json.dumps({
+        'from': 'ClawMetry <alerts@clawmetry.com>',
+        'to': [to_email],
+        'subject': f'Node {hostname} is stale — ClawMetry alert',
+        'html': html_body,
+    }).encode()
+
+    req = _ureq.Request(
+        'https://api.resend.com/emails',
+        data=payload,
+        headers={
+            'Authorization': f'Bearer {RESEND_API_KEY}',
+            'Content-Type': 'application/json',
+        },
+        method='POST',
+    )
+    with _ureq.urlopen(req, timeout=10) as resp:
+        resp.read()  # consume response
+
+
+@bp_fleet.route('/api/nodes/<node_id>')
+def api_node_detail(node_id):
+    """Get detailed info for a single node with metric history."""
+    with _fleet_db_lock:
+        db = _fleet_db()
+        node = db.execute("SELECT * FROM nodes WHERE node_id = ?", (node_id,)).fetchone()
+        if not node:
+            db.close()
+            return jsonify({'error': 'Node not found'}), 404
+>>>>>>> Stashed changes
 
 
 @app.before_request
