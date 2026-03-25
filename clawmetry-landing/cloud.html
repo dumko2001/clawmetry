@@ -500,6 +500,7 @@
       if(cloudActiveTab==='macos'){window.location.href='https://github.com/vivekchand/clawmetry-mac/releases/download/v1.0.1/ClawMetry-2026-03-11.dmg';return;}
       var cmd = cloudCmds[cloudActiveTab];
       if(cmd) navigator.clipboard.writeText(cmd);
+      fetch('/api/copy-track',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tab:cloudActiveTab,command:cmd||cloudActiveTab,source:'cloud'})}).catch(function(){});
       var btn = document.getElementById('cloud-copy-btn');
       if(btn) { btn.innerHTML = '<span style="font-size:11px;color:#28c840;">Copied!</span>'; setTimeout(function(){ btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'; }, 1500); }
     }
