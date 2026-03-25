@@ -2758,6 +2758,7 @@ function clawmetryLogout(){
     <div class="nav-tab" onclick="switchTab('usage')">Tokens</div>
     <div class="nav-tab" onclick="switchTab('memory')">Memory</div>
     <div class="nav-tab" onclick="switchTab('security')">Security</div>
+    <div class="nav-tab" onclick="switchTab('models')">Models</div>
     <!-- History tab hidden until mature -->
     <!-- <div class="nav-tab" onclick="switchTab('history')">History</div> -->
   </div>
@@ -3608,6 +3609,28 @@ function clawmetryLogout(){
   </div>
 </div><!-- end page-security -->
 
+<div class="page" id="page-models">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+    <h2 style="margin:0;font-size:18px;font-weight:700;">Model Attribution</h2>
+    <button class="refresh-btn" onclick="loadModels()">&#x21bb; Refresh</button>
+  </div>
+  <div id="models-summary-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:20px;"></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+    <div class="card" style="padding:16px;">
+      <h3 style="margin:0 0 12px;font-size:14px;font-weight:600;color:var(--text-muted);">Model Mix</h3>
+      <div id="models-mix-chart"></div>
+    </div>
+    <div class="card" style="padding:16px;">
+      <h3 style="margin:0 0 12px;font-size:14px;font-weight:600;color:var(--text-muted);">7-Day Primary vs Fallback</h3>
+      <div id="models-timeline-chart"></div>
+    </div>
+  </div>
+  <div class="card" style="padding:16px;">
+    <h3 style="margin:0 0 12px;font-size:14px;font-weight:600;color:var(--text-muted);">Recent Fallbacks</h3>
+    <div id="models-fallbacks-list"></div>
+  </div>
+</div><!-- end page-models -->
+
 
 
 <script>
@@ -3918,6 +3941,7 @@ function switchTab(name) {
   if (name === 'history') loadHistory();
   if (name === 'brain') loadBrainPage();
   if (name === 'security') { loadSecurityPage(); loadSecurityPosture(); }
+  if (name === 'models') loadModels();
   if (name === 'logs') { if (!logStream || logStream.readyState === EventSource.CLOSED) startLogStream(); loadLogs(); }
 }
 
@@ -7875,6 +7899,7 @@ function clawmetryLogout(){
     <div class="nav-tab" onclick="switchTab('usage')">Tokens</div>
     <div class="nav-tab" onclick="switchTab('memory')">Memory</div>
     <div class="nav-tab" onclick="switchTab('security')">Security</div>
+    <div class="nav-tab" onclick="switchTab('models')">Models</div>
     <!-- History tab hidden until mature -->
     <!-- <div class="nav-tab" onclick="switchTab('history')">History</div> -->
   <div id="cloud-cta-btn" onclick="openCloudModal()" style="display:none;margin-left:8px;cursor:pointer;padding:6px 12px;border:1px solid rgba(96,165,250,0.5);border-radius:8px;font-size:12px;font-weight:600;color:#60a5fa;white-space:nowrap;transition:all 0.2s;user-select:none;" onmouseover="this.style.background='rgba(96,165,250,0.1)'" onmouseout="this.style.background='transparent'"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Enable Cloud Sync</div>
@@ -8769,6 +8794,28 @@ function clawmetryLogout(){
   </div>
 </div><!-- end page-security -->
 
+<div class="page" id="page-models">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+    <h2 style="margin:0;font-size:18px;font-weight:700;">Model Attribution</h2>
+    <button class="refresh-btn" onclick="loadModels()">&#x21bb; Refresh</button>
+  </div>
+  <div id="models-summary-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:20px;"></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+    <div class="card" style="padding:16px;">
+      <h3 style="margin:0 0 12px;font-size:14px;font-weight:600;color:var(--text-muted);">Model Mix</h3>
+      <div id="models-mix-chart"></div>
+    </div>
+    <div class="card" style="padding:16px;">
+      <h3 style="margin:0 0 12px;font-size:14px;font-weight:600;color:var(--text-muted);">7-Day Primary vs Fallback</h3>
+      <div id="models-timeline-chart"></div>
+    </div>
+  </div>
+  <div class="card" style="padding:16px;">
+    <h3 style="margin:0 0 12px;font-size:14px;font-weight:600;color:var(--text-muted);">Recent Fallbacks</h3>
+    <div id="models-fallbacks-list"></div>
+  </div>
+</div><!-- end page-models -->
+
 
 
 
@@ -9136,6 +9183,7 @@ function switchTab(name) {
   if (name === 'history') loadHistory();
   if (name === 'brain') loadBrainPage();
   if (name === 'security') { loadSecurityPage(); loadSecurityPosture(); }
+  if (name === 'models') loadModels();
   if (name === 'logs') { if (!logStream || logStream.readyState === EventSource.CLOSED) startLogStream(); loadLogs(); }
 }
 
@@ -11537,6 +11585,104 @@ function startSystemHealthRefresh() {
   loadSystemHealth();
   if (window._sysHealthTimer) clearInterval(window._sysHealthTimer);
   window._sysHealthTimer = setInterval(loadSystemHealth, 30000);
+}
+
+// ===== Model Attribution =====
+var MODEL_COLORS = ['#6366f1','#22c55e','#f59e0b','#ef4444','#3b82f6','#a855f7','#06b6d4','#ec4899'];
+
+async function loadModels() {
+  var summaryEl = document.getElementById('models-summary-cards');
+  var mixEl = document.getElementById('models-mix-chart');
+  var timelineEl = document.getElementById('models-timeline-chart');
+  var fallbacksEl = document.getElementById('models-fallbacks-list');
+  if (!summaryEl) return;
+  summaryEl.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Loading...</div>';
+  try {
+    var d = await fetch('/api/model-attribution').then(function(r){return r.json();});
+    var s = d.summary || {};
+    var mix = d.model_mix || [];
+    var fallbacks = d.recent_fallbacks || [];
+    var timeline = d.timeline || [];
+
+    // Summary cards
+    var totalModels = mix.length;
+    summaryEl.innerHTML = [
+      statCard('Primary Model', s.primary_model || '—', '🤖'),
+      statCard('Fallback Rate', (s.fallback_rate_pct != null ? s.fallback_rate_pct.toFixed(1) : '0') + '%', '🔄'),
+      statCard('Total Turns', s.total_turns || 0, '💬'),
+      statCard('Models Used', totalModels, '📊'),
+    ].join('');
+
+    // Model mix bar chart (SVG)
+    if (mix.length === 0) {
+      mixEl.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:12px 0;">No model data yet.</div>';
+    } else {
+      var barH = 28, gap = 8, labelW = 160, barMaxW = 260, totalH = mix.length * (barH + gap);
+      var svgRows = mix.map(function(m, i) {
+        var barW = Math.max(4, Math.round(m.pct / 100 * barMaxW));
+        var color = MODEL_COLORS[i % MODEL_COLORS.length];
+        var y = i * (barH + gap);
+        var label = escHtml((m.model || 'unknown').replace('claude-', '').replace('anthropic/', ''));
+        return '<g transform="translate(0,' + y + ')">'
+          + '<text x="' + (labelW - 8) + '" y="' + (barH/2 + 5) + '" text-anchor="end" font-size="12" fill="var(--text-secondary)" style="font-family:monospace;">' + label + '</text>'
+          + '<rect x="' + labelW + '" y="0" width="' + barW + '" height="' + barH + '" rx="4" fill="' + color + '" opacity="0.85"/>'
+          + '<text x="' + (labelW + barW + 6) + '" y="' + (barH/2 + 5) + '" font-size="11" fill="var(--text-muted)">' + m.turns + ' (' + m.pct.toFixed(1) + '%)</text>'
+          + '</g>';
+      }).join('');
+      mixEl.innerHTML = '<svg width="100%" height="' + totalH + '" viewBox="0 0 ' + (labelW + barMaxW + 120) + ' ' + totalH + '">' + svgRows + '</svg>';
+    }
+
+    // 7-day timeline chart (SVG stacked bars)
+    if (timeline.length === 0) {
+      timelineEl.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:12px 0;">No timeline data yet.</div>';
+    } else {
+      var chartW = 400, chartH = 160, padL = 36, padB = 28, padT = 8, padR = 16;
+      var maxVal = Math.max(1, Math.max.apply(null, timeline.map(function(t){return (t.primary_turns||0)+(t.fallback_turns||0);})));
+      var bw = Math.floor((chartW - padL - padR) / timeline.length) - 4;
+      var bars = timeline.map(function(t, i) {
+        var total = (t.primary_turns||0) + (t.fallback_turns||0);
+        var ph = Math.round(((t.primary_turns||0) / maxVal) * (chartH - padB - padT));
+        var fh = Math.round(((t.fallback_turns||0) / maxVal) * (chartH - padB - padT));
+        var x = padL + i * (bw + 4);
+        var dateLabel = (t.date||'').slice(5);
+        return '<rect x="' + x + '" y="' + (chartH - padB - ph - fh) + '" width="' + bw + '" height="' + ph + '" fill="#6366f1" opacity="0.85" rx="2"/>'
+          + '<rect x="' + x + '" y="' + (chartH - padB - fh) + '" width="' + bw + '" height="' + fh + '" fill="#ef4444" opacity="0.85" rx="2"/>'
+          + '<text x="' + (x + bw/2) + '" y="' + (chartH - 4) + '" text-anchor="middle" font-size="9" fill="var(--text-muted)">' + dateLabel + '</text>';
+      }).join('');
+      var legend = '<g transform="translate(' + padL + ',4)">'
+        + '<rect x="0" y="0" width="10" height="10" fill="#6366f1" rx="2"/><text x="14" y="9" font-size="10" fill="var(--text-muted)">Primary</text>'
+        + '<rect x="70" y="0" width="10" height="10" fill="#ef4444" rx="2"/><text x="84" y="9" font-size="10" fill="var(--text-muted)">Fallback</text>'
+        + '</g>';
+      timelineEl.innerHTML = '<svg width="100%" height="' + chartH + '" viewBox="0 0 ' + chartW + ' ' + chartH + '">' + legend + bars + '</svg>';
+    }
+
+    // Recent fallbacks list
+    if (fallbacks.length === 0) {
+      fallbacksEl.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">No fallbacks detected.</div>';
+    } else {
+      var rows = fallbacks.slice(0, 10).map(function(fb) {
+        var ts = fb.ts ? new Date(fb.ts * 1000).toLocaleString() : '';
+        var sid = (fb.session_id || '').slice(0, 16) + (fb.session_id && fb.session_id.length > 16 ? '...' : '');
+        return '<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;">'
+          + '<span style="color:var(--text-muted);min-width:130px;">' + escHtml(ts) + '</span>'
+          + '<span style="color:#ef4444;font-family:monospace;min-width:160px;">' + escHtml(fb.model || '') + '</span>'
+          + '<span style="color:var(--text-muted);">primary: ' + escHtml(fb.primary || '') + '</span>'
+          + '<span style="margin-left:auto;color:var(--text-muted);font-family:monospace;">' + escHtml(sid) + '</span>'
+          + '</div>';
+      }).join('');
+      fallbacksEl.innerHTML = rows;
+    }
+  } catch(e) {
+    summaryEl.innerHTML = '<div style="color:var(--text-error);font-size:13px;">Failed to load model attribution data.</div>';
+  }
+}
+
+function statCard(label, value, icon) {
+  return '<div class="card" style="padding:16px;text-align:center;">'
+    + '<div style="font-size:24px;margin-bottom:4px;">' + icon + '</div>'
+    + '<div style="font-size:20px;font-weight:700;color:var(--text-primary);">' + escHtml(String(value)) + '</div>'
+    + '<div style="font-size:12px;color:var(--text-muted);margin-top:4px;">' + escHtml(label) + '</div>'
+    + '</div>';
 }
 
 // ===== Activity Heatmap =====
@@ -22381,6 +22527,145 @@ def api_security_posture():
         return jsonify(result)
     except Exception as e:
         return jsonify({'error': str(e), 'score': 'U', 'checks': []}), 500
+
+
+_model_attribution_cache = {'data': None, 'ts': 0}
+_MODEL_ATTRIBUTION_CACHE_TTL = 60  # seconds
+
+
+@bp_health.route('/api/model-attribution')
+def api_model_attribution():
+    """Model attribution — track which model (primary vs fallback) responded per turn."""
+    import time as _time_mod
+    now = _time_mod.time()
+    if _model_attribution_cache['data'] is not None and (now - _model_attribution_cache['ts']) < _MODEL_ATTRIBUTION_CACHE_TTL:
+        return jsonify(_model_attribution_cache['data'])
+
+    sessions_dir = _get_sessions_dir()
+    # Per-model aggregates across all sessions: turns, cost
+    model_turns = {}   # model -> int
+    model_cost = {}    # model -> float
+
+    # Recent fallbacks list
+    recent_fallbacks = []
+
+    # Timeline: date -> {primary: int, fallback: int}
+    timeline_map = {}
+
+    if os.path.isdir(sessions_dir):
+        for fname in sorted(os.listdir(sessions_dir)):
+            if not fname.endswith('.jsonl'):
+                continue
+            fpath = os.path.join(sessions_dir, fname)
+            sid = fname.replace('.jsonl', '')
+            fallback_dt = datetime.fromtimestamp(os.path.getmtime(fpath))
+
+            # First pass: collect per-turn model info
+            turns = []  # list of (ts_epoch, model, cost)
+            try:
+                with open(fpath, 'r') as f:
+                    for line in f:
+                        try:
+                            obj = json.loads(line.strip())
+                        except Exception:
+                            continue
+                        message = obj.get('message', {}) if isinstance(obj.get('message'), dict) else {}
+                        model = message.get('model') or obj.get('model')
+                        if not model:
+                            continue
+                        ts = _parse_event_timestamp(
+                            obj.get('timestamp') or obj.get('time') or obj.get('created_at'),
+                            fallback_dt
+                        )
+                        ts_epoch = ts.timestamp() if ts else fallback_dt.timestamp()
+                        usage_metrics = _extract_usage_metrics(obj)
+                        cost = usage_metrics.get('cost', 0.0)
+                        turns.append((ts_epoch, model, cost))
+            except Exception:
+                continue
+
+            if not turns:
+                continue
+
+            # Determine primary model for this session (most frequent)
+            from collections import Counter
+            model_counts = Counter(t[1] for t in turns)
+            primary_model = model_counts.most_common(1)[0][0]
+
+            # Accumulate
+            for (ts_epoch, model, cost) in turns:
+                model_turns[model] = model_turns.get(model, 0) + 1
+                model_cost[model] = model_cost.get(model, 0.0) + cost
+
+                day = datetime.fromtimestamp(ts_epoch).strftime('%Y-%m-%d')
+                if day not in timeline_map:
+                    timeline_map[day] = {'primary': 0, 'fallback': 0}
+                is_fallback = (model != primary_model)
+                if is_fallback:
+                    timeline_map[day]['fallback'] += 1
+                    recent_fallbacks.append({
+                        'session_id': sid,
+                        'ts': int(ts_epoch),
+                        'model': model,
+                        'primary': primary_model,
+                    })
+                else:
+                    timeline_map[day]['primary'] += 1
+
+    # Sort recent fallbacks newest first, keep 10
+    recent_fallbacks.sort(key=lambda x: x['ts'], reverse=True)
+    recent_fallbacks = recent_fallbacks[:10]
+
+    # Overall primary model (most turns globally)
+    total_turns = sum(model_turns.values())
+    if model_turns:
+        overall_primary = max(model_turns, key=lambda m: model_turns[m])
+        primary_turns = model_turns[overall_primary]
+        fallback_turns = total_turns - primary_turns
+    else:
+        overall_primary = 'unknown'
+        primary_turns = 0
+        fallback_turns = 0
+
+    fallback_rate_pct = round(100.0 * fallback_turns / total_turns, 1) if total_turns > 0 else 0.0
+
+    # Model mix list
+    model_mix = []
+    for model, turns_count in sorted(model_turns.items(), key=lambda x: -x[1]):
+        model_mix.append({
+            'model': model,
+            'turns': turns_count,
+            'cost_usd': round(model_cost.get(model, 0.0), 4),
+            'pct': round(100.0 * turns_count / total_turns, 1) if total_turns > 0 else 0.0,
+        })
+
+    # Timeline: last 7 days sorted
+    today = datetime.now().date()
+    timeline = []
+    for i in range(6, -1, -1):
+        d = (today - timedelta(days=i)).strftime('%Y-%m-%d')
+        entry = timeline_map.get(d, {'primary': 0, 'fallback': 0})
+        timeline.append({
+            'date': d,
+            'primary_turns': entry['primary'],
+            'fallback_turns': entry['fallback'],
+        })
+
+    result = {
+        'summary': {
+            'primary_model': overall_primary,
+            'fallback_rate_pct': fallback_rate_pct,
+            'total_turns': total_turns,
+            'primary_turns': primary_turns,
+            'fallback_turns': fallback_turns,
+        },
+        'model_mix': model_mix,
+        'recent_fallbacks': recent_fallbacks,
+        'timeline': timeline,
+    }
+    _model_attribution_cache['data'] = result
+    _model_attribution_cache['ts'] = now
+    return jsonify(result)
 
 
 @bp_health.route('/api/heatmap')

@@ -443,3 +443,67 @@ class TestMemoryAnalytics:
             assert f["status"] in ("ok", "warning", "critical")
 
 
+
+
+# ---------------------------------------------------------------------------
+# Model Attribution (GH #300)
+# ---------------------------------------------------------------------------
+
+class TestModelAttribution:
+    """Tests for /api/model-attribution endpoint."""
+
+    def test_returns_200(self, api, base_url):
+        """Model attribution endpoint returns HTTP 200."""
+        r = get(api, base_url, "/api/model-attribution")
+        assert_ok(r)
+
+    def test_schema_top_level_keys(self, api, base_url):
+        """Response has all required top-level keys."""
+        d = assert_ok(get(api, base_url, "/api/model-attribution"))
+        assert_keys(d, "summary", "model_mix", "recent_fallbacks", "timeline")
+
+    def test_summary_keys(self, api, base_url):
+        """Summary block has required fields with correct types."""
+        d = assert_ok(get(api, base_url, "/api/model-attribution"))
+        s = d["summary"]
+        assert_keys(s, "primary_model", "fallback_rate_pct", "total_turns",
+                    "primary_turns", "fallback_turns")
+        assert isinstance(s["primary_model"], str)
+        assert isinstance(s["fallback_rate_pct"], (int, float))
+        assert isinstance(s["total_turns"], int)
+        assert isinstance(s["primary_turns"], int)
+        assert isinstance(s["fallback_turns"], int)
+
+    def test_model_mix_structure(self, api, base_url):
+        """model_mix is a list; each entry has model, turns, cost_usd, pct."""
+        d = assert_ok(get(api, base_url, "/api/model-attribution"))
+        assert isinstance(d["model_mix"], list)
+        for entry in d["model_mix"]:
+            assert_keys(entry, "model", "turns", "cost_usd", "pct")
+            assert isinstance(entry["turns"], int)
+            assert isinstance(entry["pct"], (int, float))
+            assert 0.0 <= entry["pct"] <= 100.0
+
+    def test_timeline_has_7_days(self, api, base_url):
+        """Timeline always contains exactly 7 entries (one per day)."""
+        d = assert_ok(get(api, base_url, "/api/model-attribution"))
+        assert len(d["timeline"]) == 7
+        for entry in d["timeline"]:
+            assert_keys(entry, "date", "primary_turns", "fallback_turns")
+            assert isinstance(entry["primary_turns"], int)
+            assert isinstance(entry["fallback_turns"], int)
+
+    def test_recent_fallbacks_capped(self, api, base_url):
+        """recent_fallbacks contains at most 10 entries."""
+        d = assert_ok(get(api, base_url, "/api/model-attribution"))
+        assert len(d["recent_fallbacks"]) <= 10
+        for fb in d["recent_fallbacks"]:
+            assert_keys(fb, "session_id", "ts", "model", "primary")
+
+    def test_fallback_rate_consistency(self, api, base_url):
+        """primary_turns + fallback_turns == total_turns."""
+        d = assert_ok(get(api, base_url, "/api/model-attribution"))
+        s = d["summary"]
+        assert s["primary_turns"] + s["fallback_turns"] == s["total_turns"], (
+            f"Turn counts inconsistent: {s['primary_turns']} + {s['fallback_turns']} != {s['total_turns']}"
+        )
