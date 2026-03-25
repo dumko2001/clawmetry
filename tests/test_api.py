@@ -134,6 +134,29 @@ class TestCrons:
         assert isinstance(d, (list, dict))
 
 
+class TestCronHealth:
+    def test_status(self, api, base_url):
+        r = get(api, base_url, "/api/cron/health")
+        assert_ok(r)
+
+    def test_has_jobs_and_summary(self, api, base_url):
+        d = assert_ok(get(api, base_url, "/api/cron/health"))
+        assert "jobs" in d, "Missing 'jobs' key"
+        assert "summary" in d, "Missing 'summary' key"
+
+    def test_summary_has_required_keys(self, api, base_url):
+        d = assert_ok(get(api, base_url, "/api/cron/health"))
+        summary = d["summary"]
+        for key in ("total", "healthy", "dead", "errored", "costSpikes"):
+            assert key in summary, f"Missing summary key: {key}"
+
+    def test_jobs_have_required_fields(self, api, base_url):
+        d = assert_ok(get(api, base_url, "/api/cron/health"))
+        for job in d.get("jobs", []):
+            for key in ("id", "name", "enabled", "totalRuns", "successRate", "deadCron", "costSpike"):
+                assert key in job, f"Missing job field: {key}"
+
+
 class TestTranscripts:
     def test_status(self, api, base_url):
         r = get(api, base_url, "/api/transcripts")
