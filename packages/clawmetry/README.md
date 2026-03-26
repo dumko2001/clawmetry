@@ -39,6 +39,16 @@ Opens the dashboard at `http://localhost:4321`. Works with any existing OpenClaw
 - [Docs](https://clawmetry.com/docs)
 - [GitHub](https://github.com/vivekchand/clawmetry)
 
+## Star History
+
+<a href="https://www.star-history.com/?repos=vivekchand%2Fclawmetry&type=date&legend=top-left">
+ <picture>
+ <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/image?repos=vivekchand/clawmetry&type=date&theme=dark&legend=top-left" />
+ <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/image?repos=vivekchand/clawmetry&type=date&legend=top-left" />
+ <img alt="Star History Chart" src="https://api.star-history.com/image?repos=vivekchand/clawmetry&type=date&legend=top-left" />
+ </picture>
+</a>
+
 ---
 
 MIT License. Built by [Vivek Chand](https://github.com/vivekchand).
