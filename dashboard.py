@@ -381,7 +381,7 @@ def _sample_cpu_ram():
         import psutil
         sample['cpu'] = round(psutil.cpu_percent(interval=None), 1)
         sample['ram'] = round(psutil.virtual_memory().percent, 1)
-        # CPU temperature — pick best source
+        # CPU temperature - pick best source
         try:
             temps = psutil.sensors_temperatures()
             if temps:
@@ -1274,10 +1274,10 @@ def _send_email_alert(config, message, alert_type, details=None, subject=None):
     """Send alert via email using Resend API.
 
     config keys:
-      api_key      – Resend API key (required)
-      to           – recipient address(es), comma-separated (required)
-      from_email   – sender address (optional; defaults to alerts@clawmetry.com)
-      digest_min   – if >0, batch alerts and send one digest every N minutes (optional)
+      api_key      - Resend API key (required)
+      to           - recipient address(es), comma-separated (required)
+      from_email   - sender address (optional; defaults to alerts@clawmetry.com)
+      digest_min   - if >0, batch alerts and send one digest every N minutes (optional)
     """
     import urllib.request as _ur
 
@@ -1333,7 +1333,7 @@ def _send_email_alert(config, message, alert_type, details=None, subject=None):
           </table>
         </div>
         <p style="font-size:12px;color:#888;margin-bottom:0;margin-top:16px;">
-          Sent by <a href="https://clawmetry.com" style="color:#6366f1;">ClawMetry</a> — AI Agent Observability
+          Sent by <a href="https://clawmetry.com" style="color:#6366f1;">ClawMetry</a> - AI Agent Observability
         </p>
       </div>
     </div>
@@ -1376,7 +1376,7 @@ def _send_email_digest(channel_id, config):
         return
 
     count = len(items)
-    subject = f'[ClawMetry] Alert Digest — {count} alert{"s" if count != 1 else ""}'
+    subject = f'[ClawMetry] Alert Digest - {count} alert{"s" if count != 1 else ""}'
     lines = []
     for msg, atype, det, ts in items:
         import datetime as _dt
@@ -1395,7 +1395,7 @@ def _send_email_digest(channel_id, config):
           {''.join(lines)}
         </ul>
         <p style="font-size:12px;color:#888;margin:0;">
-          Sent by <a href="https://clawmetry.com" style="color:#6366f1;">ClawMetry</a> — AI Agent Observability
+          Sent by <a href="https://clawmetry.com" style="color:#6366f1;">ClawMetry</a> - AI Agent Observability
         </p>
       </div>
     </div>
@@ -2009,7 +2009,7 @@ def _get_otel_usage_data():
     msg_count = len(metrics_store['messages'])
 
     # Enhanced cost tracking for OTLP data
-    trend_data = _analyze_usage_trends(daily_tokens) 
+    trend_data = _analyze_usage_trends(daily_tokens)
     warnings = _generate_cost_warnings(today_cost_val, week_cost_val, month_cost_val, trend_data)
 
     return {
@@ -2050,7 +2050,7 @@ def validate_configuration():
     """Validate the detected configuration and provide helpful feedback for new users."""
     warnings = []
     tips = []
-    
+
     # Check if workspace looks like a real OpenClaw setup
     workspace_files = ['SOUL.md', 'AGENTS.md', 'MEMORY.md', 'memory']
     found_files = []
@@ -2058,11 +2058,11 @@ def validate_configuration():
         path = os.path.join(WORKSPACE, f)
         if os.path.exists(path):
             found_files.append(f)
-    
+
     if not found_files:
         warnings.append(f"⚠️  No OpenClaw workspace files found in {WORKSPACE}")
         tips.append("💡 Create SOUL.md, AGENTS.md, or MEMORY.md to set up your agent workspace")
-    
+
     # Check if log directory exists and has recent logs
     if not os.path.exists(LOG_DIR):
         warnings.append(f"⚠️  Log directory doesn't exist: {LOG_DIR}")
@@ -2070,24 +2070,24 @@ def validate_configuration():
     else:
         # Check for recent log files
         log_pattern = os.path.join(LOG_DIR, "*claw*.log")
-        recent_logs = [f for f in glob.glob(log_pattern) 
+        recent_logs = [f for f in glob.glob(log_pattern)
                       if os.path.getmtime(f) > time.time() - 86400]  # Last 24h
         if not recent_logs:
             warnings.append(f"⚠️  No recent log files found in {LOG_DIR}")
             tips.append("💡 Start your OpenClaw agent to see real-time data")
-    
+
     # Check if sessions directory exists
     if not SESSIONS_DIR or not os.path.exists(SESSIONS_DIR):
         warnings.append(f"⚠️  Sessions directory not found: {SESSIONS_DIR}")
         tips.append("💡 Sessions will appear when your agent starts conversations")
-    
+
     # Check if OpenClaw binary is available
     try:
         subprocess.run(['openclaw', '--version'], capture_output=True, timeout=10)
     except (subprocess.TimeoutExpired, FileNotFoundError, subprocess.SubprocessError):
         warnings.append("⚠️  OpenClaw binary not found in PATH")
         tips.append("💡 Install OpenClaw: https://github.com/openclaw/openclaw")
-    
+
     return warnings, tips
 
 
@@ -2161,7 +2161,7 @@ def detect_config(args=None):
     else:
         # Auto-detect: check common locations including Docker volumes
         data_dir = _auto_detect_data_dir()
-    
+
     if data_dir and os.path.isdir(data_dir):
         # Auto-set workspace, sessions, crons from data dir
         ws = os.path.join(data_dir, 'workspace')
@@ -2479,7 +2479,7 @@ DASHBOARD_HTML = r"""
   .theme-toggle { background: var(--button-bg); border: none; border-radius: 8px; padding: 8px 12px; color: var(--text-tertiary); cursor: pointer; font-size: 16px; margin-left: 12px; transition: all 0.15s; box-shadow: var(--card-shadow); }
   .theme-toggle:hover { background: var(--button-hover); color: var(--text-secondary); }
   .theme-toggle:active { transform: scale(0.98); }
-  
+
   /* === Zoom Controls === */
   .zoom-controls { display: flex; align-items: center; gap: 4px; margin-left: 12px; }
   .zoom-btn { background: var(--button-bg); border: 1px solid var(--border-primary); border-radius: 6px; width: 28px; height: 28px; color: var(--text-tertiary); cursor: pointer; font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
@@ -2772,7 +2772,7 @@ DASHBOARD_HTML = r"""
   .heatmap-grid { display: grid; grid-template-columns: 60px repeat(24, 1fr); gap: 2px; min-width: 650px; }
   .heatmap-label { font-size: 11px; color: #666; display: flex; align-items: center; padding-right: 8px; justify-content: flex-end; }
   .heatmap-hour-label { font-size: 10px; color: #555; text-align: center; padding-bottom: 4px; }
-  .heatmap-cell { aspect-ratio: 1; border-radius: 3px; min-height: 16px; transition: all 0.15s; cursor: default; position: relative; }
+  .heatmap-cell { aspect-ratio: 1; border-radius: 3px; min-height: 12px; transition: all 0.15s; cursor: default; position: relative; }
   .heatmap-cell:hover { transform: scale(1.3); z-index: 2; outline: 1px solid #f0c040; }
   .heatmap-cell[title]:hover::after { content: attr(title); position: absolute; bottom: 120%; left: 50%; transform: translateX(-50%); background: #222; color: #eee; padding: 3px 8px; border-radius: 4px; font-size: 10px; white-space: nowrap; z-index: 10; pointer-events: none; }
   .heatmap-legend { display: flex; align-items: center; gap: 6px; margin-top: 10px; font-size: 11px; color: #666; }
@@ -2805,7 +2805,7 @@ DASHBOARD_HTML = r"""
   .usage-table th { text-align: left; font-size: 12px; color: var(--text-muted); padding: 8px 12px; border-bottom: 1px solid var(--border-primary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
   .usage-table td { padding: 8px 12px; font-size: 13px; color: var(--text-secondary); border-bottom: 1px solid var(--border-secondary); }
   .usage-table tr:last-child td { border-bottom: none; font-weight: 700; color: var(--text-accent); }
-  
+
   /* === Cost Warnings === */
   .cost-warning { padding: 12px 16px; border-radius: 8px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; font-size: 13px; }
   /* === Markdown Rendered Content === */
@@ -3003,7 +3003,7 @@ DASHBOARD_HTML = r"""
   .comp-modal-title { font-size: 18px; font-weight: 700; color: var(--text-primary); }
   .comp-modal-close { background: var(--button-bg); border: 1px solid var(--border-primary); border-radius: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; color: var(--text-tertiary); transition: all 0.15s; }
   .comp-modal-close:hover { background: var(--bg-error); color: var(--text-error); }
-  
+
   /* Time Travel Controls */
   .time-travel-bar { display: none; padding: 12px 20px; border-bottom: 1px solid var(--border-primary); background: var(--bg-secondary); }
   .time-travel-bar.active { display: block; }
@@ -3082,18 +3082,18 @@ DASHBOARD_HTML = r"""
     .heatmap-grid { min-width: 500px; }
     .chat-msg { max-width: 95%; }
     .usage-chart { height: 150px; }
-    
+
     /* Enhanced Flow mobile optimizations */
-    .flow-container { 
-      padding-bottom: 20px; 
-      overflow: visible; 
+    .flow-container {
+      padding-bottom: 20px;
+      overflow: visible;
     }
     #flow-svg text { font-size: 11px !important; }
     .flow-label { font-size: 7px !important; }
     .flow-node rect { stroke-width: 1 !important; }
     .flow-node.active rect { stroke-width: 1.5 !important; }
     .brain-group { animation-duration: 1.8s; } /* Faster on mobile */
-    
+
     /* Mobile zoom controls */
     .zoom-controls { margin-left: 8px; gap: 2px; }
     .zoom-btn { width: 24px; height: 24px; font-size: 14px; }
@@ -3123,7 +3123,7 @@ DASHBOARD_HTML = r"""
     .then(function(r){return r.json()})
     .then(function(d){
       if(d.needsSetup){
-        // No gateway token configured — show mandatory gateway setup wizard
+        // No gateway token configured - show mandatory gateway setup wizard
         document.getElementById('login-overlay').style.display='none';
         var overlay=document.getElementById('gw-setup-overlay');
         overlay.dataset.mandatory='true';
@@ -3205,7 +3205,7 @@ function clawmetryLogout(){
   <div class="theme-toggle" id="logout-btn" onclick="clawmetryLogout()" title="Logout" style="display:none;cursor:pointer;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></div>
   <div class="theme-toggle" onclick="document.getElementById('kb-help-overlay').style.display='flex'" title="Keyboard shortcuts (?)" style="cursor:pointer;font-size:13px;font-weight:700;color:var(--text-tertiary);user-select:none;">?</div>
   <div class="zoom-controls">
-    <button class="zoom-btn" onclick="zoomOut()" title="Zoom out (Ctrl/Cmd + -)">−</button>
+    <button class="zoom-btn" onclick="zoomOut()" title="Zoom out (Ctrl/Cmd + -)">-</button>
     <span class="zoom-level" id="zoom-level" title="Current zoom level. Ctrl/Cmd + 0 to reset">100%</span>
     <button class="zoom-btn" onclick="zoomIn()" title="Zoom in (Ctrl/Cmd + +)">+</button>
   </div>
@@ -3398,8 +3398,8 @@ function clawmetryLogout(){
         <div class="stats-footer-value" id="cost-today">$0.00</div>
       </div>
       <div style="margin-left:auto;text-align:right;">
-        <div class="stats-footer-sub">wk: <span id="cost-week">—</span></div>
-        <div class="stats-footer-sub">mo: <span id="cost-month">—</span></div>
+        <div class="stats-footer-sub">wk: <span id="cost-week">-</span></div>
+        <div class="stats-footer-sub">mo: <span id="cost-month">-</span></div>
       </div>
       <span id="cost-trend" style="display:none;">Today's running total</span>
     </div>
@@ -3407,7 +3407,7 @@ function clawmetryLogout(){
       <span class="stats-footer-icon">🤖</span>
       <div>
         <div class="stats-footer-label">Model</div>
-        <div class="stats-footer-value" id="model-primary">—</div>
+        <div class="stats-footer-value" id="model-primary">-</div>
       </div>
       <div id="model-breakdown" style="display:none;">Loading...</div>
     </div>
@@ -3415,15 +3415,15 @@ function clawmetryLogout(){
       <span class="stats-footer-icon">📊</span>
       <div>
         <div class="stats-footer-label">Tokens</div>
-        <div class="stats-footer-value" id="token-rate">—</div>
+        <div class="stats-footer-value" id="token-rate">-</div>
       </div>
-      <span class="stats-footer-sub" style="margin-left:auto;">today: <span id="tokens-today" style="color:var(--text-success);font-weight:600;">—</span></span>
+      <span class="stats-footer-sub" style="margin-left:auto;">today: <span id="tokens-today" style="color:var(--text-success);font-weight:600;">-</span></span>
     </div>
     <div class="stats-footer-item">
       <span class="stats-footer-icon">💬</span>
       <div>
         <div class="stats-footer-label">Sessions</div>
-        <div class="stats-footer-value" id="hot-sessions-count">—</div>
+        <div class="stats-footer-value" id="hot-sessions-count">-</div>
       </div>
       <div id="hot-sessions-list" style="display:none;">Loading...</div>
     </div>
@@ -3515,13 +3515,13 @@ function clawmetryLogout(){
 
   <!-- Hidden elements referenced by existing JS -->
   <div style="display:none;">
-    <span id="tokens-peak">—</span>
-    <span id="subagents-count">—</span>
-    <span id="subagents-status">—</span>
+    <span id="tokens-peak">-</span>
+    <span id="subagents-count">-</span>
+    <span id="subagents-status">-</span>
     <span id="subagents-preview"></span>
-    <span id="tools-active">—</span>
-    <span id="tools-recent">—</span>
-    <div id="tools-sparklines"><div class="tool-spark"><span>—</span></div><div class="tool-spark"><span>—</span></div><div class="tool-spark"><span>—</span></div></div>
+    <span id="tools-active">-</span>
+    <span id="tools-recent">-</span>
+    <div id="tools-sparklines"><div class="tool-spark"><span>-</span></div><div class="tool-spark"><span>-</span></div><div class="tool-spark"><span>-</span></div></div>
     <div id="active-tasks-grid"></div>
     <div id="activity-stream"></div>
   </div>
@@ -3535,30 +3535,30 @@ function clawmetryLogout(){
     <button class="refresh-btn" onclick="loadUsage()">↻ Refresh</button>
     <button class="refresh-btn" onclick="exportUsageData()" style="margin-left: 8px;">📥 Export CSV</button>
   </div>
-  
+
   <!-- Cost Warnings -->
   <div id="cost-warnings" style="display:none; margin-bottom: 16px;"></div>
-  
+
   <!-- Main Usage Stats -->
   <div class="grid">
     <div class="card">
       <div class="card-title"><span class="icon">📊</span> Today</div>
-      <div class="card-value" id="usage-today">—</div>
+      <div class="card-value" id="usage-today">-</div>
       <div class="card-sub" id="usage-today-cost"></div>
     </div>
     <div class="card">
       <div class="card-title"><span class="icon">📅</span> This Week</div>
-      <div class="card-value" id="usage-week">—</div>
+      <div class="card-value" id="usage-week">-</div>
       <div class="card-sub" id="usage-week-cost"></div>
     </div>
     <div class="card">
       <div class="card-title"><span class="icon">📆</span> This Month</div>
-      <div class="card-value" id="usage-month">—</div>
+      <div class="card-value" id="usage-month">-</div>
       <div class="card-sub" id="usage-month-cost"></div>
     </div>
     <div class="card" id="trend-card" style="display:none;">
       <div class="card-title"><span class="icon">📈</span> Trend</div>
-      <div class="card-value" id="trend-direction">—</div>
+      <div class="card-value" id="trend-direction">-</div>
       <div class="card-sub" id="trend-prediction"></div>
     </div>
   </div>
@@ -3572,18 +3572,33 @@ function clawmetryLogout(){
     <div class="grid" style="margin-top:16px;">
       <div class="card">
         <div class="card-title"><span class="icon">⏱️</span> Avg Run Duration</div>
-        <div class="card-value" id="usage-avg-run">—</div>
+        <div class="card-value" id="usage-avg-run">-</div>
         <div class="card-sub">from OTLP openclaw.run.duration_ms</div>
       </div>
       <div class="card">
         <div class="card-title"><span class="icon">💬</span> Messages Processed</div>
-        <div class="card-value" id="usage-msg-count">—</div>
+        <div class="card-value" id="usage-msg-count">-</div>
         <div class="card-sub">from OTLP openclaw.message.processed</div>
       </div>
     </div>
     <div class="section-title">🤖 Model Breakdown</div>
     <div class="card"><table class="usage-table" id="usage-model-table"><tbody><tr><td colspan="2" style="color:#666;">No model data</td></tr></tbody></table></div>
     <div style="margin-top:12px;padding:8px 12px;background:#1a3a2a;border:1px solid #2a5a3a;border-radius:8px;font-size:12px;color:#60ff80;">📡 Data source: OpenTelemetry OTLP - real-time metrics from OpenClaw</div>
+  </div>
+
+  <!-- Activity Heatmap (30-day, hourly grid) -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;">
+    <div class="section-title" style="margin-top:0;margin-bottom:0;">🗓️ Activity Heatmap</div>
+    <div style="display:flex;gap:6px;">
+      <button id="heatmap-btn-7" onclick="switchHeatmapRange(7)" style="padding:3px 10px;font-size:11px;border-radius:5px;border:1px solid var(--border-secondary);background:var(--accent-primary);color:#fff;cursor:pointer;font-weight:600;">7d</button>
+      <button id="heatmap-btn-30" onclick="switchHeatmapRange(30)" style="padding:3px 10px;font-size:11px;border-radius:5px;border:1px solid var(--border-secondary);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;">30d</button>
+    </div>
+  </div>
+  <div class="card" style="margin-top:8px;">
+    <div class="heatmap-wrap">
+      <div class="heatmap-grid" id="heatmap-grid">Loading...</div>
+    </div>
+    <div class="heatmap-legend" id="heatmap-legend"></div>
   </div>
 </div>
 
@@ -3999,7 +4014,7 @@ var CHANNEL_CONFIG_FIELDS = {
   discord:   [{id:'webhook_url',label:'Webhook URL',placeholder:'https://discord.com/api/webhooks/...',required:true},{id:'username',label:'Bot Name (optional)',placeholder:'ClawMetry',required:false}],
   pagerduty: [{id:'routing_key',label:'Integration/Routing Key',placeholder:'abc123...',required:true},{id:'source',label:'Source (optional)',placeholder:'ClawMetry',required:false}],
   opsgenie:  [{id:'api_key',label:'API Key',placeholder:'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',required:true},{id:'team',label:'Team Name (optional)',placeholder:'ops-team',required:false},{id:'priority',label:'Priority (optional)',placeholder:'P2',required:false}],
-  email:     [{id:'api_key',label:'Resend API Key',placeholder:'re_xxxxxxxxxxxx',required:true},{id:'to',label:'Recipient(s)',placeholder:'you@example.com, team@example.com',required:true},{id:'from_email',label:'From Address (optional)',placeholder:'ClawMetry Alerts <alerts@clawmetry.com>',required:false},{id:'digest_min',label:'Digest Mode — batch every N minutes (0 = immediate)',placeholder:'0',required:false}],
+  email:     [{id:'api_key',label:'Resend API Key',placeholder:'re_xxxxxxxxxxxx',required:true},{id:'to',label:'Recipient(s)',placeholder:'you@example.com, team@example.com',required:true},{id:'from_email',label:'From Address (optional)',placeholder:'ClawMetry Alerts <alerts@clawmetry.com>',required:false},{id:'digest_min',label:'Digest Mode - batch every N minutes (0 = immediate)',placeholder:'0',required:false}],
   webhook:   [{id:'url',label:'Webhook URL',placeholder:'https://your-server/webhook',required:true}],
 };
 
@@ -4273,7 +4288,7 @@ async function renderAlertPanel() {
     var data = await fetch('/api/alerts/history?limit=30').then(function(r){return r.json();});
     var alerts = data.alerts || [];
     if (alerts.length === 0) {
-      body.innerHTML = '<div class="alert-panel-empty">&#10003; No alerts — all clear!</div>';
+      body.innerHTML = '<div class="alert-panel-empty">&#10003; No alerts - all clear!</div>';
       return;
     }
     var html = '';
@@ -4443,7 +4458,7 @@ function toggleTheme() {
   const body = document.body;
   const toggle = document.getElementById('theme-toggle-btn');
   const isLight = !body.hasAttribute('data-theme') || body.getAttribute('data-theme') !== 'dark';
-  
+
   if (isLight) {
     body.setAttribute('data-theme', 'dark');
     toggle.innerHTML = _sunSVG;
@@ -4461,7 +4476,7 @@ function initTheme() {
   const savedTheme = localStorage.getItem('openclaw-theme') || 'light';
   const body = document.body;
   const toggle = document.getElementById('theme-toggle-btn');
-  
+
   if (savedTheme === 'dark') {
     body.setAttribute('data-theme', 'dark');
     if (toggle) { toggle.innerHTML = _sunSVG; toggle.title = 'Switch to light theme'; }
@@ -4488,14 +4503,14 @@ function initZoom() {
 function applyZoom() {
   const wrapper = document.getElementById('zoom-wrapper');
   const levelDisplay = document.getElementById('zoom-level');
-  
+
   if (wrapper) {
     wrapper.style.transform = `scale(${currentZoom})`;
   }
   if (levelDisplay) {
     levelDisplay.textContent = Math.round(currentZoom * 100) + '%';
   }
-  
+
   // Save to localStorage
   localStorage.setItem('openclaw-zoom', currentZoom.toString());
 }
@@ -4545,7 +4560,7 @@ function timeAgo(ms) {
 }
 
 function formatTime(ms) {
-  if (!ms) return '—';
+  if (!ms) return '-';
   return new Date(ms).toLocaleString('en-GB', {hour:'2-digit',minute:'2-digit',day:'numeric',month:'short'});
 }
 
@@ -4647,28 +4662,28 @@ async function loadAll() {
 }
 
 async function loadMiniWidgets(overview, usage) {
-  // 💰 Cost Ticker 
+  // 💰 Cost Ticker
   function fmtCost(c) { return c >= 0.01 ? '$' + c.toFixed(2) : c > 0 ? '<$0.01' : '$0.00'; }
   document.getElementById('cost-today').textContent = fmtCost(usage.todayCost || 0);
   document.getElementById('cost-week').textContent = fmtCost(usage.weekCost || 0);
   document.getElementById('cost-month').textContent = fmtCost(usage.monthCost || 0);
-  
+
   var trend = '';
   if (usage.trend && usage.trend.trend) {
     var trendIcon = usage.trend.trend === 'increasing' ? '📈' : usage.trend.trend === 'decreasing' ? '📉' : '➡️';
     trend = trendIcon + ' ' + usage.trend.trend;
   }
   document.getElementById('cost-trend').textContent = trend || 'Today\'s running total';
-  
+
   // ⚡ Tool Activity (load from logs)
   loadToolActivity();
-  
+
   // 📊 Token Burn Rate
   function fmtTokens(n) { return n >= 1000000 ? (n/1000000).toFixed(1) + 'M' : n >= 1000 ? (n/1000).toFixed(0) + 'K' : String(n); }
   document.getElementById('token-rate').textContent = fmtTokens(usage.month || 0);
   document.getElementById('tokens-today').textContent = fmtTokens(usage.today || 0);
-  
-  // 🔥 Hot Sessions — use /api/sessions for consistency with modal
+
+  // 🔥 Hot Sessions - use /api/sessions for consistency with modal
   fetch('/api/sessions').then(function(r){return r.json()}).then(function(sd) {
     var sl = sd.sessions || sd || [];
     if (!Array.isArray(sl)) sl = [];
@@ -4676,7 +4691,7 @@ async function loadMiniWidgets(overview, usage) {
   }).catch(function() {
     document.getElementById('hot-sessions-count').textContent = overview.sessionCount || 0;
   });
-  
+
   // 📈 Model Mix
   document.getElementById('model-primary').textContent = overview.model || 'unknown';
   var modelLabel = document.getElementById('main-activity-model');
@@ -4698,10 +4713,10 @@ async function loadMiniWidgets(overview, usage) {
     modelBreakdown = 'Primary model';
   }
   document.getElementById('model-breakdown').textContent = modelBreakdown;
-  
+
   // 🐝 Worker Bees (Sub-Agents)
   loadSubAgents();
-  
+
 }
 
 async function loadSubAgents() {
@@ -4709,10 +4724,10 @@ async function loadSubAgents() {
     var data = await fetch('/api/subagents').then(r => r.json());
     var counts = data.counts;
     var subagents = data.subagents;
-    
+
     // Update main counter
     document.getElementById('subagents-count').textContent = counts.total;
-    
+
     // Update status text
     var statusText = '';
     if (counts.active > 0) {
@@ -4725,7 +4740,7 @@ async function loadSubAgents() {
       statusText = 'All idle/stale';
     }
     document.getElementById('subagents-status').textContent = statusText;
-    
+
     // Update preview with top sub-agents (human-readable)
     var previewHtml = '';
     if (subagents.length === 0) {
@@ -4744,14 +4759,14 @@ async function loadSubAgents() {
         previewHtml += '<span class="subagent-runtime">' + agent.runtime + '</span>';
         previewHtml += '</div>';
       });
-      
+
       if (subagents.length > 3) {
         previewHtml += '<div style="font-size:9px;color:#555;margin-top:4px;">+' + (subagents.length - 3) + ' more</div>';
       }
     }
-    
+
     document.getElementById('subagents-preview').innerHTML = previewHtml;
-    
+
   } catch(e) {
     document.getElementById('subagents-count').textContent = '?';
     document.getElementById('subagents-status').textContent = 'Error loading sub-agents';
@@ -4874,31 +4889,31 @@ async function loadToolActivity() {
     var logs = await fetch('/api/logs?lines=100').then(r => r.json());
     var toolCounts = { exec: 0, browser: 0, search: 0, other: 0 };
     var recentTools = [];
-    
+
     logs.lines.forEach(function(line) {
       var msg = line.toLowerCase();
       if (msg.includes('tool') || msg.includes('invoke')) {
-        if (msg.includes('exec') || msg.includes('shell')) { 
-          toolCounts.exec++; recentTools.push('exec'); 
-        } else if (msg.includes('browser') || msg.includes('screenshot')) { 
-          toolCounts.browser++; recentTools.push('browser'); 
-        } else if (msg.includes('web_search') || msg.includes('web_fetch')) { 
-          toolCounts.search++; recentTools.push('search'); 
+        if (msg.includes('exec') || msg.includes('shell')) {
+          toolCounts.exec++; recentTools.push('exec');
+        } else if (msg.includes('browser') || msg.includes('screenshot')) {
+          toolCounts.browser++; recentTools.push('browser');
+        } else if (msg.includes('web_search') || msg.includes('web_fetch')) {
+          toolCounts.search++; recentTools.push('search');
         } else {
           toolCounts.other++;
         }
       }
     });
-    
+
     document.getElementById('tools-active').textContent = recentTools.slice(0, 3).join(', ') || 'Idle';
     document.getElementById('tools-recent').textContent = 'Last ' + Math.min(logs.lines.length, 100) + ' log entries';
-    
+
     var sparks = document.querySelectorAll('.tool-spark span');
     sparks[0].textContent = toolCounts.exec;
-    sparks[1].textContent = toolCounts.browser;  
+    sparks[1].textContent = toolCounts.browser;
     sparks[2].textContent = toolCounts.search;
   } catch(e) {
-    document.getElementById('tools-active').textContent = '—';
+    document.getElementById('tools-active').textContent = '-';
   }
 }
 
@@ -4906,26 +4921,26 @@ async function loadActivityStream() {
   try {
     var transcripts = await fetch('/api/transcripts').then(r => r.json());
     var activities = [];
-    
+
     // Get the most recent transcript to parse for activity
     if (transcripts.transcripts && transcripts.transcripts.length > 0) {
       var recent = transcripts.transcripts[0];
       try {
         var transcript = await fetch('/api/transcript/' + recent.id).then(r => r.json());
         var recentMessages = transcript.messages.slice(-10); // Last 10 messages
-        
+
         recentMessages.forEach(function(msg) {
           if (msg.role === 'assistant' && msg.content) {
             var content = msg.content.toLowerCase();
             var activity = '';
             var time = new Date(msg.timestamp || Date.now()).toLocaleTimeString();
-            
+
             if (content.includes('searching') || content.includes('search')) {
               activity = time + ' 🔍 Searching web for information';
             } else if (content.includes('reading') || content.includes('file')) {
               activity = time + ' 📖 Reading files';
             } else if (content.includes('writing') || content.includes('edit')) {
-              activity = time + ' ✏️ Editing files'; 
+              activity = time + ' ✏️ Editing files';
             } else if (content.includes('exec') || content.includes('command')) {
               activity = time + ' ⚡ Running commands';
             } else if (content.includes('browser') || content.includes('screenshot')) {
@@ -4934,24 +4949,24 @@ async function loadActivityStream() {
               var preview = msg.content.substring(0, 80).replace(/[^\w\s]/g, ' ').trim();
               activity = time + ' 💭 ' + preview + '...';
             }
-            
+
             if (activity) activities.push(activity);
           }
         });
       } catch(e) {}
     }
-    
+
     if (activities.length === 0) {
       activities = [
         new Date().toLocaleTimeString() + ' 🤖 AI agent initialized',
         new Date().toLocaleTimeString() + ' 📡 Monitoring for activity...'
       ];
     }
-    
+
     var html = activities.slice(-8).map(function(a) {
       return '<div style="padding:4px 0; border-bottom:1px solid #1a1a30; color:#ccc;">' + escHtml(a) + '</div>';
     }).join('');
-    
+
     document.getElementById('activity-stream').innerHTML = html;
   } catch(e) {
     document.getElementById('activity-stream').innerHTML = '<div style="color:#666;">Error loading activity stream</div>';
@@ -5157,7 +5172,7 @@ function showSessionsModal() {
         var tokens = s.totalTokens || s.tokens || 0;
         tokens = tokens > 1e6 ? (tokens/1e6).toFixed(1)+'M' : (tokens > 1e3 ? (tokens/1e3).toFixed(0)+'K' : tokens);
         var kind = s.kind || (s.sessionKey && s.sessionKey.includes('subagent') ? 'isolated' : 'main');
-        var label = s.label || s.sessionKey || s.name || '—';
+        var label = s.label || s.sessionKey || s.name || '-';
         var kindColor = kind === 'main' ? 'var(--text-success)' : kind === 'isolated' ? '#a78bfa' : 'var(--text-muted)';
         html += '<tr style="border-bottom:1px solid var(--border-primary);">';
         html += '<td style="padding:8px;color:var(--text-primary);font-weight:600;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escHtml(label) + '</td>';
@@ -5277,7 +5292,7 @@ async function loadSessions() {
   // Main sessions (non-subagent)
   var mainSessions = sessData.sessions.filter(function(s) { return !(s.sessionId || '').includes('subagent'); });
   var subagents = saData.subagents || [];
-  
+
   mainSessions.forEach(function(s) {
     html += '<div class="session-item" style="border-left:3px solid var(--bg-accent);padding-left:16px;">';
     html += '<div class="session-name">🖥️ ' + escHtml(s.displayName || s.key) + ' <span style="font-size:11px;color:var(--text-muted);font-weight:400;">Main Session</span></div>';
@@ -5311,7 +5326,7 @@ async function loadSessions() {
     }
     html += '</div>';
   });
-  
+
   // Show orphan sessions that aren't main
   var subSessions = sessData.sessions.filter(function(s) { return (s.sessionId || '').includes('subagent'); });
   if (subSessions.length > 0 && mainSessions.length === 0) {
@@ -5324,7 +5339,7 @@ async function loadSessions() {
       html += '</div></div>';
     });
   }
-  
+
   document.getElementById('sessions-list').innerHTML = html || '<div style="padding:16px;color:var(--text-muted);">No sessions found</div>';
 }
 
@@ -5735,7 +5750,7 @@ function renderMCExpanded(key) {
   var html = '<div style="font-size:11px;font-weight:700;color:'+col.color+';margin-bottom:8px;">'+col.icon+' '+col.label+' ('+col.tasks.length+')</div>';
   html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px;">';
   col.tasks.forEach(function(t) {
-    var title = t.title || '—';
+    var title = t.title || '-';
     var badge = t.companyId ? '<span style="font-size:9px;background:var(--bg-secondary);padding:1px 5px;border-radius:3px;color:var(--text-muted);margin-left:6px;">'+t.companyId+'</span>' : '';
     html += '<div style="font-size:12px;color:var(--text-secondary);padding:4px 8px;background:var(--bg-secondary);border-radius:6px;border-left:3px solid '+col.color+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="'+(t.title||'').replace(/"/g,'&quot;')+'">'+title+badge+'</div>';
   });
@@ -5884,7 +5899,7 @@ async function loadSystemHealth() {
         + '</div></div>'
         + (ramSeries.length >= 2 ? '<div style="margin-top:6px;border-radius:6px;overflow:hidden;background:rgba(0,0,0,0.15);">' + _shSparkline(ramSeries, memColor, 260, 32) + '</div>' : '');
       if (memory.pct >= 80) {
-        mhtml += '<div style="font-size:11px;color:' + memColor + ';margin-top:6px;">⚠ High memory usage — consider restarting heavy processes</div>';
+        mhtml += '<div style="font-size:11px;color:' + memColor + ';margin-top:6px;">⚠ High memory usage - consider restarting heavy processes</div>';
       }
     } else {
       mhtml = '<div style="padding:8px 10px;background:var(--bg-secondary);border:1px solid var(--border-secondary);border-radius:8px;font-size:12px;color:var(--text-muted);">Memory data unavailable</div>';
@@ -5984,11 +5999,30 @@ function startSystemHealthRefresh() {
 }
 
 // ===== Activity Heatmap =====
+var _heatmapDays = 7;
+
+function switchHeatmapRange(days) {
+  _heatmapDays = days;
+  var btn7 = document.getElementById('heatmap-btn-7');
+  var btn30 = document.getElementById('heatmap-btn-30');
+  var activeStyle = 'padding:3px 10px;font-size:11px;border-radius:5px;border:1px solid var(--border-secondary);cursor:pointer;font-weight:600;background:var(--accent-primary);color:#fff;';
+  var inactiveStyle = 'padding:3px 10px;font-size:11px;border-radius:5px;border:1px solid var(--border-secondary);cursor:pointer;background:var(--bg-secondary);color:var(--text-secondary);';
+  if (btn7) btn7.style.cssText = days === 7 ? activeStyle : inactiveStyle;
+  if (btn30) btn30.style.cssText = days === 30 ? activeStyle : inactiveStyle;
+  loadHeatmap();
+}
+
 async function loadHeatmap() {
+  var gridEl = document.getElementById('heatmap-grid');
+  if (!gridEl) return;
   try {
-    var data = await fetch('/api/heatmap').then(r => r.json());
-    var grid = document.getElementById('heatmap-grid');
+    var days = _heatmapDays || 7;
+    var data = await fetch('/api/heatmap?days=' + days).then(r => r.json());
     var maxVal = Math.max(1, data.max);
+    // Grid layout: rows = days (Y), cols = hours 0-23 (X)
+    // Update grid-template-columns to match
+    var colCount = 24;
+    gridEl.style.gridTemplateColumns = '60px repeat(' + colCount + ', 1fr)';
     var html = '<div class="heatmap-label"></div>';
     for (var h = 0; h < 24; h++) { html += '<div class="heatmap-hour-label">' + (h < 10 ? '0' : '') + h + '</div>'; }
     data.days.forEach(function(day) {
@@ -5996,19 +6030,19 @@ async function loadHeatmap() {
       day.hours.forEach(function(val, hi) {
         var intensity = val / maxVal;
         var color;
-        if (val === 0) color = '#12122a';
+        if (val === 0) color = 'var(--bg-secondary,#12122a)';
         else if (intensity < 0.25) color = '#1a3a2a';
         else if (intensity < 0.5) color = '#2a6a3a';
         else if (intensity < 0.75) color = '#4a9a2a';
         else color = '#6adb3a';
-        html += '<div class="heatmap-cell" style="background:' + color + ';" title="' + day.label + ' ' + (hi < 10 ? '0' : '') + hi + ':00 - ' + val + ' events"></div>';
+        html += '<div class="heatmap-cell" style="background:' + color + ';" title="' + (day.date || day.label) + ' ' + (hi < 10 ? '0' : '') + hi + ':00 – ' + val + ' events"></div>';
       });
     });
-    grid.innerHTML = html;
+    gridEl.innerHTML = html;
     var legend = document.getElementById('heatmap-legend');
-    legend.innerHTML = 'Less <div class="heatmap-legend-cell" style="background:#12122a"></div><div class="heatmap-legend-cell" style="background:#1a3a2a"></div><div class="heatmap-legend-cell" style="background:#2a6a3a"></div><div class="heatmap-legend-cell" style="background:#4a9a2a"></div><div class="heatmap-legend-cell" style="background:#6adb3a"></div> More';
+    if (legend) legend.innerHTML = 'Less <div class="heatmap-legend-cell" style="background:#12122a;border:1px solid var(--border-secondary);"></div><div class="heatmap-legend-cell" style="background:#1a3a2a"></div><div class="heatmap-legend-cell" style="background:#2a6a3a"></div><div class="heatmap-legend-cell" style="background:#4a9a2a"></div><div class="heatmap-legend-cell" style="background:#6adb3a"></div> More &nbsp;·&nbsp; <span style="color:var(--text-muted);">hover cell for details</span>';
   } catch(e) {
-    document.getElementById('heatmap-grid').innerHTML = '<span style="color:#555">No activity data</span>';
+    if (gridEl) gridEl.innerHTML = '<span style="color:var(--text-muted);">No activity data</span>';
   }
 }
 
@@ -6024,10 +6058,10 @@ async function loadUsage() {
     document.getElementById('usage-week-cost').textContent = '≈ ' + fmtCost(data.weekCost);
     document.getElementById('usage-month').textContent = fmtTokens(data.month);
     document.getElementById('usage-month-cost').textContent = '≈ ' + fmtCost(data.monthCost);
-    
+
     // Display cost warnings
     displayCostWarnings(data.warnings || []);
-    
+
     // Display trend analysis
     displayTrendAnalysis(data.trend || {});
     // Bar chart
@@ -6053,7 +6087,7 @@ async function loadUsage() {
     if (data.source === 'otlp') {
       otelExtra.style.display = '';
       var runEl = document.getElementById('usage-avg-run');
-      if (runEl) runEl.textContent = data.avgRunMs > 0 ? (data.avgRunMs > 1000 ? (data.avgRunMs/1000).toFixed(1) + 's' : data.avgRunMs.toFixed(0) + 'ms') : '—';
+      if (runEl) runEl.textContent = data.avgRunMs > 0 ? (data.avgRunMs > 1000 ? (data.avgRunMs/1000).toFixed(1) + 's' : data.avgRunMs.toFixed(0) + 'ms') : '-';
       var msgEl = document.getElementById('usage-msg-count');
       if (msgEl) msgEl.textContent = data.messageCount || '0';
       // Model breakdown table
@@ -6079,7 +6113,7 @@ function displayCostWarnings(warnings) {
     container.style.display = 'none';
     return;
   }
-  
+
   var html = '';
   warnings.forEach(function(w) {
     var icon = w.level === 'error' ? '🚨' : '⚠️';
@@ -6088,7 +6122,7 @@ function displayCostWarnings(warnings) {
     html += '<div class="cost-warning-message">' + escHtml(w.message) + '</div>';
     html += '</div>';
   });
-  
+
   container.innerHTML = html;
   container.style.display = 'block';
 }
@@ -6099,22 +6133,22 @@ function displayTrendAnalysis(trend) {
     card.style.display = 'none';
     return;
   }
-  
+
   var directionEl = document.getElementById('trend-direction');
   var predictionEl = document.getElementById('trend-prediction');
-  
+
   var emoji = trend.trend === 'increasing' ? '📈' : trend.trend === 'decreasing' ? '📉' : '➡️';
   directionEl.textContent = emoji + ' ' + trend.trend.charAt(0).toUpperCase() + trend.trend.slice(1);
-  
+
   if (trend.dailyAvg && trend.monthlyPrediction) {
     var dailyAvg = trend.dailyAvg >= 1000 ? (trend.dailyAvg/1000).toFixed(0) + 'K' : trend.dailyAvg;
-    var monthlyPred = trend.monthlyPrediction >= 1000000 ? (trend.monthlyPrediction/1000000).toFixed(1) + 'M' : 
+    var monthlyPred = trend.monthlyPrediction >= 1000000 ? (trend.monthlyPrediction/1000000).toFixed(1) + 'M' :
                       trend.monthlyPrediction >= 1000 ? (trend.monthlyPrediction/1000).toFixed(0) + 'K' : trend.monthlyPrediction;
     predictionEl.textContent = dailyAvg + '/day avg, ~' + monthlyPred + '/month projected';
   } else {
     predictionEl.textContent = 'Analyzing usage patterns...';
   }
-  
+
   card.style.display = 'block';
 }
 
@@ -6288,7 +6322,7 @@ async function loadExecutionTrace() {
     }
 
     if (events.length === 0) {
-      container.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:20px;text-align:center;width:100%;">No trace data — waiting for agent activity...</div>';
+      container.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:20px;text-align:center;width:100%;">No trace data - waiting for agent activity...</div>';
       return;
     }
 
@@ -6542,13 +6576,13 @@ function hideUnconfiguredChannels(svgRoot) {
 function initFlow() {
   if (flowInitDone) return;
   flowInitDone = true;
-  
+
   // Performance: Reduce update frequency on mobile
   var updateInterval = window.innerWidth < 768 ? 3000 : 2000;
 
   // Hide unconfigured channels in the flow SVG
   hideUnconfiguredChannels(document);
-  
+
   fetch('/api/overview').then(function(r){return r.json();}).then(async function(d) {
     if (!d.model || d.model === 'unknown') {
       var fm = await resolvePrimaryModelFallback();
@@ -6557,13 +6591,13 @@ function initFlow() {
     if (d.model) applyBrainModelToAll(d.model);
     var tok = document.getElementById('flow-tokens');
     if (tok) tok.textContent = (d.mainTokens / 1000).toFixed(0) + 'K';
-    
+
     // Add visual hierarchy hints
     setTimeout(function() {
       enhanceArchitectureClarity();
     }, 1000);
   }).catch(function(){});
-  
+
   setInterval(updateFlowStats, updateInterval);
 }
 
@@ -6582,7 +6616,7 @@ function enhanceArchitectureClarity() {
       }
     }, index * 800);
   });
-  
+
   // Highlight the main message flow path briefly
   var paths = ['path-human-tg', 'path-tg-gw', 'path-gw-brain'];
   paths.forEach(function(pathId, index) {
@@ -6652,11 +6686,11 @@ function _animateParticleOn(pathId, svgId, color, duration, reverse) {
   if (!path) return;
   var svg = document.getElementById(svgId);
   if (!svg) return;
-  
+
   // Skip if too many particles (performance)
   var activeParticles = svg.querySelectorAll('circle[data-particle]').length;
   if (activeParticles > maxParticles) return;
-  
+
   var len = path.getTotalLength();
   var particle = getPooledParticle(false);
   particle.setAttribute('data-particle', 'true');
@@ -6664,27 +6698,27 @@ function _animateParticleOn(pathId, svgId, color, duration, reverse) {
   particle.style.filter = 'drop-shadow(0 0 8px ' + color + ')';
   particle.style.opacity = '1';
   svg.appendChild(particle);
-  
+
   var glowCls = color === '#60a0ff' ? 'glow-blue' : color === '#f0c040' ? 'glow-yellow' : color === '#50e080' ? 'glow-green' : color === '#40a0b0' ? 'glow-cyan' : color === '#c0a0ff' ? 'glow-purple' : 'glow-red';
   path.classList.add(glowCls);
-  
+
   var startT = performance.now();
   var trailN = 0;
   var trailElements = [];
-  
+
   function step(now) {
     var t = Math.min((now - startT) / duration, 1);
     var dist = reverse ? (1 - t) * len : t * len;
-    
+
     try {
       var pt = path.getPointAtLength(dist);
       particle.setAttribute('cx', pt.x);
       particle.setAttribute('cy', pt.y);
-    } catch(e) { 
+    } catch(e) {
       cleanup();
-      return; 
+      return;
     }
-    
+
     // Create trail less frequently, and only if not too many already
     if (trailN++ % trailInterval === 0 && trailElements.length < 6) {
       var tr = getPooledParticle(true);
@@ -6695,34 +6729,34 @@ function _animateParticleOn(pathId, svgId, color, duration, reverse) {
       tr.style.filter = 'blur(0.5px)';
       svg.insertBefore(tr, particle);
       trailElements.push(tr);
-      
+
       // Fade trail with CSS transition instead of JS animation
       setTimeout(function() {
         tr.style.transition = 'opacity 400ms ease-out, transform 400ms ease-out';
         tr.style.opacity = '0';
         tr.style.transform = 'scale(0.3)';
-        setTimeout(function() { 
+        setTimeout(function() {
           if (tr.parentNode) tr.parentNode.removeChild(tr);
           returnToPool(tr, true);
         }, 450);
       }, 50);
     }
-    
+
     if (t < 1) {
       requestAnimationFrame(step);
     } else {
       cleanup();
     }
   }
-  
+
   function cleanup() {
     if (particle.parentNode) particle.parentNode.removeChild(particle);
     returnToPool(particle, false);
-    setTimeout(function() { 
-      path.classList.remove(glowCls); 
+    setTimeout(function() {
+      path.classList.remove(glowCls);
     }, 400);
   }
-  
+
   requestAnimationFrame(step);
 }
 
@@ -7265,19 +7299,19 @@ function isCompModalActive(nodeId) {
 function openCompModal(nodeId) {
   var c = COMP_MAP[nodeId];
   if (!c) return;
-  
+
   // Clear ALL existing refresh timers to prevent stale data overwriting new modal
   if (_tgRefreshTimer) { clearInterval(_tgRefreshTimer); _tgRefreshTimer = null; }
   if (_gwRefreshTimer) { clearInterval(_gwRefreshTimer); _gwRefreshTimer = null; }
   if (_brainRefreshTimer) { clearInterval(_brainRefreshTimer); _brainRefreshTimer = null; }
   if (_toolRefreshTimer) { clearInterval(_toolRefreshTimer); _toolRefreshTimer = null; }
   if (_costOptimizerRefreshTimer) { clearInterval(_costOptimizerRefreshTimer); _costOptimizerRefreshTimer = null; }
-  
+
   // Track current component for time travel
   window._currentComponentId = nodeId;
-  
+
   document.getElementById('comp-modal-title').textContent = c.icon + ' ' + c.name;
-  
+
   // Reset time travel state when opening new component
   _timeTravelMode = false;
   _currentTimeContext = null;
@@ -7539,7 +7573,7 @@ function loadBrainData(isRefresh) {
         var ts = c.timestamp ? new Date(c.timestamp).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '';
         var costVal = parseFloat((c.cost||'$0').replace('$',''));
         var cColor = costVal > 0.50 ? '#f59e0b' : costVal > 1.0 ? '#ef4444' : '#22c55e';
-        var dur = c.duration_ms > 0 ? (c.duration_ms >= 1000 ? (c.duration_ms/1000).toFixed(1)+'s' : c.duration_ms+'ms') : '—';
+        var dur = c.duration_ms > 0 ? (c.duration_ms >= 1000 ? (c.duration_ms/1000).toFixed(1)+'s' : c.duration_ms+'ms') : '-';
         html += '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-secondary);border-radius:8px;border:1px solid var(--border-secondary);font-size:11px;flex-wrap:wrap;">';
         html += '<span style="color:var(--text-tertiary);min-width:58px;">' + ts + '</span>';
         html += '<span style="color:var(--text-muted);font-size:10px;min-width:50px;">' + escapeHtml(c.session||'main') + '</span>';
@@ -7586,7 +7620,7 @@ function loadCostOptimizerData(isRefresh) {
     if (!isCompModalActive(expectedNodeId)) return;
     var body = document.getElementById('comp-modal-body');
     var html = '';
-    
+
     // Cost Summary
     html += '<div class="cost-optimizer-summary">';
     html += '<div class="cost-stat-grid">';
@@ -7596,7 +7630,7 @@ function loadCostOptimizerData(isRefresh) {
     html += '<div class="cost-stat"><div class="cost-label">Projected Monthly</div><div class="cost-value">$' + (data.costs.projected || 0).toFixed(2) + '</div></div>';
     html += '</div>';
     html += '</div>';
-    
+
     // Local Model Availability
     html += '<div class="local-models-section" style="margin-top:20px;">';
     html += '<h3 style="color:var(--text-accent);margin-bottom:12px;">🖥️ Local Model Availability</h3>';
@@ -7613,11 +7647,11 @@ function loadCostOptimizerData(isRefresh) {
       html += '<div style="margin-top:4px;font-size:11px;color:var(--text-muted);">Example: <code>ollama pull llama3.3</code></div>';
     }
     html += '</div>';
-    
+
     // Cost Optimization Recommendations
     html += '<div class="recommendations-section" style="margin-top:20px;">';
     html += '<h3 style="color:var(--text-accent);margin-bottom:12px;">💡 Optimization Recommendations</h3>';
-    
+
     if (data.recommendations.length === 0) {
       html += '<div style="padding:12px;background:var(--bg-success);border-radius:8px;color:var(--text-success);">✅ Cost usage is optimal</div>';
     } else {
@@ -7634,7 +7668,7 @@ function loadCostOptimizerData(isRefresh) {
       });
     }
     html += '</div>';
-    
+
     // Recent High-Cost Operations
     if (data.expensiveOps && data.expensiveOps.length > 0) {
       html += '<div class="expensive-ops-section" style="margin-top:20px;">';
@@ -7653,7 +7687,7 @@ function loadCostOptimizerData(isRefresh) {
       });
       html += '</div>';
     }
-    
+
     body.innerHTML = html;
     document.getElementById('comp-modal-footer').textContent = 'Auto-refreshing · Last updated: ' + new Date().toLocaleTimeString();
   }).catch(function(e) {
@@ -7676,7 +7710,7 @@ function toggleTimeTravelMode() {
   _timeTravelMode = !_timeTravelMode;
   var toggle = document.getElementById('time-travel-toggle');
   var bar = document.getElementById('time-travel-bar');
-  
+
   if (_timeTravelMode) {
     toggle.classList.add('active');
     bar.classList.add('active');
@@ -7704,11 +7738,11 @@ function loadTimelineData() {
 
 function timeTravel(direction) {
   if (!_timelineData || !_timelineData.days) return;
-  
+
   var days = _timelineData.days;
   var currentDate = _currentTimeContext ? _currentTimeContext.date : _timelineData.today;
   var currentIndex = days.findIndex(function(d) { return d.date === currentDate; });
-  
+
   if (direction === 'prev-day' && currentIndex > 0) {
     _currentTimeContext = {date: days[currentIndex - 1].date, hour: null};
   } else if (direction === 'next-day' && currentIndex < days.length - 1) {
@@ -7716,7 +7750,7 @@ function timeTravel(direction) {
   } else if (direction === 'now') {
     _currentTimeContext = null;
   }
-  
+
   updateTimeDisplay();
   updateSliderPosition();
   reloadCurrentComponent();
@@ -7724,15 +7758,15 @@ function timeTravel(direction) {
 
 function onTimeSliderClick(event) {
   if (!_timelineData || !_timelineData.days) return;
-  
+
   var slider = document.getElementById('time-slider');
   var rect = slider.getBoundingClientRect();
   var percent = (event.clientX - rect.left) / rect.width;
-  
+
   var days = _timelineData.days;
   var index = Math.floor(percent * days.length);
   index = Math.max(0, Math.min(index, days.length - 1));
-  
+
   _currentTimeContext = {date: days[index].date, hour: null};
   updateTimeDisplay();
   updateSliderPosition();
@@ -7742,7 +7776,7 @@ function onTimeSliderClick(event) {
 function updateTimeDisplay() {
   var display = document.getElementById('time-display');
   if (!display) return;
-  
+
   if (!_currentTimeContext) {
     display.textContent = 'Live (Now)';
     display.style.color = 'var(--text-accent)';
@@ -7758,7 +7792,7 @@ function updateTimeDisplay() {
 function updateSliderPosition() {
   var thumb = document.getElementById('time-slider-thumb');
   if (!thumb || !_timelineData) return;
-  
+
   if (!_currentTimeContext) {
     // "Now" - position at the end
     thumb.style.left = '100%';
@@ -7778,7 +7812,7 @@ function reloadCurrentComponent() {
   if (overlay && overlay.classList.contains('open')) {
     var body = document.getElementById('comp-modal-body');
     body.innerHTML = '<div style="text-align:center;padding:40px;"><div class="pulse"></div> Loading ' + (_currentTimeContext ? 'historical' : 'current') + ' data...</div>';
-    
+
     if (window._currentComponentId) {
       loadComponentWithTimeContext(window._currentComponentId);
     }
@@ -7795,20 +7829,20 @@ function loadCostOptimizerDataWithTime() {
 function loadAutomationAdvisorDataWithTime() {
   var body = document.getElementById('comp-modal-body');
   var timeContext = _currentTimeContext ? ' (' + _currentTimeContext.date + ')' : '';
-  
+
   if (_currentTimeContext) {
     body.innerHTML = '<div style="text-align:center;padding:20px;"><div style="font-size:48px;margin-bottom:16px;">🧠</div><div style="font-size:16px;font-weight:600;margin-bottom:8px;">Automation Advisor' + timeContext + '</div><div style="color:var(--text-muted);">Historical pattern analysis coming soon</div><div style="margin-top:8px;font-size:12px;color:var(--text-muted);text-transform:uppercase;">advisor</div></div>';
     document.getElementById('comp-modal-footer').textContent = 'Time travel: ' + _currentTimeContext.date;
     return;
   }
-  
+
   body.innerHTML = '<div style="text-align:center;padding:40px;"><div style="font-size:24px;margin-bottom:20px;">🧠 Loading automation analysis...</div></div>';
   document.getElementById('comp-modal-footer').textContent = 'Live';
-  
+
   fetch('/api/automation-analysis').then(function(r){return r.json();}).then(function(data) {
     var html = '<div style="padding:20px;">';
     html += '<div style="text-align:center;margin-bottom:30px;"><div style="font-size:48px;margin-bottom:12px;">🧠</div><h2 style="margin:0;font-size:20px;">Automation Advisor</h2><p style="color:var(--text-muted);margin:8px 0 0 0;">Analyzing patterns to suggest new automations</p></div>';
-    
+
     if (data.patterns && data.patterns.length > 0) {
       html += '<h3 style="color:var(--text-primary);border-bottom:2px solid var(--border-primary);padding-bottom:8px;margin-bottom:16px;">🔍 Detected Patterns</h3>';
       data.patterns.forEach(function(pattern) {
@@ -7820,7 +7854,7 @@ function loadAutomationAdvisorDataWithTime() {
         html += '</div>';
       });
     }
-    
+
     if (data.suggestions && data.suggestions.length > 0) {
       html += '<h3 style="color:var(--text-primary);border-bottom:2px solid var(--border-primary);padding-bottom:8px;margin-bottom:16px;">💡 Automation Suggestions</h3>';
       data.suggestions.forEach(function(suggestion) {
@@ -7836,7 +7870,7 @@ function loadAutomationAdvisorDataWithTime() {
         html += '</div>';
       });
     }
-    
+
     if (!data.patterns || data.patterns.length === 0) {
       html += '<div style="text-align:center;padding:40px;color:var(--text-muted);">';
       html += '<div style="font-size:48px;margin-bottom:16px;">🌱</div>';
@@ -7844,7 +7878,7 @@ function loadAutomationAdvisorDataWithTime() {
       html += '<p>Continue using the agent and check back later for automation suggestions.</p>';
       html += '</div>';
     }
-    
+
     html += '</div>';
     body.innerHTML = html;
   }).catch(function(e) {
@@ -7855,14 +7889,14 @@ function loadAutomationAdvisorDataWithTime() {
 function loadComponentWithTimeContext(nodeId) {
   var c = COMP_MAP[nodeId];
   if (!c) return;
-  
+
   // Clear existing refresh timers
   if (_tgRefreshTimer) { clearInterval(_tgRefreshTimer); _tgRefreshTimer = null; }
   if (_gwRefreshTimer) { clearInterval(_gwRefreshTimer); _gwRefreshTimer = null; }
   if (_brainRefreshTimer) { clearInterval(_brainRefreshTimer); _brainRefreshTimer = null; }
   if (_toolRefreshTimer) { clearInterval(_toolRefreshTimer); _toolRefreshTimer = null; }
   if (_costOptimizerRefreshTimer) { clearInterval(_costOptimizerRefreshTimer); _costOptimizerRefreshTimer = null; }
-  
+
   // Load data based on component type
   if (nodeId === 'node-telegram') {
     loadTelegramMessagesWithTime();
@@ -8319,12 +8353,12 @@ function closeCompModal() {
   if (_brainRefreshTimer) { clearInterval(_brainRefreshTimer); _brainRefreshTimer = null; }
   if (_toolRefreshTimer) { clearInterval(_toolRefreshTimer); _toolRefreshTimer = null; }
   if (_costOptimizerRefreshTimer) { clearInterval(_costOptimizerRefreshTimer); _costOptimizerRefreshTimer = null; }
-  
+
   // Reset time travel state
   _timeTravelMode = false;
   _currentTimeContext = null;
   window._currentComponentId = null;
-  
+
   document.getElementById('comp-modal-overlay').classList.remove('open');
 }
 document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeCompModal(); });
@@ -8870,8 +8904,8 @@ async function loadHistory() {
       runs.slice(-100).reverse().forEach(function(r) {
         var t = new Date(r.timestamp * 1000).toLocaleString();
         var statusColor = r.status === 'success' || r.status === 'completed' ? '#10b981' : (r.status === 'error' || r.status === 'failed' ? '#ef4444' : '#f59e0b');
-        var dur = r.duration_ms ? (r.duration_ms/1000).toFixed(1)+'s' : '—';
-        cronHtml += '<tr style="border-bottom:1px solid var(--border-secondary);"><td style="padding:4px 8px;font-size:12px;">'+t+'</td><td style="padding:4px 8px;font-size:12px;">'+((r.job_name||r.job_id)||'—')+'</td><td style="padding:4px 8px;font-size:12px;"><span style="color:'+statusColor+';font-weight:600;">&#9679;</span> '+(r.status||'—')+'</td><td style="padding:4px 8px;font-size:12px;text-align:right;">'+dur+'</td></tr>';
+        var dur = r.duration_ms ? (r.duration_ms/1000).toFixed(1)+'s' : '-';
+        cronHtml += '<tr style="border-bottom:1px solid var(--border-secondary);"><td style="padding:4px 8px;font-size:12px;">'+t+'</td><td style="padding:4px 8px;font-size:12px;">'+((r.job_name||r.job_id)||'-')+'</td><td style="padding:4px 8px;font-size:12px;"><span style="color:'+statusColor+';font-weight:600;">&#9679;</span> '+(r.status||'-')+'</td><td style="padding:4px 8px;font-size:12px;text-align:right;">'+dur+'</td></tr>';
       });
       cronHtml += '</tbody></table>';
     }
@@ -8879,7 +8913,7 @@ async function loadHistory() {
 
     // Update status
     var totalPts = (tokIn.data||[]).length + (costData.data||[]).length;
-    status.textContent = totalPts > 0 ? totalPts + ' data points' : 'No data yet — collector polls every 60s';
+    status.textContent = totalPts > 0 ? totalPts + ' data points' : 'No data yet - collector polls every 60s';
   } catch(e) {
     status.textContent = 'Error: ' + e.message;
     console.error('History load error:', e);
@@ -8924,7 +8958,7 @@ async function showSnapshot(ts) {
       </div>
     </div>
     <div class="comp-modal-body" id="comp-modal-body">Loading...</div>
-    <div class="comp-modal-footer" id="comp-modal-footer">Last updated: —</div>
+    <div class="comp-modal-footer" id="comp-modal-footer">Last updated: -</div>
   </div>
 </div>
 
@@ -8948,8 +8982,8 @@ async function showSnapshot(ts) {
     </div>
     <div class="modal-content" id="modal-content">Loading...</div>
     <div class="modal-footer">
-      <span id="modal-event-count">—</span>
-      <span id="modal-msg-count">—</span>
+      <span id="modal-event-count">-</span>
+      <span id="modal-msg-count">-</span>
     </div>
   </div>
 </div>
@@ -8961,7 +8995,7 @@ async function showSnapshot(ts) {
     <div style="font-size:48px; margin-bottom:16px;">🦞</div>
     <h2 style="color:var(--text-primary, #fff); margin:0 0 8px; font-size:24px; font-weight:700;">ClawMetry Setup</h2>
     <p style="color:var(--text-muted, #888); margin:0 0 24px; font-size:14px;">Enter your OpenClaw gateway token to connect.</p>
-    <input id="gw-token-input" type="password" placeholder="Paste your gateway token" 
+    <input id="gw-token-input" type="password" placeholder="Paste your gateway token"
       style="width:100%; padding:12px 16px; border:1px solid var(--border-primary, #444); border-radius:8px; background:var(--bg-primary, #111); color:var(--text-primary, #fff); font-size:14px; font-family:monospace; box-sizing:border-box; outline:none; margin-bottom:8px;"
       onkeydown="if(event.key==='Enter')gwSetupConnect()">
     <p id="gw-setup-hint" style="color:var(--text-muted, #888); font-size:12px; margin:0 0 4px; text-align:left;">Find it: <code style="color:var(--text-accent, #0af); background:rgba(0,170,255,0.1); padding:2px 6px; border-radius:4px;">docker exec $(docker ps -q) env | grep TOKEN</code> or <code style="color:var(--text-accent, #0af); background:rgba(0,170,255,0.1); padding:2px 6px; border-radius:4px;">gateway.auth.token</code></p>
@@ -9015,15 +9049,15 @@ async function gwSetupConnect() {
   const statusEl = document.getElementById('gw-setup-status');
   const token = document.getElementById('gw-token-input').value.trim();
   const url = document.getElementById('gw-url-input').value.trim();
-  
+
   errEl.style.display = 'none';
   if (!token) { errEl.textContent = 'Please enter a token'; errEl.style.display = 'block'; return; }
-  
+
   btn.textContent = 'Scanning for gateway...';
   btn.disabled = true;
   statusEl.textContent = 'Scanning ports to find your OpenClaw gateway...';
   statusEl.style.display = 'block';
-  
+
   try {
     const r = await fetch('/api/gw/config', {
       method: 'POST',
@@ -9168,7 +9202,7 @@ document.addEventListener('DOMContentLoaded', checkGwConfig);
     <div style="display:grid;grid-template-columns:auto 1fr;gap:10px 20px;align-items:start;font-size:13px;">
       <div style="display:flex;gap:4px;">
         <kbd style="display:inline-block;background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:5px;padding:2px 7px;font-family:monospace;font-size:12px;color:var(--text-primary);">1</kbd>
-        <span style="color:var(--text-muted);">–</span>
+        <span style="color:var(--text-muted);">-</span>
         <kbd style="display:inline-block;background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:5px;padding:2px 7px;font-family:monospace;font-size:12px;color:var(--text-primary);">8</kbd>
       </div>
       <span style="color:var(--text-secondary);">Switch tabs: Overview · Flow · Crons · Tokens · Memory · Main Agent · Sub Agents · Transcripts</span>
@@ -9343,7 +9377,7 @@ def _gw_invoke(tool, args=None):
     cfg = _load_gw_config()
     token = cfg.get('token')
     url = cfg.get('url')
-    
+
     # Try direct HTTP first
     if url and token:
         try:
@@ -9363,13 +9397,13 @@ def _gw_invoke(tool, args=None):
                     return data.get('result', {}).get('details', data.get('result', {}))
         except Exception:
             pass
-    
+
     # Fallback: docker exec (for Hostinger/Docker installs where gateway binds to loopback)
     if token:
         result = _gw_invoke_docker(tool, args, token)
         if result:
             return result
-    
+
     return None
 
 def _gw_invoke_docker(tool, args=None, token=None):
@@ -9415,13 +9449,13 @@ def api_gw_config():
             return jsonify({'error': 'Could not find OpenClaw gateway. Please provide URL.'}), 404
         # Validate the connection
         valid = False
-        
+
         # Docker mode: skip HTTP/WS, validate via docker exec
         if gw_url.startswith('docker://'):
             result = _gw_invoke_docker('session_status', {}, token)
             if result:
                 valid = True
-        
+
         # WebSocket validation (non-docker)
         if not valid and not gw_url.startswith('docker://'):
             ws_url = gw_url.replace('http://', 'ws://').replace('https://', 'wss://')
@@ -9448,7 +9482,7 @@ def api_gw_config():
                 ws.close()
             except Exception:
                 pass
-        
+
         # HTTP fallback validation (non-docker)
         if not valid and not gw_url.startswith('docker://'):
             try:
@@ -9464,14 +9498,14 @@ def api_gw_config():
                     valid = result.get('ok', False)
             except Exception:
                 pass
-        
+
         # Docker exec fallback (last resort)
         if not valid:
             result = _gw_invoke_docker('session_status', {}, token)
             if result:
                 valid = True
                 gw_url = 'docker://localhost:18789'
-        
+
         if not valid:
             return jsonify({'error': 'Invalid token or gateway not responding'}), 401
         # Save config
@@ -9598,7 +9632,7 @@ def _auto_discover_gateway(token):
                     return url
         except Exception:
             continue
-    
+
     # Last resort: try docker exec
     try:
         result = _gw_invoke_docker('session_status', {}, token)
@@ -9770,25 +9804,25 @@ def api_overview():
         disk_color = 'green' if disk_pct < 80 else ('yellow' if disk_pct < 90 else 'red')
         system.append(['Disk /', f'{disk[2]} / {disk[1]} ({disk[4]})', disk_color])
     except Exception:
-        system.append(['Disk /', '—', ''])
+        system.append(['Disk /', '-', ''])
 
     try:
         mem = subprocess.run(['free', '-h'], capture_output=True, text=True).stdout.strip().split('\n')[1].split()
         system.append(['RAM', f'{mem[2]} / {mem[1]}', ''])
     except Exception:
-        system.append(['RAM', '—', ''])
+        system.append(['RAM', '-', ''])
 
     try:
         load = open('/proc/loadavg').read().split()[:3]
         system.append(['Load', ' '.join(load), ''])
     except Exception:
-        system.append(['Load', '—', ''])
+        system.append(['Load', '-', ''])
 
     try:
         uptime = subprocess.run(['uptime', '-p'], capture_output=True, text=True).stdout.strip()
         system.append(['Uptime', uptime.replace('up ', ''), ''])
     except Exception:
-        system.append(['Uptime', '—', ''])
+        system.append(['Uptime', '-', ''])
 
     gw = subprocess.run(['pgrep', '-f', 'moltbot'], capture_output=True, text=True)
     system.append(['Gateway', 'Running' if gw.returncode == 0 else 'Stopped',
@@ -11000,7 +11034,7 @@ def _get_model_pricing():
     """Model-specific pricing per 1M tokens (input, output)."""
     return {
         'claude-opus': (15.0, 75.0),      # Claude 3 Opus
-        'claude-sonnet': (3.0, 15.0),     # Claude 3 Sonnet  
+        'claude-sonnet': (3.0, 15.0),     # Claude 3 Sonnet
         'claude-haiku': (0.25, 1.25),     # Claude 3 Haiku
         'gpt-4': (10.0, 30.0),            # GPT-4 Turbo
         'gpt-3.5': (1.0, 2.0),            # GPT-3.5 Turbo
@@ -11010,10 +11044,10 @@ def _get_model_pricing():
 def _calculate_enhanced_costs(daily_tokens, today_str, week_start, month_start):
     """Enhanced cost calculation with model-specific pricing."""
     pricing = _get_model_pricing()
-    
+
     # For log parsing fallback, assume 60/40 input/output ratio
     input_ratio, output_ratio = 0.6, 0.4
-    
+
     def calc_cost(tokens, model_key='default'):
         if tokens == 0:
             return 0.0
@@ -11021,14 +11055,14 @@ def _calculate_enhanced_costs(daily_tokens, today_str, week_start, month_start):
         input_cost = (tokens * input_ratio) * (in_price / 1_000_000)
         output_cost = (tokens * output_ratio) * (out_price / 1_000_000)
         return input_cost + output_cost
-    
+
     today_tok = daily_tokens.get(today_str, 0)
     week_tok = sum(v for k, v in daily_tokens.items() if k >= week_start)
     month_tok = sum(v for k, v in daily_tokens.items() if k >= month_start)
-    
+
     return (
         round(calc_cost(today_tok), 4),
-        round(calc_cost(week_tok), 4), 
+        round(calc_cost(week_tok), 4),
         round(calc_cost(month_tok), 4)
     )
 
@@ -11036,42 +11070,42 @@ def _analyze_usage_trends(daily_tokens):
     """Analyze usage trends for predictions."""
     if len(daily_tokens) < 3:
         return {'prediction': None, 'trend': 'insufficient_data'}
-    
+
     # Get last 7 days of data
     recent_days = sorted(daily_tokens.items())[-7:]
     if len(recent_days) < 3:
         return {'prediction': None, 'trend': 'insufficient_data'}
-    
+
     tokens_series = [v for k, v in recent_days]
-    
+
     # Simple trend analysis
     if len(tokens_series) >= 3:
         recent_avg = sum(tokens_series[-3:]) / 3
         older_avg = sum(tokens_series[:-3]) / max(1, len(tokens_series) - 3) if len(tokens_series) > 3 else recent_avg
-        
+
         if recent_avg > older_avg * 1.2:
             trend = 'increasing'
         elif recent_avg < older_avg * 0.8:
             trend = 'decreasing'
         else:
             trend = 'stable'
-        
+
         # Monthly prediction based on recent average
         daily_avg = sum(tokens_series[-7:]) / len(tokens_series[-7:])
         monthly_prediction = daily_avg * 30
-        
+
         return {
             'trend': trend,
             'dailyAvg': int(daily_avg),
             'monthlyPrediction': int(monthly_prediction),
         }
-    
+
     return {'prediction': None, 'trend': 'stable'}
 
 def _generate_cost_warnings(today_cost, week_cost, month_cost, trend_data):
     """Generate cost warnings based on thresholds."""
     warnings = []
-    
+
     # Daily cost warnings
     if today_cost > 10.0:
         warnings.append({
@@ -11081,16 +11115,16 @@ def _generate_cost_warnings(today_cost, week_cost, month_cost, trend_data):
         })
     elif today_cost > 5.0:
         warnings.append({
-            'type': 'elevated_daily_cost', 
+            'type': 'elevated_daily_cost',
             'level': 'warning',
             'message': f'Elevated daily cost: ${today_cost:.2f}',
         })
-    
-    # Weekly cost warnings  
+
+    # Weekly cost warnings
     if week_cost > 50.0:
         warnings.append({
             'type': 'high_weekly_cost',
-            'level': 'error', 
+            'level': 'error',
             'message': f'High weekly cost: ${week_cost:.2f} (threshold: $50)',
         })
     elif week_cost > 25.0:
@@ -11099,21 +11133,21 @@ def _generate_cost_warnings(today_cost, week_cost, month_cost, trend_data):
             'level': 'warning',
             'message': f'Elevated weekly cost: ${week_cost:.2f}',
         })
-    
+
     # Monthly cost warnings
     if month_cost > 200.0:
         warnings.append({
             'type': 'high_monthly_cost',
             'level': 'error',
-            'message': f'High monthly cost: ${month_cost:.2f} (threshold: $200)', 
+            'message': f'High monthly cost: ${month_cost:.2f} (threshold: $200)',
         })
     elif month_cost > 100.0:
         warnings.append({
             'type': 'elevated_monthly_cost',
-            'level': 'warning', 
+            'level': 'warning',
             'message': f'Elevated monthly cost: ${month_cost:.2f}',
         })
-    
+
     # Trend-based warnings
     if trend_data.get('trend') == 'increasing' and trend_data.get('monthlyPrediction', 0) > 300:
         warnings.append({
@@ -11121,7 +11155,7 @@ def _generate_cost_warnings(today_cost, week_cost, month_cost, trend_data):
             'level': 'warning',
             'message': f'Usage trending up - projected monthly cost: ${(trend_data["monthlyPrediction"] * 0.00003):.2f}',
         })
-    
+
     return warnings
 
 # ── Usage cache ─────────────────────────────────────────────────────────
@@ -11153,29 +11187,29 @@ def api_usage():
     daily_cost = {}
     model_usage = {}
     session_costs = {}
-    
+
     if os.path.isdir(sessions_dir):
         for fname in os.listdir(sessions_dir):
             if not fname.endswith('.jsonl'):
                 continue
             fpath = os.path.join(sessions_dir, fname)
             session_cost = 0
-            
+
             try:
                 with open(fpath, 'r') as f:
                     for line in f:
                         try:
                             obj = json.loads(line.strip())
-                            
+
                             # Only process message entries with usage data
                             if obj.get('type') != 'message':
                                 continue
-                                
+
                             message = obj.get('message', {})
                             usage = message.get('usage')
                             if not usage or not isinstance(usage, dict):
                                 continue
-                                
+
                             # Extract the exact usage format from the brief
                             tokens_data = {
                                 'input': usage.get('input', 0),
@@ -11185,16 +11219,16 @@ def api_usage():
                                 'totalTokens': usage.get('totalTokens', 0),
                                 'cost': usage.get('cost', {})
                             }
-                            
+
                             cost_data = tokens_data['cost']
                             if isinstance(cost_data, dict) and 'total' in cost_data:
                                 total_cost = float(cost_data['total'])
                             else:
                                 total_cost = 0.0
-                            
+
                             # Extract model name
                             model = message.get('model', 'unknown') or 'unknown'
-                            
+
                             # Get timestamp and convert to date
                             ts = obj.get('timestamp')
                             if ts:
@@ -11207,25 +11241,25 @@ def api_usage():
                                 else:
                                     # Handle numeric timestamps
                                     dt = datetime.fromtimestamp(ts / 1000 if ts > 1e12 else ts)
-                                
+
                                 day = dt.strftime('%Y-%m-%d')
-                                
+
                                 # Aggregate daily tokens and costs
                                 daily_tokens[day] = daily_tokens.get(day, 0) + tokens_data['totalTokens']
                                 daily_cost[day] = daily_cost.get(day, 0) + total_cost
-                                
+
                                 # Track model usage
                                 model_usage[model] = model_usage.get(model, 0) + tokens_data['totalTokens']
-                                
+
                                 # Track session costs
                                 session_cost += total_cost
-                                
+
                         except (json.JSONDecodeError, ValueError, KeyError):
                             continue
-                            
+
                 # Store session cost
                 session_costs[fname.replace('.jsonl', '')] = session_cost
-                        
+
             except Exception:
                 continue
 
@@ -11236,7 +11270,7 @@ def api_usage():
         d = today - timedelta(days=i)
         ds = d.strftime('%Y-%m-%d')
         days.append({
-            'date': ds, 
+            'date': ds,
             'tokens': daily_tokens.get(ds, 0),
             'cost': daily_cost.get(ds, 0)
         })
@@ -11245,32 +11279,32 @@ def api_usage():
     today_str = today.strftime('%Y-%m-%d')
     week_start = (today - timedelta(days=today.weekday())).strftime('%Y-%m-%d')
     month_start = today.strftime('%Y-%m-01')
-    
+
     today_tok = daily_tokens.get(today_str, 0)
     week_tok = sum(v for k, v in daily_tokens.items() if k >= week_start)
     month_tok = sum(v for k, v in daily_tokens.items() if k >= month_start)
-    
+
     today_cost = daily_cost.get(today_str, 0)
     week_cost = sum(v for k, v in daily_cost.items() if k >= week_start)
     month_cost = sum(v for k, v in daily_cost.items() if k >= month_start)
-    
+
     # Trend analysis & predictions
     trend_data = _analyze_usage_trends(daily_tokens)
-    
+
     # Cost warnings
     warnings = _generate_cost_warnings(today_cost, week_cost, month_cost, trend_data)
-    
+
     # Model breakdown for display
     model_breakdown = [
         {'model': k, 'tokens': v}
         for k, v in sorted(model_usage.items(), key=lambda x: -x[1])
     ]
-    
+
     result = {
         'source': 'transcripts',
         'days': days,
         'today': today_tok,
-        'week': week_tok, 
+        'week': week_tok,
         'month': month_tok,
         'todayCost': round(today_cost, 4),
         'weekCost': round(week_cost, 4),
@@ -11297,7 +11331,7 @@ def api_usage_export():
             # Call the same logic as /api/usage but get full data
             sessions_dir = SESSIONS_DIR or os.path.expanduser('~/.clawdbot/agents/main/sessions')
             daily_tokens = {}
-            
+
             if os.path.isdir(sessions_dir):
                 for fname in os.listdir(sessions_dir):
                     if not fname.endswith('.jsonl'):
@@ -11342,12 +11376,12 @@ def api_usage_export():
                                     pass
                     except Exception:
                         pass
-            
+
             today = datetime.now()
             today_str = today.strftime('%Y-%m-%d')
             week_start = (today - timedelta(days=today.weekday())).strftime('%Y-%m-%d')
             month_start = today.strftime('%Y-%m-01')
-            
+
             # Build data structure similar to OTLP
             days = []
             for i in range(30, -1, -1):  # Last 30 days for export
@@ -11356,21 +11390,21 @@ def api_usage_export():
                 tokens = daily_tokens.get(ds, 0)
                 cost = round(tokens * (30.0 / 1_000_000), 4)  # Default pricing
                 days.append({'date': ds, 'tokens': tokens, 'cost': cost})
-                
+
             data = {'days': days}
-        
+
         # Generate CSV content
         csv_lines = ['Date,Tokens,Cost']
         for day in data['days']:
             csv_lines.append(f"{day['date']},{day['tokens']},{day.get('cost', 0):.4f}")
-        
+
         csv_content = '\n'.join(csv_lines)
-        
+
         response = make_response(csv_content)
         response.headers['Content-Type'] = 'text/csv'
         response.headers['Content-Disposition'] = f'attachment; filename=openclaw-usage-{datetime.now().strftime("%Y%m%d")}.csv'
         return response
-        
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -12845,19 +12879,19 @@ def api_component_brain():
 
 @app.route('/api/heatmap')
 def api_heatmap():
-    """Activity heatmap - events per hour for the last 7 days."""
+    """Activity heatmap - events per hour for the last 30 days."""
     now = datetime.now()
-    # Initialize 7 days × 24 hours grid
+    # Initialize 30 days × 24 hours grid
     grid = {}
     day_labels = []
-    for i in range(6, -1, -1):
+    for i in range(29, -1, -1):
         d = now - timedelta(days=i)
         ds = d.strftime('%Y-%m-%d')
         grid[ds] = [0] * 24
-        day_labels.append({'date': ds, 'label': d.strftime('%a %d')})
+        day_labels.append({'date': ds, 'label': d.strftime('%m/%d')})
 
-    # Parse log files for the last 7 days
-    for i in range(7):
+    # Parse log files for the last 30 days
+    for i in range(30):
         d = now - timedelta(days=i)
         ds = d.strftime('%Y-%m-%d')
         log_file = _find_log_file(ds)
@@ -12888,7 +12922,7 @@ def api_heatmap():
     max_val = max(max(hours) for hours in grid.values()) if grid else 0
     days = []
     for dl in day_labels:
-        days.append({'label': dl['label'], 'hours': grid.get(dl['date'], [0] * 24)})
+        days.append({'label': dl['label'], 'date': dl['date'], 'hours': grid.get(dl['date'], [0] * 24)})
 
     return jsonify({'days': days, 'max': max_val})
 
@@ -13194,16 +13228,16 @@ def api_cost_optimization():
     try:
         # Get cost metrics
         costs = _get_cost_summary()
-        
+
         # Check Ollama availability
         local_models = _check_ollama_availability()
-        
+
         # Generate recommendations
         recommendations = _generate_cost_recommendations(costs, local_models)
-        
+
         # Get recent expensive operations
         expensive_ops = _get_expensive_operations()
-        
+
         return jsonify({
             'costs': costs,
             'localModels': local_models,
@@ -13225,10 +13259,10 @@ def api_automation_analysis():
     try:
         # Analyze recent patterns
         patterns = _analyze_work_patterns()
-        
+
         # Generate automation suggestions
         suggestions = _generate_automation_suggestions(patterns)
-        
+
         return jsonify({
             'patterns': patterns,
             'suggestions': suggestions,
@@ -13398,27 +13432,27 @@ def _get_cost_summary():
     today = now.strftime('%Y-%m-%d')
     week_start = (now - timedelta(days=7)).strftime('%Y-%m-%d')
     month_start = (now - timedelta(days=30)).strftime('%Y-%m-%d')
-    
+
     costs = {'today': 0, 'week': 0, 'month': 0, 'projected': 0}
-    
+
     with _metrics_lock:
         for entry in metrics_store.get('cost', []):
             entry_date = datetime.fromtimestamp(entry.get('timestamp', 0) / 1000, CET).strftime('%Y-%m-%d')
             entry_cost = entry.get('usd', 0)
-            
+
             if entry_date == today:
                 costs['today'] += entry_cost
             if entry_date >= week_start:
                 costs['week'] += entry_cost
             if entry_date >= month_start:
                 costs['month'] += entry_cost
-    
+
     # Project monthly cost based on current daily average
     if costs['month'] > 0:
         days_in_period = min(30, (now - datetime.strptime(month_start, '%Y-%m-%d').replace(tzinfo=CET)).days + 1)
         daily_avg = costs['month'] / days_in_period
         costs['projected'] = daily_avg * 30
-    
+
     return costs
 
 
@@ -13431,14 +13465,14 @@ def _check_ollama_availability():
             data = response.json()
             models = data.get('models', [])
             tool_capable_models = []
-            
+
             for model in models:
                 # Check if model supports tools (simplified check)
                 model_name = model.get('name', '')
                 # Common tool-capable models
                 if any(x in model_name.lower() for x in ['llama3', 'qwen', 'gpt-oss', 'mistral', 'deepseek']):
                     tool_capable_models.append(model_name)
-            
+
             return {
                 'available': True,
                 'count': len(tool_capable_models),
@@ -13446,14 +13480,14 @@ def _check_ollama_availability():
             }
     except Exception:
         pass
-    
+
     return {'available': False, 'count': 0, 'models': []}
 
 
 def _generate_cost_recommendations(costs, local_models):
     """Generate cost optimization recommendations."""
     recommendations = []
-    
+
     # High cost alerts
     if costs['today'] > 1.0:
         recommendations.append({
@@ -13462,7 +13496,7 @@ def _generate_cost_recommendations(costs, local_models):
             'priority': 'high',
             'action': 'Review recent expensive operations below'
         })
-    
+
     # Local model setup
     if not local_models['available']:
         recommendations.append({
@@ -13478,7 +13512,7 @@ def _generate_cost_recommendations(costs, local_models):
             'priority': 'low',
             'action': 'ollama pull qwen2.5-coder:32b'
         })
-    
+
     # Projected cost warning
     if costs['projected'] > 50.0:
         recommendations.append({
@@ -13487,7 +13521,7 @@ def _generate_cost_recommendations(costs, local_models):
             'priority': 'high',
             'action': 'Configure cost thresholds and local model routing'
         })
-    
+
     # Low-stakes task identification
     with _metrics_lock:
         recent_calls = metrics_store.get('tokens', [])[-100:]  # Last 100 calls
@@ -13499,26 +13533,26 @@ def _generate_cost_recommendations(costs, local_models):
                 'priority': 'medium',
                 'action': 'Implement task classification for local vs cloud routing'
             })
-    
+
     return recommendations
 
 
 def _get_expensive_operations():
     """Get recent high-cost operations for analysis."""
     expensive_ops = []
-    
+
     with _metrics_lock:
         # Combine cost and token data
         recent_tokens = metrics_store.get('tokens', [])[-50:]
         recent_costs = metrics_store.get('cost', [])[-50:]
-        
+
         # Match tokens with costs by timestamp (approximate)
         for cost_entry in recent_costs:
             if cost_entry.get('usd', 0) > 0.01:  # Only show operations >$0.01
                 timestamp = cost_entry.get('timestamp', 0)
                 model = cost_entry.get('model', 'unknown')
                 cost = cost_entry.get('usd', 0)
-                
+
                 # Find matching token entry
                 token_entry = None
                 for t in recent_tokens:
@@ -13526,10 +13560,10 @@ def _get_expensive_operations():
                         if t.get('model', '') == model:
                             token_entry = t
                             break
-                
+
                 tokens = token_entry.get('total', 0) if token_entry else 0
                 time_ago = datetime.fromtimestamp(timestamp / 1000, CET).strftime('%H:%M')
-                
+
                 # Determine if this operation could be optimized
                 can_optimize = False
                 if tokens > 0:
@@ -13537,7 +13571,7 @@ def _get_expensive_operations():
                     # This is a simplified check - in practice you'd analyze the actual request content
                     if tokens < 5000 and 'gpt' not in model.lower() and 'simple' in model.lower():
                         can_optimize = True
-                
+
                 expensive_ops.append({
                     'model': model,
                     'cost': cost,
@@ -13545,21 +13579,21 @@ def _get_expensive_operations():
                     'timeAgo': time_ago,
                     'canOptimize': can_optimize
                 })
-    
+
     return sorted(expensive_ops, key=lambda x: x['cost'], reverse=True)[:10]
 
 
 def _analyze_work_patterns():
     """Analyze recent work patterns from logs and metrics to detect repetitive tasks."""
     patterns = []
-    
+
     try:
         # Analyze recent log files for repetitive patterns
         log_files = _get_recent_log_files(7)  # Last 7 days
         command_frequency = {}
         tool_frequency = {}
         error_patterns = {}
-        
+
         for log_file in log_files:
             try:
                 with open(log_file, 'r', encoding='utf-8', errors='ignore') as f:
@@ -13567,7 +13601,7 @@ def _analyze_work_patterns():
                         line = line.strip()
                         if not line:
                             continue
-                        
+
                         # Track tool usage patterns
                         if 'tool_call' in line and 'exec' in line:
                             try:
@@ -13580,21 +13614,21 @@ def _analyze_work_patterns():
                                         command_frequency[cmd] = command_frequency.get(cmd, 0) + 1
                             except:
                                 pass
-                        
+
                         # Track tool names
                         for tool in ['curl', 'git', 'npm', 'systemctl', 'grep', 'find', 'ls']:
                             if tool in line and 'tool_call' in line:
                                 tool_frequency[tool] = tool_frequency.get(tool, 0) + 1
-                        
+
                         # Track common error patterns
                         if 'error' in line.lower() or 'failed' in line.lower():
                             for pattern in ['connection failed', 'timeout', 'not found', 'permission denied']:
                                 if pattern in line.lower():
                                     error_patterns[pattern] = error_patterns.get(pattern, 0) + 1
-                                    
+
             except Exception:
                 continue
-        
+
         # Generate pattern insights
         # High-frequency commands
         for cmd, count in command_frequency.items():
@@ -13610,7 +13644,7 @@ def _analyze_work_patterns():
                     'type': 'command',
                     'target': cmd
                 })
-        
+
         # Repeated error handling
         for error, count in error_patterns.items():
             if count >= 3:
@@ -13623,7 +13657,7 @@ def _analyze_work_patterns():
                     'type': 'error',
                     'target': error
                 })
-        
+
         # Check for Mission Control task patterns (only if MC_URL is configured)
         if MC_URL:
             try:
@@ -13651,7 +13685,7 @@ def _analyze_work_patterns():
                                 })
             except Exception:
                 pass
-            
+
     except Exception as e:
         # Add a debug pattern if analysis fails
         patterns.append({
@@ -13663,18 +13697,18 @@ def _analyze_work_patterns():
             'type': 'debug',
             'target': 'analysis'
         })
-    
+
     return sorted(patterns, key=lambda x: (x['priority'] == 'high', x['priority'] == 'medium', x['confidence']), reverse=True)
 
 
 def _generate_automation_suggestions(patterns):
     """Generate concrete automation suggestions based on detected patterns."""
     suggestions = []
-    
+
     for pattern in patterns:
         if pattern['type'] == 'command' and pattern['target']:
             cmd = pattern['target']
-            
+
             # Command-specific automation suggestions
             if cmd in ['curl', 'git', 'systemctl']:
                 suggestions.append({
@@ -13685,7 +13719,7 @@ def _generate_automation_suggestions(patterns):
                     'impact': 'Medium - reduces manual monitoring',
                     'effort': 'Low - single script creation'
                 })
-            
+
             elif cmd in ['npm', 'git']:
                 suggestions.append({
                     'title': f'{cmd.upper()} automation skill',
@@ -13695,7 +13729,7 @@ def _generate_automation_suggestions(patterns):
                     'impact': 'High - automates entire workflow',
                     'effort': 'Medium - requires skill development'
                 })
-        
+
         elif pattern['type'] == 'error':
             error_type = pattern['target']
             suggestions.append({
@@ -13706,7 +13740,7 @@ def _generate_automation_suggestions(patterns):
                 'impact': 'High - prevents manual intervention',
                 'effort': 'Medium - requires error detection logic'
             })
-        
+
         elif pattern['type'] == 'task':
             task_type = pattern['target']
             if task_type in ['deploy', 'build', 'update']:
@@ -13718,7 +13752,7 @@ def _generate_automation_suggestions(patterns):
                     'impact': 'Very High - eliminates manual tasks',
                     'effort': 'High - requires pipeline setup'
                 })
-    
+
     # Add some universal automation suggestions
     suggestions.extend([
         {
@@ -13746,7 +13780,7 @@ def _generate_automation_suggestions(patterns):
             'effort': 'Medium - requires backup checking logic'
         }
     ])
-    
+
     # Remove duplicates and limit to top suggestions
     seen_titles = set()
     unique_suggestions = []
@@ -13754,14 +13788,14 @@ def _generate_automation_suggestions(patterns):
         if suggestion['title'] not in seen_titles:
             seen_titles.add(suggestion['title'])
             unique_suggestions.append(suggestion)
-    
+
     return unique_suggestions[:8]  # Limit to 8 suggestions max
 
 
 def _get_recent_log_files(days=7):
     """Get list of recent log files to analyze."""
     log_files = []
-    
+
     if LOG_DIR and os.path.isdir(LOG_DIR):
         # OpenClaw/Moltbot logs
         for i in range(days):
@@ -13769,11 +13803,11 @@ def _get_recent_log_files(days=7):
             log_file = os.path.join(LOG_DIR, f'moltbot-{date}.log')
             if os.path.isfile(log_file):
                 log_files.append(log_file)
-    
+
     # Also check journalctl if available
     try:
-        result = subprocess.run(['journalctl', '--user', '-u', 'moltbot-gateway', 
-                               '--since', f'{days} days ago', '--no-pager'], 
+        result = subprocess.run(['journalctl', '--user', '-u', 'moltbot-gateway',
+                               '--since', f'{days} days ago', '--no-pager'],
                               capture_output=True, text=True, timeout=10)
         if result.returncode == 0 and result.stdout.strip():
             # Create temporary file with journalctl output for analysis
@@ -13783,7 +13817,7 @@ def _get_recent_log_files(days=7):
                 log_files.append(f.name)
     except:
         pass
-    
+
     return log_files
 
 
@@ -13846,7 +13880,7 @@ def _run_setup_wizard():
             print(f"⚠️  Got HTTP {resp.status_code} (may still work)")
     except Exception as e:
         print(f"⚠️  Could not reach Turso: {e}")
-        print("  Saving config anyway — you can fix the URL later.")
+        print("  Saving config anyway - you can fix the URL later.")
 
     # Save config
     cfg_dir = os.path.expanduser('~/.clawmetry')
