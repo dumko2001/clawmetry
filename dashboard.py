@@ -6048,6 +6048,8 @@ async function loadHeatmap() {
 
 // ===== Usage / Token Tracking =====
 async function loadUsage() {
+  // Load activity heatmap alongside usage stats
+  loadHeatmap().catch(function(e) { console.warn('heatmap load failed', e); });
   try {
     var data = await fetch('/api/usage').then(r => r.json());
     function fmtTokens(n) { return n >= 1000000 ? (n/1000000).toFixed(1) + 'M' : n >= 1000 ? (n/1000).toFixed(0) + 'K' : String(n); }
@@ -12879,19 +12881,32 @@ def api_component_brain():
 
 @app.route('/api/heatmap')
 def api_heatmap():
-    """Activity heatmap - events per hour for the last 30 days."""
+    """Activity heatmap - events per hour for the last N days (default 7, max 30).
+
+    Query params:
+        days (int): number of days to include, 1-30, default 7.
+    """
+    try:
+        num_days = max(1, min(30, int(request.args.get('days', 7))))
+    except (ValueError, TypeError):
+        num_days = 7
+
     now = datetime.now()
-    # Initialize 30 days × 24 hours grid
+    # Initialize N days × 24 hours grid
     grid = {}
     day_labels = []
-    for i in range(29, -1, -1):
+    for i in range(num_days - 1, -1, -1):
         d = now - timedelta(days=i)
         ds = d.strftime('%Y-%m-%d')
         grid[ds] = [0] * 24
-        day_labels.append({'date': ds, 'label': d.strftime('%m/%d')})
+        # Short label: weekday for ≤7 days, month-day for longer ranges
+        if num_days <= 7:
+            day_labels.append({'date': ds, 'label': d.strftime('%a %d')})
+        else:
+            day_labels.append({'date': ds, 'label': d.strftime('%b %d')})
 
-    # Parse log files for the last 30 days
-    for i in range(30):
+    # Parse log files for each day
+    for i in range(num_days):
         d = now - timedelta(days=i)
         ds = d.strftime('%Y-%m-%d')
         log_file = _find_log_file(ds)
@@ -12920,11 +12935,11 @@ def api_heatmap():
             pass
 
     max_val = max(max(hours) for hours in grid.values()) if grid else 0
-    days = []
+    result_days = []
     for dl in day_labels:
-        days.append({'label': dl['label'], 'date': dl['date'], 'hours': grid.get(dl['date'], [0] * 24)})
+        result_days.append({'label': dl['label'], 'date': dl['date'], 'hours': grid.get(dl['date'], [0] * 24)})
 
-    return jsonify({'days': days, 'max': max_val})
+    return jsonify({'days': result_days, 'max': max_val, 'num_days': num_days})
 
 
 @app.route('/api/system-health')
