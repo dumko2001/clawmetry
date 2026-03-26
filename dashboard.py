@@ -8317,6 +8317,13 @@ function clawmetryLogout(){
     <canvas id="usage-session-cost-bar" height="180" style="width:100%;display:block;margin-bottom:12px;"></canvas>
     <div id="usage-session-cost-table" style="font-size:12px;color:var(--text-secondary);">Loading...</div>
   </div>
+  <!-- Skills Leaderboard (GH #303) -->
+  <div class="section-title">🎯 Skills Leaderboard
+    <span style="float:right;font-size:12px;font-weight:400;color:var(--text-muted);" id="skill-total-cost-summary"></span>
+  </div>
+  <div class="card">
+    <div id="skill-leaderboard-content" style="font-size:12px;color:var(--text-secondary);">Loading...</div>
+  </div>
   <div id="otel-extra-sections" style="display:none;">
     <div class="grid" style="margin-top:16px;">
       <div class="card">
@@ -11636,6 +11643,70 @@ function renderSessionCostChart() {
       tableHtml = '<div style="margin-bottom:8px;padding:6px 10px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:6px;font-size:12px;color:#fca5a5;">⚠ ' + aboveThreshold.length + ' session' + (aboveThreshold.length > 1 ? 's' : '') + ' exceeded the $' + threshold.toFixed(2) + ' threshold</div>' + tableHtml;
     }
     tableEl.innerHTML = tableHtml;
+  }
+}
+
+// ===== Skills Leaderboard (GH #303) =====
+async function loadSkillLeaderboard() {
+  var el = document.getElementById('skill-leaderboard-content');
+  var summEl = document.getElementById('skill-total-cost-summary');
+  if (!el) return;
+  try {
+    var data = await fetch('/api/skill-attribution').then(function(r) { return r.json(); });
+    var skills = data.skills || [];
+    if (summEl) {
+      if (data.total_skill_cost > 0) {
+        summEl.textContent = 'Total skill spend: $' + data.total_skill_cost.toFixed(4) + ' (last ' + data.period_days + ' days)';
+      } else {
+        summEl.textContent = '';
+      }
+    }
+    if (!skills.length) {
+      el.innerHTML = '<div style="color:var(--text-muted);padding:8px 0;">No skill invocations detected in the last ' + data.period_days + ' days. Skills are detected when the agent reads a SKILL.md file.</div>';
+      return;
+    }
+    var trendIcon = function(t) {
+      if (t === 'up') return '<span style="color:#22c55e;" title="More invocations this week vs last week">&#8593;</span>';
+      if (t === 'down') return '<span style="color:#f87171;" title="Fewer invocations this week vs last week">&#8595;</span>';
+      return '<span style="color:var(--text-muted);" title="Stable">&#8594;</span>';
+    };
+    var fmtCost = function(c) { return c >= 0.01 ? '$' + c.toFixed(4) : c > 0 ? '<$0.01' : '$0.00'; };
+    var fmtTok = function(n) { return n >= 1000000 ? (n/1000000).toFixed(1)+'M' : n >= 1000 ? (n/1000).toFixed(0)+'K' : String(n); };
+    var html = '<table style="width:100%;border-collapse:collapse;">';
+    html += '<thead><tr style="color:var(--text-muted);font-size:10px;text-transform:uppercase;letter-spacing:0.5px;">';
+    html += '<th style="text-align:left;padding:4px 8px;">#</th>';
+    html += '<th style="text-align:left;padding:4px 8px;">Skill</th>';
+    html += '<th style="text-align:center;padding:4px 8px;">Runs</th>';
+    html += '<th style="text-align:right;padding:4px 8px;">Total Cost</th>';
+    html += '<th style="text-align:right;padding:4px 8px;">Avg/Run</th>';
+    html += '<th style="text-align:right;padding:4px 8px;">Tokens</th>';
+    html += '<th style="text-align:center;padding:4px 8px;">Trend</th>';
+    html += '<th style="text-align:left;padding:4px 8px;">Last Used</th>';
+    html += '<th style="text-align:center;padding:4px 8px;">ClawHub</th>';
+    html += '</tr></thead><tbody>';
+    skills.forEach(function(s, i) {
+      var lastUsed = s.last_used ? s.last_used.replace('T', ' ').replace('Z', '').substring(0, 16) : '--';
+      var rowBg = i % 2 === 0 ? 'background:rgba(255,255,255,0.02);' : '';
+      html += '<tr style="' + rowBg + 'border-top:1px solid var(--border-primary);">';
+      html += '<td style="padding:6px 8px;color:var(--text-muted);font-size:11px;">' + (i+1) + '</td>';
+      html += '<td style="padding:6px 8px;font-weight:600;color:var(--text-primary);">';
+      html += '<span style="display:inline-block;padding:2px 8px;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.25);border-radius:12px;font-size:12px;">' + escHtml(s.name) + '</span>';
+      html += '</td>';
+      html += '<td style="padding:6px 8px;text-align:center;font-size:13px;color:var(--text-primary);">' + s.invocations + '</td>';
+      html += '<td style="padding:6px 8px;text-align:right;font-size:13px;color:var(--text-primary);">' + fmtCost(s.total_cost) + '</td>';
+      html += '<td style="padding:6px 8px;text-align:right;font-size:12px;color:var(--text-secondary);">' + fmtCost(s.avg_cost_per_run) + '</td>';
+      html += '<td style="padding:6px 8px;text-align:right;font-size:12px;color:var(--text-muted);">' + fmtTok(s.total_tokens) + '</td>';
+      html += '<td style="padding:6px 8px;text-align:center;font-size:16px;">' + trendIcon(s.trend) + '</td>';
+      html += '<td style="padding:6px 8px;font-size:11px;color:var(--text-muted);">' + escHtml(lastUsed) + '</td>';
+      html += '<td style="padding:6px 8px;text-align:center;">';
+      html += '<a href="' + escHtml(s.clawhub_url) + '" target="_blank" rel="noopener" style="color:#60a5fa;font-size:11px;text-decoration:none;" title="View on ClawHub">↗</a>';
+      html += '</td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    el.innerHTML = html;
+  } catch(e) {
+    if (el) el.innerHTML = '<span style="color:var(--text-muted);">Could not load skill data.</span>';
   }
 }
 
@@ -19439,6 +19510,184 @@ def api_usage_by_plugin():
         })
     rows.sort(key=lambda r: r['total_tokens'], reverse=True)
     return jsonify({'plugins': rows})
+
+
+# ── Skill attribution (ClawHub integration, GH #303) ─────────────────────────
+_skill_attribution_cache = {'data': None, 'ts': 0}
+_SKILL_ATTRIBUTION_TTL = 120  # seconds
+_SKILL_WINDOW_TURNS = 5  # turns after SKILL.md read to attribute cost to that skill
+
+
+def _extract_skill_name_from_path(path):
+    """Extract skill name from a SKILL.md file path.
+
+    Examples:
+      /home/vivek/clawd/skills/weather/SKILL.md  -> weather
+      .../openclaw/skills/coding-agent/SKILL.md  -> coding-agent
+    """
+    if not path:
+        return None
+    norm = path.replace('\\', '/')
+    if 'skill' not in norm.lower():
+        return None
+    parts = [p for p in norm.split('/') if p]
+    for i, part in enumerate(parts):
+        if part.upper() == 'SKILL.MD' and i >= 1:
+            return parts[i - 1].lower()
+    if 'skills/' in norm.lower():
+        idx = norm.lower().rfind('skills/')
+        rest = norm[idx + 7:]
+        skill = rest.split('/')[0].lower()
+        if skill and skill.upper() != 'SKILL.MD':
+            return skill
+    return None
+
+
+def _compute_skill_attribution(days=30):
+    """Scan session logs and attribute token cost per skill invocation.
+
+    Detects skill invocations via `read` toolCall events referencing SKILL.md
+    paths. Tokens/cost for the next _SKILL_WINDOW_TURNS events in the same
+    session are attributed to that skill (sliding-window heuristic).
+    """
+    import time as _time
+    now = _time.time()
+    cache = _skill_attribution_cache
+    if cache['data'] is not None and (now - cache['ts']) < _SKILL_ATTRIBUTION_TTL:
+        return cache['data']
+
+    sessions_dir = _get_sessions_dir()
+    cutoff_ts = now - days * 86400
+    skill_invocations = {}  # skill_name -> list of {ts, tokens, cost, session_id}
+
+    if os.path.isdir(sessions_dir):
+        for fname in sorted(os.listdir(sessions_dir)):
+            if not fname.endswith('.jsonl'):
+                continue
+            fpath = os.path.join(sessions_dir, fname)
+            try:
+                if os.path.getmtime(fpath) < cutoff_ts:
+                    continue
+            except OSError:
+                continue
+            sid = fname.replace('.jsonl', '')
+            fallback_dt = datetime.fromtimestamp(os.path.getmtime(fpath))
+            try:
+                events = []
+                with open(fpath, 'r') as f:
+                    for raw in f:
+                        raw = raw.strip()
+                        if not raw:
+                            continue
+                        try:
+                            obj = json.loads(raw)
+                        except Exception:
+                            continue
+                        ts = _parse_event_timestamp(
+                            obj.get('timestamp') or obj.get('time') or obj.get('created_at'),
+                            fallback_dt
+                        )
+                        metrics = _extract_usage_metrics(obj)
+                        events.append({'obj': obj, 'ts': ts,
+                                       'tokens': metrics['tokens'], 'cost': metrics['cost']})
+                for idx, ev in enumerate(events):
+                    obj = ev['obj']
+                    ts = ev['ts']
+                    if ts and ts.timestamp() < cutoff_ts:
+                        continue
+                    msg = obj.get('message', {}) if isinstance(obj.get('message'), dict) else {}
+                    content = msg.get('content', [])
+                    if not isinstance(content, list):
+                        continue
+                    for part in content:
+                        if not isinstance(part, dict):
+                            continue
+                        if part.get('type') != 'toolCall':
+                            continue
+                        if (part.get('name') or '').lower() != 'read':
+                            continue
+                        args = part.get('arguments') or part.get('input') or {}
+                        if isinstance(args, str):
+                            try:
+                                args = json.loads(args)
+                            except Exception:
+                                args = {}
+                        path_val = str(args.get('file_path') or args.get('path') or '')
+                        skill = _extract_skill_name_from_path(path_val)
+                        if not skill:
+                            continue
+                        # Attribute tokens from next _SKILL_WINDOW_TURNS events
+                        window_tokens = 0
+                        window_cost = 0.0
+                        end_idx = min(idx + _SKILL_WINDOW_TURNS + 1, len(events))
+                        for j in range(idx, end_idx):
+                            window_tokens += events[j]['tokens']
+                            window_cost += events[j]['cost']
+                        inv_ts = ts.timestamp() if ts else fallback_dt.timestamp()
+                        if skill not in skill_invocations:
+                            skill_invocations[skill] = []
+                        skill_invocations[skill].append({
+                            'ts': inv_ts, 'tokens': window_tokens,
+                            'cost': window_cost, 'session_id': sid,
+                        })
+            except Exception:
+                continue
+
+    last7_start = now - 7 * 86400
+    prev7_start = now - 14 * 86400
+    skills_out = []
+    for skill_name, invs in skill_invocations.items():
+        if not invs:
+            continue
+        total_tokens = sum(i['tokens'] for i in invs)
+        total_cost = sum(i['cost'] for i in invs)
+        last_used_ts = max(i['ts'] for i in invs)
+        last_used = datetime.utcfromtimestamp(last_used_ts).strftime('%Y-%m-%dT%H:%M:%SZ')
+        last7_count = sum(1 for i in invs if i['ts'] >= last7_start)
+        prev7_count = sum(1 for i in invs if prev7_start <= i['ts'] < last7_start)
+        if last7_count > prev7_count * 1.2:
+            trend = 'up'
+        elif prev7_count > 0 and last7_count < prev7_count * 0.8:
+            trend = 'down'
+        else:
+            trend = 'stable'
+        n = len(invs)
+        skills_out.append({
+            'name': skill_name,
+            'clawhub_url': 'https://clawhub.com/skills/' + skill_name,
+            'invocations': n,
+            'total_tokens': int(round(total_tokens)),
+            'total_cost': round(total_cost, 6),
+            'avg_cost_per_run': round(total_cost / n, 6) if n else 0.0,
+            'avg_tokens_per_run': int(round(total_tokens / n)) if n else 0,
+            'last_used': last_used,
+            'last_used_ts': last_used_ts,
+            'trend': trend,
+            'last7_invocations': last7_count,
+        })
+    skills_out.sort(key=lambda s: s['total_cost'], reverse=True)
+    total_skill_cost = round(sum(s['total_cost'] for s in skills_out), 6)
+    result = {
+        'skills': skills_out,
+        'period_days': days,
+        'total_skill_cost': total_skill_cost,
+        'generated_at': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
+    }
+    cache['data'] = result
+    cache['ts'] = now
+    return result
+
+
+@bp_usage.route('/api/skill-attribution')
+def api_skill_attribution():
+    """Return per-skill cost attribution leaderboard with ClawHub links (GH #303)."""
+    try:
+        days = int(request.args.get('days', 30))
+    except (ValueError, TypeError):
+        days = 30
+    days = max(1, min(days, 90))
+    data = _compute_skill_attribution(days=days)
+    return jsonify(data)
 
 
 @bp_usage.route('/api/usage/export')
