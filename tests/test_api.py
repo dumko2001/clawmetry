@@ -443,3 +443,55 @@ class TestMemoryAnalytics:
             assert f["status"] in ("ok", "warning", "critical")
 
 
+
+
+class TestTokenVelocity:
+    def test_velocity_endpoint_returns_200(self, api, base_url):
+        r = api.get(f"{base_url}/api/alerts/velocity", timeout=15)
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text[:200]}"
+
+    def test_velocity_has_required_keys(self, api, base_url):
+        r = api.get(f"{base_url}/api/alerts/velocity", timeout=15)
+        assert r.status_code == 200
+        d = r.json()
+        for key in ("tokens_in_window", "cost_in_window", "cost_per_min",
+                    "max_consecutive_tool_calls", "active_sessions",
+                    "alert_active", "breaches", "thresholds", "window_sec"):
+            assert key in d, f"Missing key: {key}"
+
+    def test_velocity_breaches_is_dict(self, api, base_url):
+        r = api.get(f"{base_url}/api/alerts/velocity", timeout=15)
+        assert r.status_code == 200
+        d = r.json()
+        breaches = d.get("breaches", {})
+        for key in ("token_velocity", "tool_chain", "cost_velocity"):
+            assert key in breaches, f"Missing breach key: {key}"
+
+    def test_velocity_active_sessions_is_list(self, api, base_url):
+        r = api.get(f"{base_url}/api/alerts/velocity", timeout=15)
+        assert r.status_code == 200
+        assert isinstance(r.json().get("active_sessions"), list)
+
+    def test_velocity_custom_window(self, api, base_url):
+        r = api.get(f"{base_url}/api/alerts/velocity?window_sec=60", timeout=15)
+        assert r.status_code == 200
+        assert r.json().get("window_sec") == 60
+
+    def test_velocity_config_get(self, api, base_url):
+        r = api.get(f"{base_url}/api/alerts/velocity/config", timeout=10)
+        assert r.status_code == 200
+        d = r.json()
+        assert "token_velocity_threshold" in d
+        assert "tool_chain_threshold" in d
+        assert "cost_velocity_threshold" in d
+
+    def test_velocity_config_update(self, api, base_url):
+        r = api.post(f"{base_url}/api/alerts/velocity/config",
+                     json={"token_velocity_threshold": 15000, "tool_chain_threshold": 25},
+                     timeout=10)
+        assert r.status_code == 200
+        d = r.json()
+        assert d.get("ok") is True
+        cfg = d.get("config", {})
+        assert cfg.get("token_velocity_threshold") == 15000
+        assert cfg.get("tool_chain_threshold") == 25

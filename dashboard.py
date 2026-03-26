@@ -151,6 +151,19 @@ _security_posture_hash = ''
 _ALERTS_CONFIG_FILE = os.path.expanduser('~/.openclaw/clawmetry-alerts.json')
 _security_posture_hash = ''
 
+# ── Token Velocity Alert Configuration ─────────────────────────────────
+_VELOCITY_TOKENS_PER_2MIN = 10_000   # default: alert if >10k tokens in any 2-min window
+_VELOCITY_COST_PER_5MIN = 0.50       # default: alert if >$0.50 in any 5-min window
+_VELOCITY_TOOL_CHAIN_MAX = 20        # default: alert if >20 consecutive tool calls without a human turn
+_velocity_alert_state = {            # tracks current active velocity alert
+    'active': False,
+    'reason': '',
+    'tokens_2min': 0,
+    'cost_5min': 0.0,
+    'tool_chain_len': 0,
+    'fired_at': 0,
+}
+
 # ── OTLP Metrics Store ─────────────────────────────────────────────────
 METRICS_FILE = None  # Set via CLI/env, defaults to {WORKSPACE}/.clawmetry-metrics.json
 _metrics_lock = threading.Lock()
@@ -1008,6 +1021,14 @@ def _budget_monitor_loop():
                                 _send_webhook_alert(webhook_url, {
                                     'type': rtype, 'message': msg, 'timestamp': now
                                 })
+
+
+            # Token velocity alerts (runaway loop detection — GH#313)
+            try:
+                velocity = _compute_token_velocity()
+                _check_velocity_alerts(velocity)
+            except Exception:
+                pass
 
         except Exception as e:
             print(f"Warning: Budget monitor error: {e}")
@@ -5050,6 +5071,19 @@ _AGENT_DOWN_SECONDS = 300  # 5 min with no OTLP data = agent down alert
 _last_heartbeat_ts = 0  # timestamp of last detected heartbeat event
 _heartbeat_interval_sec = 1800  # default 30 min, auto-detected from config
 _heartbeat_silent_since = 0  # when silence was first detected (0 = not silent)
+
+# ── Token Velocity Alert Configuration ─────────────────────────────────
+_VELOCITY_TOKENS_PER_2MIN = 10_000   # alert if >10k tokens in any 2-min window
+_VELOCITY_COST_PER_5MIN = 0.50       # alert if >$0.50 in any 5-min window
+_VELOCITY_TOOL_CHAIN_MAX = 20        # alert if >20 consecutive tool calls without a human turn
+_velocity_alert_state = {
+    'active': False,
+    'reason': '',
+    'tokens_2min': 0,
+    'cost_5min': 0.0,
+    'tool_chain_len': 0,
+    'fired_at': 0,
+}
 
 def _detect_heartbeat_interval():
     """Read heartbeat interval from OpenClaw config."""
@@ -18381,6 +18415,282 @@ def api_alerts_webhook_test():
     if not sent:
         return jsonify({'ok': False, 'error': 'No configured webhook URL for selected target'}), 400
     return jsonify({'ok': True, 'sent': sent})
+
+
+def _compute_token_velocity(sessions_dir=None, window_sec=120):
+    """Compute token velocity metrics for runaway-loop detection.
+
+    Scans JSONL session files for events in the last `window_sec` seconds.
+    Returns a dict with:
+      - tokens_in_window: total tokens consumed in the window
+      - cost_in_window: estimated cost in the window
+      - cost_per_min: annualised cost velocity ($/min)
+      - max_consecutive_tool_calls: longest unbroken tool-call chain without a human turn
+      - active_sessions: sessions that had events in the window
+      - computed_at: epoch timestamp
+    """
+    if sessions_dir is None:
+        sessions_dir = _get_sessions_dir()
+
+    now = time.time()
+    window_start = now - window_sec
+    total_tokens = 0
+    total_cost = 0.0
+    active_sessions = []
+    max_consecutive_tool_calls = 0
+
+    if not os.path.isdir(sessions_dir):
+        return {
+            'tokens_in_window': 0, 'cost_in_window': 0.0, 'cost_per_min': 0.0,
+            'max_consecutive_tool_calls': 0, 'active_sessions': [],
+            'window_sec': window_sec, 'computed_at': now,
+        }
+
+    try:
+        fnames = [f for f in os.listdir(sessions_dir) if f.endswith('.jsonl')]
+    except Exception:
+        fnames = []
+
+    for fname in fnames:
+        fpath = os.path.join(sessions_dir, fname)
+        try:
+            mtime = os.path.getmtime(fpath)
+            if mtime < window_start - 60:  # skip files not touched recently
+                continue
+        except Exception:
+            continue
+
+        sess_tokens = 0
+        sess_cost = 0.0
+        consecutive_tools = 0
+        sess_max_tools = 0
+        had_events = False
+
+        try:
+            with open(fpath, 'r', errors='replace') as f:
+                for line in f:
+                    try:
+                        obj = json.loads(line.strip())
+                    except Exception:
+                        continue
+
+                    ts = _parse_event_timestamp(
+                        obj.get('timestamp') or obj.get('time') or obj.get('created_at'),
+                        None
+                    )
+                    ts_val = ts.timestamp() if ts and hasattr(ts, 'timestamp') else 0
+                    if ts_val < window_start:
+                        # Check for tool calls for consecutive counting (all lines)
+                        msg = obj.get('message', {}) if isinstance(obj.get('message'), dict) else {}
+                        content = msg.get('content', []) if isinstance(msg.get('content'), list) else []
+                        has_tool = any(
+                            isinstance(b, dict) and b.get('type') in ('tool_use', 'tool_result')
+                            for b in content
+                        ) or bool(obj.get('tool_calls') or obj.get('tool_use'))
+                        role = msg.get('role', obj.get('role', ''))
+                        if role == 'user' and not has_tool:
+                            consecutive_tools = 0
+                        continue
+
+                    had_events = True
+                    usage = _extract_usage_metrics(obj)
+                    tokens = usage['tokens']
+                    cost = usage['cost']
+                    if tokens > 0:
+                        sess_tokens += tokens
+                        sess_cost += cost
+
+                    # Consecutive tool-call tracking
+                    msg = obj.get('message', {}) if isinstance(obj.get('message'), dict) else {}
+                    content = msg.get('content', []) if isinstance(msg.get('content'), list) else []
+                    has_tool = any(
+                        isinstance(b, dict) and b.get('type') in ('tool_use', 'tool_result')
+                        for b in content
+                    ) or bool(obj.get('tool_calls') or obj.get('tool_use'))
+                    role = msg.get('role', obj.get('role', ''))
+
+                    if has_tool:
+                        consecutive_tools += 1
+                        if consecutive_tools > sess_max_tools:
+                            sess_max_tools = consecutive_tools
+                    elif role == 'user':
+                        consecutive_tools = 0
+
+        except Exception:
+            pass
+
+        if had_events:
+            sid = fname.replace('.jsonl', '')
+            total_tokens += sess_tokens
+            total_cost += sess_cost
+            if sess_max_tools > max_consecutive_tool_calls:
+                max_consecutive_tool_calls = sess_max_tools
+            active_sessions.append({
+                'session_id': sid,
+                'tokens': sess_tokens,
+                'cost_usd': round(sess_cost, 6),
+                'consecutive_tool_calls': sess_max_tools,
+            })
+
+    cost_per_min = (total_cost / window_sec) * 60.0 if window_sec > 0 else 0.0
+
+    return {
+        'tokens_in_window': total_tokens,
+        'cost_in_window': round(total_cost, 6),
+        'cost_per_min': round(cost_per_min, 6),
+        'max_consecutive_tool_calls': max_consecutive_tool_calls,
+        'active_sessions': active_sessions,
+        'window_sec': window_sec,
+        'computed_at': now,
+    }
+
+
+# Velocity alert config defaults
+_VELOCITY_DEFAULTS = {
+    'token_velocity_enabled': True,
+    'token_velocity_window_sec': 120,
+    'token_velocity_threshold': 10000,    # tokens per 2-min window
+    'tool_chain_enabled': True,
+    'tool_chain_threshold': 20,           # consecutive tool calls
+    'cost_velocity_enabled': True,
+    'cost_velocity_threshold': 0.10,      # $/min
+}
+
+
+def _get_velocity_config():
+    """Load velocity alert config, merged with defaults."""
+    try:
+        with _fleet_db_lock:
+            db = _fleet_db()
+            row = db.execute("SELECT value FROM config WHERE key = 'velocity_config'").fetchone()
+            db.close()
+        if row:
+            return {**_VELOCITY_DEFAULTS, **json.loads(row['value'])}
+    except Exception:
+        pass
+    return dict(_VELOCITY_DEFAULTS)
+
+
+def _save_velocity_config(updates):
+    """Persist velocity config updates."""
+    cfg = _get_velocity_config()
+    cfg.update(updates)
+    try:
+        with _fleet_db_lock:
+            db = _fleet_db()
+            db.execute(
+                "INSERT OR REPLACE INTO config (key, value) VALUES ('velocity_config', ?)",
+                (json.dumps(cfg),)
+            )
+            db.commit()
+            db.close()
+    except Exception:
+        pass
+    return cfg
+
+
+def _check_velocity_alerts(velocity):
+    """Fire velocity alerts if thresholds exceeded. Called from monitor loop."""
+    cfg = _get_velocity_config()
+    now = velocity.get('computed_at', time.time())
+
+    if cfg.get('token_velocity_enabled', True):
+        threshold = float(cfg.get('token_velocity_threshold', 10000))
+        tokens = velocity.get('tokens_in_window', 0)
+        if tokens >= threshold:
+            window_sec = velocity.get('window_sec', 120)
+            msg = (f'Token velocity alert: {tokens:,} tokens in {window_sec}s window '
+                   f'(threshold: {int(threshold):,}). Possible runaway loop.')
+            _fire_alert(rule_id='velocity_token_spike', alert_type='velocity', message=msg,
+                        channels=['banner', 'telegram'])
+            _dispatch_configured_webhooks('cost_spike', {
+                'type': 'token_velocity_spike', 'agent': 'main',
+                'tokens': tokens, 'window_sec': window_sec, 'threshold': threshold,
+                'cost_usd': velocity.get('cost_in_window', 0), 'timestamp': now, 'message': msg,
+            })
+
+    if cfg.get('tool_chain_enabled', True):
+        threshold = int(cfg.get('tool_chain_threshold', 20))
+        chain = velocity.get('max_consecutive_tool_calls', 0)
+        if chain >= threshold:
+            session_id = next(
+                (s['session_id'] for s in velocity.get('active_sessions', [])
+                 if s.get('consecutive_tool_calls', 0) >= threshold), 'unknown'
+            )
+            msg = (f'Tool loop alert: {chain} consecutive tool calls without human turn '
+                   f'(threshold: {threshold}) in session {session_id[:16]}.')
+            _fire_alert(rule_id='velocity_tool_chain', alert_type='velocity', message=msg,
+                        channels=['banner', 'telegram'])
+
+    if cfg.get('cost_velocity_enabled', True):
+        threshold = float(cfg.get('cost_velocity_threshold', 0.10))
+        cost_per_min = velocity.get('cost_per_min', 0.0)
+        if cost_per_min >= threshold:
+            msg = (f'Cost velocity alert: ${cost_per_min:.3f}/min '
+                   f'(threshold: ${threshold:.2f}/min). Check for runaway agent.')
+            _fire_alert(rule_id='velocity_cost_rate', alert_type='velocity', message=msg,
+                        channels=['banner', 'telegram'])
+            _dispatch_configured_webhooks('cost_spike', {
+                'type': 'cost_velocity_spike', 'agent': 'main',
+                'cost_per_min': cost_per_min, 'threshold': threshold,
+                'cost_usd': velocity.get('cost_in_window', 0), 'timestamp': now, 'message': msg,
+            })
+
+
+@bp_alerts.route('/api/alerts/velocity')
+def api_alerts_velocity():
+    """Real-time token velocity metrics for runaway-loop detection.
+
+    Query params:
+      window_sec  int   default 120 — sliding window in seconds
+    """
+    try:
+        window_sec = int(request.args.get('window_sec', 120))
+        window_sec = max(30, min(window_sec, 600))
+    except (ValueError, TypeError):
+        window_sec = 120
+
+    velocity = _compute_token_velocity(window_sec=window_sec)
+    cfg = _get_velocity_config()
+
+    # Determine if any thresholds are currently breached
+    token_breach = (cfg.get('token_velocity_enabled', True) and
+                    velocity['tokens_in_window'] >= float(cfg.get('token_velocity_threshold', 10000)))
+    tool_breach = (cfg.get('tool_chain_enabled', True) and
+                   velocity['max_consecutive_tool_calls'] >= int(cfg.get('tool_chain_threshold', 20)))
+    cost_breach = (cfg.get('cost_velocity_enabled', True) and
+                   velocity['cost_per_min'] >= float(cfg.get('cost_velocity_threshold', 0.10)))
+
+    alert_active = token_breach or tool_breach or cost_breach
+
+    return jsonify({
+        **velocity,
+        'alert_active': alert_active,
+        'breaches': {
+            'token_velocity': token_breach,
+            'tool_chain': tool_breach,
+            'cost_velocity': cost_breach,
+        },
+        'thresholds': {
+            'token_velocity': float(cfg.get('token_velocity_threshold', 10000)),
+            'tool_chain': int(cfg.get('tool_chain_threshold', 20)),
+            'cost_velocity': float(cfg.get('cost_velocity_threshold', 0.10)),
+        },
+    })
+
+
+@bp_alerts.route('/api/alerts/velocity/config', methods=['GET', 'POST'])
+def api_alerts_velocity_config():
+    """Get or update token velocity alert configuration."""
+    if request.method == 'POST':
+        data = request.get_json(silent=True) or {}
+        allowed = set(_VELOCITY_DEFAULTS.keys())
+        updates = {k: v for k, v in data.items() if k in allowed}
+        if not updates:
+            return jsonify({'error': 'No valid fields provided'}), 400
+        cfg = _save_velocity_config(updates)
+        return jsonify({'ok': True, 'config': cfg})
+    return jsonify(_get_velocity_config())
 
 
 # ── History / Time-Series API ────────────────────────────────────────────
