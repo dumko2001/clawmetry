@@ -408,7 +408,7 @@
 
 <!-- INSTALL & CONNECT -->
 <section class="section" style="padding-bottom:80px;">
-  <h2 class="section-title">Up and running in two commands</h2>
+  <h2 class="section-title">Up and running in 30 seconds</h2>
   <p class="section-sub">Install ClawMetry, connect your node. That's it.</p>
 
 <div style="max-width:680px;margin:0 auto;background:linear-gradient(180deg, #141922 0%, #0d1117 100%);border:1px solid rgba(255,255,255,0.08);border-radius:12px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.4);">
@@ -419,7 +419,7 @@
           <div style="width:12px;height:12px;border-radius:50%;background:#28c840;"></div>
         </div>
         <div style="display:flex;gap:2px;margin-left:8px;flex-wrap:wrap;">
-          <button onclick="showCloudTab('curl')" id="ctab-curl" style="padding:5px 14px;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;background:#28c840;color:#000;font-family:'JetBrains Mono',monospace;transition:all 0.15s;">curl</button>
+          <button onclick="showCloudTab('curl')" id="ctab-curl" style="padding:5px 14px;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;background:#28c840;color:#000;font-family:'JetBrains Mono',monospace;transition:all 0.15s;">One-liner</button>
           <button onclick="showCloudTab('agent')" id="ctab-agent" style="padding:5px 14px;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;background:transparent;color:rgba(255,255,255,0.5);font-family:'JetBrains Mono',monospace;transition:all 0.15s;">&#x1F916; Agent</button>
           <button onclick="showCloudTab('pip')" id="ctab-pip" style="padding:5px 14px;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;background:transparent;color:rgba(255,255,255,0.5);font-family:'JetBrains Mono',monospace;transition:all 0.15s;">pip</button>
           <button onclick="showCloudTab('powershell')" id="ctab-powershell" style="padding:5px 14px;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;background:transparent;color:rgba(255,255,255,0.5);font-family:'JetBrains Mono',monospace;transition:all 0.15s;">PowerShell</button>
@@ -432,9 +432,8 @@
       </div>
       <div style="padding:20px 24px;font-family:'JetBrains Mono',monospace;font-size:14px;line-height:2;">
         <div id="cpanel-curl">
-          <div style="color:rgba(255,255,255,0.35);font-style:italic;"># Install + connect to cloud</div>
+          <div style="color:rgba(255,255,255,0.35);font-style:italic;"># Install + connect in one command</div>
           <div><span style="color:rgba(255,255,255,0.4);">$ </span><span style="color:#28c840;">curl -fsSL https://clawmetry.com/install.sh | bash</span></div>
-          <div><span style="color:rgba(255,255,255,0.4);">$ </span><span style="color:#28c840;">clawmetry connect</span></div>
           <div style="margin-top:6px;padding:8px 12px;background:rgba(52,211,153,0.07);border:1px solid rgba(52,211,153,0.15);border-radius:6px;font-size:13px;"><span style="color:#34D399;">&#10003; Node connected.</span> <span style="color:#64748B;">Opening app.clawmetry.com...</span></div>
         </div>
         <div id="cpanel-pip" style="display:none;">
@@ -472,10 +471,10 @@
         </div>
       </div>
     </div>
-    <p style="text-align:center;color:var(--text-dim);font-size:13px;margin-top:16px;">macOS, Linux, Windows. Two commands to full cloud visibility.</p>
+    <p style="text-align:center;color:var(--text-dim);font-size:13px;margin-top:16px;">macOS, Linux, Windows. Up and running in 30 seconds.</p>
     <script>
     var cloudCmds = {
-      curl: 'curl -fsSL https://clawmetry.com/install.sh | bash && clawmetry connect',
+      curl: 'curl -fsSL https://clawmetry.com/install.sh | bash',
       agent: 'Run pip install clawmetry && clawmetry connect',
       pip: 'pip install clawmetry && clawmetry connect',
       powershell: 'iwr -useb https://clawmetry.com/install.ps1 | iex; clawmetry connect',
