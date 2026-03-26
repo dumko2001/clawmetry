@@ -443,3 +443,44 @@ class TestMemoryAnalytics:
             assert f["status"] in ("ok", "warning", "critical")
 
 
+
+
+class TestModelAttribution:
+    """Tests for model attribution dashboard (GH #300)."""
+
+    def test_model_attribution_returns_200(self, api, base_url):
+        """Model attribution endpoint returns 200 with required keys."""
+        d = assert_ok(get(api, base_url, "/api/model-attribution"))
+        assert_keys(d, "primary_model", "total_sessions", "fallback_sessions",
+                    "fallback_rate", "primary_tokens", "primary_cost",
+                    "fallback_tokens", "fallback_cost", "models", "alert")
+
+    def test_model_attribution_types(self, api, base_url):
+        """Field types are correct."""
+        d = assert_ok(get(api, base_url, "/api/model-attribution"))
+        assert isinstance(d["primary_model"], str)
+        assert isinstance(d["total_sessions"], int)
+        assert isinstance(d["fallback_sessions"], int)
+        assert isinstance(d["fallback_rate"], (int, float))
+        assert isinstance(d["models"], list)
+        assert isinstance(d["alert"], bool)
+
+    def test_model_attribution_fallback_rate_range(self, api, base_url):
+        """Fallback rate is between 0 and 100."""
+        d = assert_ok(get(api, base_url, "/api/model-attribution"))
+        assert 0.0 <= d["fallback_rate"] <= 100.0
+
+    def test_model_attribution_session_counts_consistent(self, api, base_url):
+        """Fallback sessions cannot exceed total sessions."""
+        d = assert_ok(get(api, base_url, "/api/model-attribution"))
+        assert d["fallback_sessions"] <= d["total_sessions"]
+
+    def test_model_attribution_models_have_required_fields(self, api, base_url):
+        """Each model entry has required fields."""
+        d = assert_ok(get(api, base_url, "/api/model-attribution"))
+        for m in d["models"]:
+            assert_keys(m, "model", "sessions", "tokens", "cost")
+            assert isinstance(m["model"], str)
+            assert isinstance(m["sessions"], int)
+            assert isinstance(m["tokens"], (int, float))
+            assert isinstance(m["cost"], (int, float))

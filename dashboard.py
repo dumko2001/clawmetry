@@ -3099,6 +3099,33 @@ function clawmetryLogout(){
   </div>
 </div>
 
+  <!-- Model Attribution Panel -->
+  <div class="section-title">🤖 Model Attribution</div>
+  <div id="model-attribution-alert" style="display:none;margin-bottom:12px;padding:10px 14px;background:#3a1a1a;border:1px solid #ff4444;border-radius:8px;font-size:13px;color:#ff8080;">
+    ⚠️ High fallback rate detected — your agent is frequently using a non-primary model.
+  </div>
+  <div class="grid">
+    <div class="card">
+      <div class="card-title"><span class="icon">🎯</span> Primary Model</div>
+      <div class="card-value" id="model-attr-primary" style="font-size:13px;word-break:break-all;">--</div>
+      <div class="card-sub" id="model-attr-primary-stats"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">🔀</span> Fallback Rate</div>
+      <div class="card-value" id="model-attr-fallback-rate">--</div>
+      <div class="card-sub" id="model-attr-fallback-count"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">💸</span> Fallback Cost</div>
+      <div class="card-value" id="model-attr-fallback-cost">--</div>
+      <div class="card-sub" id="model-attr-fallback-tokens"></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:12px;">
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">All models seen across sessions (by token usage)</div>
+    <div id="model-attr-table">Loading...</div>
+  </div>
+
 <!-- CRONS -->
 <div class="page" id="page-crons">
   <div class="refresh-bar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -8260,6 +8287,33 @@ function clawmetryLogout(){
   </div>
 </div>
 
+  <!-- Model Attribution Panel (theme2) -->
+  <div class="section-title">🤖 Model Attribution</div>
+  <div id="model-attribution-alert2" style="display:none;margin-bottom:12px;padding:10px 14px;background:#3a1a1a;border:1px solid #ff4444;border-radius:8px;font-size:13px;color:#ff8080;">
+    ⚠️ High fallback rate detected — your agent is frequently using a non-primary model.
+  </div>
+  <div class="grid">
+    <div class="card">
+      <div class="card-title"><span class="icon">🎯</span> Primary Model</div>
+      <div class="card-value" id="model-attr-primary2" style="font-size:13px;word-break:break-all;">--</div>
+      <div class="card-sub" id="model-attr-primary-stats2"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">🔀</span> Fallback Rate</div>
+      <div class="card-value" id="model-attr-fallback-rate2">--</div>
+      <div class="card-sub" id="model-attr-fallback-count2"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">💸</span> Fallback Cost</div>
+      <div class="card-value" id="model-attr-fallback-cost2">--</div>
+      <div class="card-sub" id="model-attr-fallback-tokens2"></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:12px;">
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">All models seen across sessions (by token usage)</div>
+    <div id="model-attr-table2">Loading...</div>
+  </div>
+
 <!-- CRONS -->
 <div class="page" id="page-crons">
   <div class="refresh-bar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -11651,8 +11705,63 @@ async function loadUsage() {
       var el = document.getElementById('usage-session-cost-table');
       if (el) el.innerHTML = '<span style="color:var(--text-muted)">No session cost data available</span>';
     });
+    // Load model attribution
+    loadModelAttribution();
   } catch(e) {
     document.getElementById('usage-chart').innerHTML = '<span style="color:#555">No usage data available</span>';
+  }
+}
+
+async function loadModelAttribution() {
+  function fmtTokens(n) { return n >= 1000000 ? (n/1000000).toFixed(1) + 'M' : n >= 1000 ? (n/1000).toFixed(0) + 'K' : String(n||0); }
+  function fmtCost(c) { return (c||0) >= 0.01 ? '$' + (c||0).toFixed(2) : (c||0) > 0 ? '<$0.01' : '$0.00'; }
+  try {
+    var d = await fetch('/api/model-attribution').then(r => r.json());
+    var primary = d.primary_model || 'unknown';
+    var fallbackRate = (d.fallback_rate || 0).toFixed(1) + '%';
+    var primarySessions = d.total_sessions - d.fallback_sessions;
+
+    // Update all DOM ids (theme1 uses base ids, theme2 uses ids with '2' suffix)
+    ['', '2'].forEach(function(sfx) {
+      var alertEl = document.getElementById('model-attribution-alert' + (sfx ? sfx : ''));
+      var primaryEl = document.getElementById('model-attr-primary' + sfx);
+      var primaryStatsEl = document.getElementById('model-attr-primary-stats' + sfx);
+      var fallbackRateEl = document.getElementById('model-attr-fallback-rate' + sfx);
+      var fallbackCountEl = document.getElementById('model-attr-fallback-count' + sfx);
+      var fallbackCostEl = document.getElementById('model-attr-fallback-cost' + sfx);
+      var fallbackTokEl = document.getElementById('model-attr-fallback-tokens' + sfx);
+      var tableEl = document.getElementById('model-attr-table' + sfx);
+
+      if (alertEl) alertEl.style.display = d.alert ? '' : 'none';
+      if (primaryEl) primaryEl.textContent = primary;
+      if (primaryStatsEl) primaryStatsEl.textContent = primarySessions + ' sessions · ' + fmtTokens(d.primary_tokens) + ' tokens · ' + fmtCost(d.primary_cost);
+      if (fallbackRateEl) { fallbackRateEl.textContent = fallbackRate; fallbackRateEl.style.color = d.alert ? '#ff8080' : d.fallback_rate > 5 ? '#ffbb44' : 'var(--text-primary)'; }
+      if (fallbackCountEl) fallbackCountEl.textContent = d.fallback_sessions + ' of ' + d.total_sessions + ' sessions used fallback';
+      if (fallbackCostEl) fallbackCostEl.textContent = fmtCost(d.fallback_cost);
+      if (fallbackTokEl) fallbackTokEl.textContent = fmtTokens(d.fallback_tokens) + ' tokens in fallback sessions';
+
+      if (tableEl && d.models && d.models.length > 0) {
+        var rows = '<table class="usage-table" style="width:100%;"><thead><tr><th>Model</th><th style="text-align:right;">Sessions</th><th style="text-align:right;">Tokens</th><th style="text-align:right;">Cost</th><th style="text-align:right;">Type</th></tr></thead><tbody>';
+        d.models.forEach(function(m) {
+          var isPrimary = m.model === primary;
+          var typeLabel = isPrimary ? '<span style="color:#60ff80;font-size:11px;">primary</span>' : (m.model === 'unknown' ? '<span style="color:#666;font-size:11px;">unknown</span>' : '<span style="color:#ffbb44;font-size:11px;">fallback</span>');
+          rows += '<tr><td><span class="badge model">' + escHtml(m.model) + '</span></td>'
+               + '<td style="text-align:right;color:var(--text-muted);">' + m.sessions + '</td>'
+               + '<td style="text-align:right;color:var(--text-muted);">' + fmtTokens(m.tokens) + '</td>'
+               + '<td style="text-align:right;color:var(--text-muted);">' + fmtCost(m.cost) + '</td>'
+               + '<td style="text-align:right;">' + typeLabel + '</td></tr>';
+        });
+        rows += '</tbody></table>';
+        tableEl.innerHTML = rows;
+      } else if (tableEl) {
+        tableEl.innerHTML = '<span style="color:var(--text-muted);font-size:13px;">No session model data available yet.</span>';
+      }
+    });
+  } catch(e) {
+    ['', '2'].forEach(function(sfx) {
+      var el = document.getElementById('model-attr-table' + sfx);
+      if (el) el.innerHTML = '<span style="color:var(--text-muted)">Unable to load model attribution data</span>';
+    });
   }
 }
 
@@ -19298,6 +19407,214 @@ def _compute_session_cost_anomalies(session_summaries):
 
     anomalies.sort(key=lambda a: a.get('ratio', 0), reverse=True)
     return anomalies
+
+# ── Model Attribution ───────────────────────────────────────────────────
+
+_model_attribution_cache = {'data': None, 'ts': 0}
+_MODEL_ATTRIBUTION_CACHE_TTL = 120  # seconds
+
+
+def _compute_model_attribution(days=30):
+    """Scan session JSONL logs, extract model per turn, classify primary vs fallback.
+
+    Primary model = first model set in the session (via model_change or model-snapshot).
+    Fallback = any subsequent model that differs from the session's primary model.
+
+    Returns:
+      {
+        model_table:    [{model, sessions, turns, total_cost, pct_of_turns, avg_cost_per_turn}],
+        daily_fallback: [{date, fallback_pct}],   # last 7 days
+        alert:          bool,                      # True if last-24h fallback rate > 20%
+        fallback_rate_24h: float,
+        summary: { primary_model, primary_turns, fallback_turns, total_turns }
+      }
+    """
+    sessions_dir = _get_sessions_dir()
+    cutoff_ts = time.time() - (days * 86400)
+    day_24h_ago = time.time() - 86400
+
+    # per-model aggregates
+    model_sessions = defaultdict(set)
+    model_turns = defaultdict(int)
+    model_cost = defaultdict(float)
+
+    # daily fallback tracking {date: {primary_turns, fallback_turns}}
+    daily = defaultdict(lambda: {'primary': 0, 'fallback': 0})
+
+    total_turns = 0
+    total_fallback_turns = 0
+    fallback_turns_24h = 0
+    total_turns_24h = 0
+
+    if not os.path.isdir(sessions_dir):
+        return {
+            'model_table': [],
+            'daily_fallback': [],
+            'alert': False,
+            'fallback_rate_24h': 0.0,
+            'summary': {'primary_model': 'unknown', 'primary_turns': 0, 'fallback_turns': 0, 'total_turns': 0},
+        }
+
+    for fname in os.listdir(sessions_dir):
+        if not fname.endswith('.jsonl'):
+            continue
+        sid = fname.replace('.jsonl', '')
+        fpath = os.path.join(sessions_dir, fname)
+
+        # Skip files untouched before the cutoff window
+        try:
+            mtime = os.path.getmtime(fpath)
+            if mtime < cutoff_ts:
+                continue
+        except OSError:
+            continue
+
+        primary_model = None
+        session_start_ts = None
+
+        try:
+            with open(fpath, 'r', errors='replace') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        obj = json.loads(line)
+                    except Exception:
+                        continue
+
+                    obj_type = obj.get('type', '')
+
+                    # Determine session start timestamp
+                    raw_ts = obj.get('timestamp') or obj.get('time') or obj.get('created_at')
+                    ts_dt = _parse_event_timestamp(raw_ts, None)
+                    ts_epoch = ts_dt.timestamp() if ts_dt else None
+
+                    if ts_epoch and session_start_ts is None:
+                        session_start_ts = ts_epoch
+
+                    # Identify primary model from first model_change or model-snapshot
+                    if primary_model is None:
+                        if obj_type == 'model_change':
+                            primary_model = obj.get('modelId') or obj.get('model')
+                        elif obj_type == 'custom' and obj.get('customType') == 'model-snapshot':
+                            data_field = obj.get('data', {})
+                            if isinstance(data_field, dict):
+                                primary_model = data_field.get('modelId') or data_field.get('model')
+
+                    # Process assistant messages with usage data
+                    if obj_type != 'message':
+                        continue
+
+                    msg = obj.get('message', {})
+                    if not isinstance(msg, dict):
+                        continue
+                    if msg.get('role') != 'assistant':
+                        continue
+
+                    usage_metrics = _extract_usage_metrics(obj)
+                    turn_tokens = usage_metrics['tokens']
+                    turn_cost = usage_metrics['cost']
+                    if turn_tokens <= 0:
+                        continue
+
+                    # Determine the model used for this turn
+                    turn_model = (
+                        msg.get('model')
+                        or obj.get('model')
+                        or primary_model
+                        or 'unknown'
+                    )
+
+                    # Determine session day
+                    turn_ts = ts_epoch or (session_start_ts or time.time())
+                    turn_dt = datetime.fromtimestamp(turn_ts)
+                    day_str = turn_dt.strftime('%Y-%m-%d')
+
+                    is_fallback = (primary_model is not None
+                                   and turn_model != primary_model
+                                   and primary_model != 'unknown')
+
+                    model_sessions[turn_model].add(sid)
+                    model_turns[turn_model] += 1
+                    model_cost[turn_model] += turn_cost
+                    total_turns += 1
+
+                    if is_fallback:
+                        total_fallback_turns += 1
+                        daily[day_str]['fallback'] += 1
+                    else:
+                        daily[day_str]['primary'] += 1
+
+                    # 24h window tracking
+                    if turn_ts >= day_24h_ago:
+                        total_turns_24h += 1
+                        if is_fallback:
+                            fallback_turns_24h += 1
+
+        except Exception:
+            continue
+
+    # Build model_table rows
+    all_turns_nonzero = max(total_turns, 1)
+    model_table = []
+    for mdl in sorted(model_turns.keys(), key=lambda m: -model_turns[m]):
+        t = model_turns[mdl]
+        c = model_cost[mdl]
+        model_table.append({
+            'model': mdl,
+            'sessions': len(model_sessions[mdl]),
+            'turns': t,
+            'total_cost': round(c, 6),
+            'pct_of_turns': round((t / all_turns_nonzero) * 100.0, 1),
+            'avg_cost_per_turn': round(c / max(t, 1), 6),
+        })
+
+    # Build daily fallback sparkline (last 7 days)
+    today = datetime.now()
+    daily_fallback = []
+    for i in range(6, -1, -1):
+        d = today - timedelta(days=i)
+        ds = d.strftime('%Y-%m-%d')
+        bucket = daily.get(ds, {'primary': 0, 'fallback': 0})
+        bucket_total = bucket['primary'] + bucket['fallback']
+        fallback_pct = round((bucket['fallback'] / max(bucket_total, 1)) * 100.0, 1) if bucket_total > 0 else 0.0
+        daily_fallback.append({'date': ds, 'fallback_pct': fallback_pct, 'total_turns': bucket_total})
+
+    # Alert if last-24h fallback rate > 20%
+    fallback_rate_24h = round((fallback_turns_24h / max(total_turns_24h, 1)) * 100.0, 1) if total_turns_24h > 0 else 0.0
+    alert = fallback_rate_24h > 20.0
+
+    # Summary: find the "primary" model overall (highest turns)
+    primary_model_overall = model_table[0]['model'] if model_table else 'unknown'
+
+    return {
+        'model_table': model_table,
+        'daily_fallback': daily_fallback,
+        'alert': alert,
+        'fallback_rate_24h': fallback_rate_24h,
+        'summary': {
+            'primary_model': primary_model_overall,
+            'primary_turns': total_turns - total_fallback_turns,
+            'fallback_turns': total_fallback_turns,
+            'total_turns': total_turns,
+        },
+    }
+
+
+@bp_usage.route('/api/model-attribution')
+def api_model_attribution():
+    """Return model attribution data: per-model breakdown, fallback rate, alert."""
+    import time as _time
+    now = _time.time()
+    if _model_attribution_cache['data'] is not None and (now - _model_attribution_cache['ts']) < _MODEL_ATTRIBUTION_CACHE_TTL:
+        return jsonify(_model_attribution_cache['data'])
+
+    result = _compute_model_attribution(days=30)
+    _model_attribution_cache['data'] = result
+    _model_attribution_cache['ts'] = now
+    return jsonify(result)
+
 
 # ── New Feature APIs ────────────────────────────────────────────────────
 
