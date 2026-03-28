@@ -81,6 +81,13 @@ def _extract_usage(response_body: bytes, provider: str) -> tuple[int, int]:
         or usage.get("completion_tokens")
         or 0
     )
+
+    # Gemini: usageMetadata.promptTokenCount / candidatesTokenCount
+    if tokens_in == 0 and tokens_out == 0:
+        meta = data.get("usageMetadata") or {}
+        tokens_in = meta.get("promptTokenCount") or 0
+        tokens_out = meta.get("candidatesTokenCount") or 0
+
     return int(tokens_in), int(tokens_out)
 
 

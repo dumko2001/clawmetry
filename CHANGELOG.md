@@ -1,3 +1,14 @@
+## [Unreleased]
+
+### Added
+- `clawmetry.track` module — zero-config HTTP interceptor for LLM cost tracking (GH #374)
+  - `import clawmetry.track` activates monkey-patching of httpx and requests on import
+  - `CLAWMETRY_TRACK=1` env var auto-activates via `clawmetry.__init__`
+  - Detects provider from hostname (Anthropic, OpenAI, Gemini, Mistral, Groq, Together AI, Cohere)
+  - Per-call cost line printed to terminal; atexit session summary
+- `clawmetry/interceptor.py`: Gemini `usageMetadata` support (promptTokenCount / candidatesTokenCount)
+- `tests/test_track.py`: 30 unit tests covering provider detection, cost parsing, accumulator totals, graceful degradation (no httpx/requests installed)
+
 ## v0.12.63 (2026-03-22)
 - fix: robust Ollama detection -- PATH fallback + HTTP ping to localhost:11434
 - feat: sync daemon heartbeat includes ollama status (installed, running, models)
