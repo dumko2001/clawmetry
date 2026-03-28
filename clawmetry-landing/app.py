@@ -2743,6 +2743,11 @@ def install_ps1():
 @app.route("/cloud")
 def cloud():
     return send_from_directory(".", "cloud.html")
+@app.route("/nemoclaw")
+def nemoclaw():
+    return send_from_directory(".", "nemoclaw.html")
+
+
 
 
 
