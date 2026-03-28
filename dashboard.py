@@ -8021,6 +8021,7 @@ function clawmetryLogout(){
     <div class="nav-tab" onclick="switchTab('memory')">Memory</div>
     <div class="nav-tab" onclick="switchTab('models')">Models</div>
     <div class="nav-tab" onclick="switchTab('security')">Security</div>
+    <div class="nav-tab" id="nemoclaw-tab" onclick="switchTab('nemoclaw')" style="display:none;">NemoClaw</div>
     <!-- History tab hidden until mature -->
     <!-- <div class="nav-tab" onclick="switchTab('history')">History</div> -->
   <div id="cloud-cta-btn" onclick="openCloudModal()" style="display:none;margin-left:8px;cursor:pointer;padding:6px 12px;border:1px solid rgba(96,165,250,0.5);border-radius:8px;font-size:12px;font-weight:600;color:#60a5fa;white-space:nowrap;transition:all 0.2s;user-select:none;" onmouseover="this.style.background='rgba(96,165,250,0.1)'" onmouseout="this.style.background='transparent'"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:4px"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Enable Cloud Sync</div>
@@ -8973,7 +8974,68 @@ function clawmetryLogout(){
   </div>
 </div><!-- end page-models (theme 2) -->
 
-
+<!-- NEMOCLAW GOVERNANCE -->
+<div class="page" id="page-nemoclaw">
+  <div style="padding:12px 0 8px 0;">
+    <!-- Header row -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span id="nc-status-dot" style="font-size:18px;">🟢</span>
+        <span style="font-size:14px;font-weight:700;color:#76b900;">NemoClaw</span>
+        <span id="nc-sandbox-name" style="font-size:12px;background:rgba(118,185,0,0.15);color:#76b900;border:1px solid rgba(118,185,0,0.3);border-radius:12px;padding:2px 10px;font-weight:600;"></span>
+        <span id="nc-blueprint-ver" style="font-size:12px;background:var(--bg-secondary);color:var(--text-muted);border:1px solid var(--border);border-radius:12px;padding:2px 10px;"></span>
+      </div>
+      <button class="refresh-btn" onclick="loadNemoClaw()">&#8635; Refresh</button>
+    </div>
+    <!-- Two-column info grid -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <!-- Sandbox panel -->
+      <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:14px;">
+        <div style="font-size:11px;font-weight:700;color:#76b900;letter-spacing:1px;margin-bottom:10px;">SANDBOX</div>
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <tr><td style="color:var(--text-muted);padding:3px 0;width:45%;">Status</td><td id="nc-sandbox-status" style="color:var(--text-primary);font-family:\'JetBrains Mono\',monospace;">&#8212;</td></tr>
+          <tr><td style="color:var(--text-muted);padding:3px 0;">Blueprint</td><td id="nc-blueprint-ver2" style="color:var(--text-primary);font-family:\'JetBrains Mono\',monospace;">&#8212;</td></tr>
+          <tr><td style="color:var(--text-muted);padding:3px 0;">Last action</td><td id="nc-last-action" style="color:var(--text-primary);font-family:\'JetBrains Mono\',monospace;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">&#8212;</td></tr>
+          <tr><td style="color:var(--text-muted);padding:3px 0;">Run ID</td><td id="nc-run-id" style="color:var(--text-tertiary);font-family:\'JetBrains Mono\',monospace;font-size:11px;">&#8212;</td></tr>
+        </table>
+      </div>
+      <!-- Inference panel -->
+      <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:14px;">
+        <div style="font-size:11px;font-weight:700;color:#76b900;letter-spacing:1px;margin-bottom:10px;">INFERENCE</div>
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <tr><td style="color:var(--text-muted);padding:3px 0;width:45%;">Provider</td><td id="nc-provider" style="color:var(--text-primary);font-family:\'JetBrains Mono\',monospace;">&#8212;</td></tr>
+          <tr><td style="color:var(--text-muted);padding:3px 0;">Model</td><td id="nc-model" style="color:var(--text-primary);font-family:\'JetBrains Mono\',monospace;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">&#8212;</td></tr>
+          <tr><td style="color:var(--text-muted);padding:3px 0;">Endpoint</td><td id="nc-endpoint" style="color:var(--text-tertiary);font-family:\'JetBrains Mono\',monospace;font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">&#8212;</td></tr>
+          <tr><td style="color:var(--text-muted);padding:3px 0;">Onboarded</td><td id="nc-onboarded" style="color:var(--text-tertiary);font-family:\'JetBrains Mono\',monospace;font-size:11px;">&#8212;</td></tr>
+        </table>
+      </div>
+    </div>
+    <!-- Active Policy -->
+    <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <span style="font-size:11px;font-weight:700;color:#76b900;letter-spacing:1px;">ACTIVE POLICY</span>
+        <span id="nc-policy-hash" style="font-size:11px;color:var(--text-muted);font-family:\'JetBrains Mono\',monospace;background:var(--bg-primary);border:1px solid var(--border-secondary);border-radius:4px;padding:1px 6px;"></span>
+        <span id="nc-drift-badge" style="font-size:11px;font-weight:600;"></span>
+      </div>
+      <!-- Drift alert -->
+      <div id="nc-drift-alert" style="display:none;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:6px;padding:10px;margin-bottom:10px;">
+        <div style="font-size:12px;font-weight:700;color:#ef4444;">&#9888;&#65039; Policy drift detected</div>
+        <div id="nc-drift-detail" style="font-size:11px;color:var(--text-muted);margin-top:4px;font-family:\'JetBrains Mono\',monospace;"></div>
+      </div>
+      <!-- Network policies table -->
+      <div id="nc-policy-table" style="font-family:\'JetBrains Mono\',\'SF Mono\',monospace;font-size:12px;line-height:1.8;">
+        <div style="color:var(--text-muted);padding:8px 0;">Loading policy...</div>
+      </div>
+    </div>
+    <!-- Applied Presets -->
+    <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:14px;">
+      <div style="font-size:11px;font-weight:700;color:#76b900;letter-spacing:1px;margin-bottom:10px;">APPLIED PRESETS</div>
+      <div id="nc-presets" style="display:flex;flex-wrap:wrap;gap:6px;">
+        <span style="color:var(--text-muted);font-size:12px;">None detected</span>
+      </div>
+    </div>
+  </div>
+</div><!-- end page-nemoclaw (theme 2) -->
 
 
 <script>
@@ -9342,6 +9404,7 @@ function switchTab(name) {
   if (name === 'security') { loadSecurityPage(); loadSecurityPosture(); }
   if (name === 'logs') { if (!logStream || logStream.readyState === EventSource.CLOSED) startLogStream(); loadLogs(); }
   if (name === 'models') loadModelAttribution();
+  if (name === 'nemoclaw') loadNemoClaw();
 }
 
 function exportUsageData() {
@@ -15604,8 +15667,9 @@ async function showSnapshot(ts) {
   }
 }
 
-// ── NemoClaw Governance ──────────────────────────────────────────────────────
-async function loadNemoClaw() {
+// ── NemoClaw: duplicate stub removed; see loadNemoClaw() above ────────────────
+// (The live implementation lives earlier in this file at the // NemoClaw Governance Tab comment)
+if (false) { async function loadNemoClaw() {
   try {
     var data = await fetch('/api/nemoclaw/status').then(function(r) { return r.json(); });
     if (!data.installed) {
@@ -15716,6 +15780,7 @@ function _ncEsc(s) {
     }).catch(function(){});
   } catch(e) {}
 })();
+}} // end if(false) stub
 </script>
 </div> <!-- end zoom-wrapper -->
 
