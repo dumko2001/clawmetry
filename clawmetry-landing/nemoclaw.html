@@ -7,854 +7,628 @@
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-XDF9MFD8FJ"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
-    function gtag(){dataData.push(arguments);}
+    function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
     gtag('config', 'G-XDF9MFD8FJ');
+    gtag('config', 'G-6H5W9Y2B79');
   </script>
-  <title>ClawMetry for NemoClaw — Observability for NVIDIA NeMo Agents</title>
-  <meta name="description" content="ClawMetry gives NemoClaw agents full observability: live token flow, cost tracking, sub-agent trees, cron health, and memory monitoring. Free, open-source, zero config.">
-  <meta name="keywords" content="NemoClaw, NVIDIA NeMo, NeMo Agent Toolkit, AI agent observability, LLM monitoring, ClawMetry, token cost tracking">
+  <title>ClawMetry for NemoClaw — Know what your NeMo agents are doing</title>
+  <meta name="description" content="Install ClawMetry inside NemoClaw. Your agents sync E2E encrypted data to the cloud. Monitor live agent activity, token costs, and memory from anywhere.">
   <link rel="canonical" href="https://clawmetry.com/nemoclaw">
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-
-  <meta property="og:title" content="ClawMetry for NemoClaw — Observability for NVIDIA NeMo Agents">
-  <meta property="og:description" content="Full observability for NemoClaw agents. Live token flow, cost breakdown, sub-agent trees, cron health. Free and open-source.">
-  <meta property="og:url" content="https://clawmetry.com/nemoclaw">
+  <meta property="og:title" content="ClawMetry for NemoClaw — Know what your NeMo agents are doing">
+  <meta property="og:description" content="Install ClawMetry inside NemoClaw. E2E encrypted. Live agent activity, token costs, memory. Monitor from anywhere.">
   <meta property="og:type" content="website">
-
+  <meta property="og:url" content="https://clawmetry.com/nemoclaw">
+  <meta property="og:image" content="https://clawmetry.com/dashboard-overview-og.png">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0a0a0a;
-      --bg-card: #111111;
-      --bg-card-hover: #181818;
-      --border: rgba(255,255,255,0.06);
-      --border-nemo: rgba(118,185,0,0.25);
+      --bg: #000000;
+      --bg-card: #0d0d0d;
+      --bg-card-hover: #141414;
+      --border: rgba(255,255,255,0.07);
+      --border-hover: rgba(118,185,0,0.35);
       --text: #f0f0f0;
-      --text-muted: #888;
+      --text-muted: #a0a0a0;
       --text-dim: #555;
-      --accent: #76b900;           /* NVIDIA green */
-      --accent-dark: #5a8f00;
-      --accent-glow: rgba(118,185,0,0.15);
-      --accent-glow-strong: rgba(118,185,0,0.28);
-      --red: #E5443A;
-      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      --mono: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      --accent: #76b900;
+      --accent-glow: rgba(118,185,0,0.12);
+      --accent-glow-strong: rgba(118,185,0,0.22);
+      --terminal-bg: #0a0a0a;
     }
 
-    html { scroll-behavior: smooth; }
+    html { scroll-behavior: smooth; overflow-x: hidden; }
 
     body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       background: var(--bg);
       color: var(--text);
-      font-family: var(--font);
-      font-size: 16px;
       line-height: 1.6;
-      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
     }
 
-    /* ── Nav ── */
+    img, video, pre, code, table { max-width: 100%; }
+
+    /* NAV */
     nav {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      background: rgba(10,10,10,0.92);
-      backdrop-filter: blur(12px);
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(0,0,0,0.88);
+      backdrop-filter: blur(16px);
       border-bottom: 1px solid var(--border);
-      padding: 0 24px;
-      height: 60px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
     }
-
+    .nav-inner {
+      max-width: 1100px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; height: 60px;
+    }
     .nav-logo {
-      display: flex;
-      align-items: center;
-      gap: 9px;
+      display: flex; align-items: center; gap: 8px;
       text-decoration: none;
-      flex-shrink: 0;
     }
-    .nav-logo img { width: 28px; height: 28px; border-radius: 6px; }
-    .nav-logo-text { font-size: 17px; font-weight: 700; line-height: 1; }
-    .nav-logo-text .claw { color: var(--text); }
-    .nav-logo-text .metry { color: var(--accent); }
-
-    .nav-badge {
-      background: var(--accent-glow);
-      border: 1px solid var(--border-nemo);
-      color: var(--accent);
-      font-size: 11px;
-      font-weight: 600;
-      padding: 2px 8px;
-      border-radius: 20px;
-      letter-spacing: 0.03em;
-    }
-
-    .nav-links {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .nav-links a {
-      color: var(--text-muted);
-      text-decoration: none;
-      font-size: 14px;
-      font-weight: 500;
-      padding: 6px 12px;
-      border-radius: 8px;
-      transition: color 0.15s, background 0.15s;
-    }
-    .nav-links a:hover { color: var(--text); background: rgba(255,255,255,0.05); }
-
-    .nav-cta {
-      background: var(--accent);
-      color: #000 !important;
-      font-weight: 600 !important;
-      border-radius: 8px;
-      padding: 7px 16px !important;
-      transition: background 0.15s !important;
-    }
-    .nav-cta:hover { background: #88d400 !important; }
-
-    /* ── Hero ── */
-    .hero {
-      padding: 100px 24px 80px;
-      text-align: center;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .hero::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background:
-        radial-gradient(ellipse 800px 500px at 50% 0%, rgba(118,185,0,0.1) 0%, transparent 70%),
-        radial-gradient(ellipse 400px 300px at 50% 120%, rgba(118,185,0,0.05) 0%, transparent 70%);
-      pointer-events: none;
-    }
-
-    .hero-eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: rgba(118,185,0,0.08);
-      border: 1px solid var(--border-nemo);
-      border-radius: 24px;
-      padding: 6px 14px;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--accent);
-      margin-bottom: 28px;
-      letter-spacing: 0.02em;
-    }
-    .hero-eyebrow .dot {
-      width: 7px; height: 7px;
-      background: var(--accent);
-      border-radius: 50%;
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.5; transform: scale(0.85); }
-    }
-
-    .hero h1 {
-      font-size: clamp(36px, 6vw, 72px);
-      font-weight: 800;
-      line-height: 1.08;
-      letter-spacing: -0.03em;
-      margin-bottom: 24px;
-      max-width: 900px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-    .hero h1 .nemo { color: var(--accent); }
-
-    .hero-sub {
-      font-size: clamp(16px, 2vw, 20px);
-      color: var(--text-muted);
-      max-width: 640px;
-      margin: 0 auto 40px;
-      line-height: 1.6;
-    }
-
-    .hero-actions {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 60px;
-    }
-
-    .btn-primary {
-      background: var(--accent);
-      color: #000;
-      font-weight: 700;
-      font-size: 15px;
-      padding: 13px 28px;
-      border-radius: 10px;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      transition: background 0.15s, transform 0.1s;
-      border: none;
-      cursor: pointer;
-    }
-    .btn-primary:hover { background: #88d400; transform: translateY(-1px); }
-
-    .btn-secondary {
-      background: rgba(255,255,255,0.05);
+    .nav-logo img { width: 36px; height: 36px; display: block; }
+    .nav-logo-text {
+      font-size: 17px; font-weight: 700; letter-spacing: -0.02em;
       color: var(--text);
-      font-weight: 600;
-      font-size: 15px;
-      padding: 13px 28px;
-      border-radius: 10px;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      border: 1px solid var(--border);
-      transition: background 0.15s, border-color 0.15s;
     }
-    .btn-secondary:hover { background: rgba(255,255,255,0.09); border-color: rgba(255,255,255,0.12); }
-
-    /* ── Terminal mockup ── */
-    .terminal-wrap {
-      max-width: 680px;
-      margin: 0 auto 100px;
-      border-radius: 14px;
-      overflow: hidden;
-      border: 1px solid var(--border-nemo);
-      box-shadow: 0 0 60px var(--accent-glow), 0 20px 60px rgba(0,0,0,0.5);
-    }
-    .terminal-bar {
-      background: #1a1a1a;
-      padding: 12px 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      border-bottom: 1px solid rgba(255,255,255,0.04);
-    }
-    .terminal-bar .dot { width: 12px; height: 12px; border-radius: 50%; }
-    .terminal-bar .dot-r { background: #ff5f57; }
-    .terminal-bar .dot-y { background: #ffbd2e; }
-    .terminal-bar .dot-g { background: #28c840; }
-    .terminal-title { font-size: 12px; color: var(--text-dim); margin-left: auto; font-family: var(--mono); }
-    .terminal-body {
-      background: #0f0f0f;
-      padding: 24px;
-      font-family: var(--mono);
-      font-size: 13px;
-      line-height: 1.8;
-    }
-    .terminal-body .prompt { color: var(--accent); }
-    .terminal-body .cmd { color: #e0e0e0; }
-    .terminal-body .out { color: var(--text-dim); }
-    .terminal-body .out-green { color: var(--accent); }
-    .terminal-body .out-cyan { color: #5eead4; }
-    .terminal-body .out-yellow { color: #fbbf24; }
-    .terminal-body .comment { color: #444; }
-
-    /* ── Section ── */
-    section { padding: 80px 24px; }
-    .container { max-width: 1100px; margin: 0 auto; }
-
-    .section-label {
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
+    .nav-logo-text span { color: var(--accent); }
+    .nav-badge {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.04em;
       color: var(--accent);
-      margin-bottom: 12px;
+      background: var(--accent-glow);
+      border: 1px solid rgba(118,185,0,0.3);
+      border-radius: 4px;
+      padding: 2px 7px;
+      text-transform: uppercase;
     }
+    .nav-links { display: flex; align-items: center; gap: 20px; }
+    .nav-links a {
+      color: var(--text-muted); text-decoration: none;
+      font-size: 14px; font-weight: 500;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--text); }
+    .nav-links a.active { color: var(--accent); }
+    .nav-cta {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--accent); color: #000 !important;
+      border-radius: 6px; padding: 7px 16px;
+      font-size: 13px; font-weight: 700; text-decoration: none;
+      transition: all 0.2s;
+    }
+    .nav-cta:hover { filter: brightness(1.1); }
+
+    /* HERO */
+    .hero {
+      position: relative;
+      text-align: center;
+      padding: 140px 24px 72px;
+      max-width: 1100px; margin: 0 auto;
+    }
+    .hero-glow {
+      position: absolute;
+      top: -180px; left: 50%;
+      transform: translateX(-50%);
+      width: 800px; max-width: 100vw; height: 560px;
+      background: radial-gradient(ellipse at center, rgba(118,185,0,0.1) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+    .hero-lockup {
+      display: inline-flex; align-items: center; gap: 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 8px 18px;
+      margin-bottom: 32px;
+      font-size: 13px;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .hero-lockup-nemo {
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 13px;
+    }
+    .hero-lockup-sep {
+      color: var(--text-dim);
+    }
+    .hero-lockup-cm {
+      color: var(--text);
+      font-weight: 700;
+    }
+    .hero h1 {
+      font-size: clamp(2.4rem, 6vw, 3.8rem);
+      font-weight: 800; line-height: 1.1;
+      letter-spacing: -0.03em;
+      margin-bottom: 20px;
+    }
+    .hero h1 .accent {
+      background: linear-gradient(135deg, #76b900 0%, #a0e000 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-sub {
+      font-size: 18px; color: var(--text-muted);
+      max-width: 560px; margin: 0 auto 44px; line-height: 1.65;
+    }
+    .hero-buttons { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--accent); color: #000;
+      padding: 13px 30px; border-radius: 8px;
+      font-size: 15px; font-weight: 700; text-decoration: none;
+      transition: all 0.2s;
+      box-shadow: 0 0 24px rgba(118,185,0,0.3);
+    }
+    .btn-primary:hover { filter: brightness(1.12); box-shadow: 0 0 36px rgba(118,185,0,0.45); transform: translateY(-1px); }
+    .btn-secondary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: transparent; color: var(--text);
+      padding: 13px 30px; border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 15px; font-weight: 600; text-decoration: none;
+      transition: all 0.2s;
+    }
+    .btn-secondary:hover { border-color: var(--border-hover); color: var(--accent); }
+
+    /* SECTIONS */
+    .section { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
     .section-title {
-      font-size: clamp(28px, 4vw, 44px);
-      font-weight: 800;
-      letter-spacing: -0.025em;
-      line-height: 1.15;
-      margin-bottom: 16px;
+      font-size: clamp(1.7rem, 4vw, 2.3rem);
+      font-weight: 700; letter-spacing: -0.02em;
+      text-align: center; margin-bottom: 12px;
     }
     .section-sub {
-      font-size: 17px;
-      color: var(--text-muted);
-      max-width: 560px;
-      line-height: 1.6;
-      margin-bottom: 56px;
+      text-align: center; color: var(--text-muted);
+      font-size: 16px; max-width: 520px; margin: 0 auto 48px;
     }
 
-    /* ── Features grid ── */
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 20px;
+    /* HOW IT WORKS */
+    .steps-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
     }
-
-    .feat-card {
+    .step-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 28px;
-      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
-    }
-    .feat-card:hover {
-      border-color: var(--border-nemo);
-      box-shadow: 0 0 24px var(--accent-glow);
-      background: var(--bg-card-hover);
-    }
-    .feat-icon {
-      width: 44px; height: 44px;
-      border-radius: 10px;
-      background: var(--accent-glow);
-      border: 1px solid var(--border-nemo);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 18px;
-      font-size: 20px;
-    }
-    .feat-card h3 {
-      font-size: 17px;
-      font-weight: 700;
-      margin-bottom: 8px;
-      letter-spacing: -0.01em;
-    }
-    .feat-card p {
-      font-size: 14px;
-      color: var(--text-muted);
-      line-height: 1.6;
-    }
-
-    /* ── How it works ── */
-    .steps {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 24px;
-      counter-reset: step;
-    }
-    .step {
+      border-radius: 14px; padding: 28px;
+      transition: all 0.3s;
       position: relative;
-      padding-left: 20px;
     }
+    .step-card:hover { border-color: var(--border-hover); background: var(--bg-card-hover); transform: translateY(-2px); }
     .step-num {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: var(--accent-glow);
+      border: 1px solid rgba(118,185,0,0.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700; color: var(--accent);
+      margin-bottom: 16px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .step-card h3 { font-size: 17px; font-weight: 600; margin-bottom: 8px; }
+    .step-card p { font-size: 14px; color: var(--text-muted); line-height: 1.6; margin-bottom: 0; }
+    .step-cmd {
+      display: inline-block;
+      margin-top: 10px;
+      font-family: 'JetBrains Mono', monospace;
       font-size: 13px;
-      font-weight: 700;
+      background: rgba(118,185,0,0.08);
+      border: 1px solid rgba(118,185,0,0.18);
+      border-radius: 6px;
+      padding: 4px 10px;
       color: var(--accent);
-      font-family: var(--mono);
-      margin-bottom: 10px;
-    }
-    .step h3 {
-      font-size: 17px;
-      font-weight: 700;
-      margin-bottom: 8px;
-    }
-    .step p {
-      font-size: 14px;
-      color: var(--text-muted);
-      line-height: 1.6;
-    }
-    .step::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 4px;
-      bottom: 0;
-      width: 2px;
-      background: linear-gradient(to bottom, var(--accent), transparent);
-      border-radius: 2px;
     }
 
-    /* ── Comparison table ── */
-    .compare-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 15px;
+    /* QUICK START TERMINAL */
+    .terminal {
+      max-width: 700px; margin: 0 auto;
+      background: var(--terminal-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px; overflow: hidden;
+      box-shadow: 0 8px 48px rgba(0,0,0,0.5), 0 0 60px rgba(118,185,0,0.05);
     }
-    .compare-table th, .compare-table td {
-      padding: 14px 20px;
-      text-align: left;
+    .terminal-bar {
+      display: flex; align-items: center; gap: 8px;
+      padding: 11px 16px; border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+    }
+    .terminal-dot { width: 12px; height: 12px; border-radius: 50%; }
+    .terminal-dot.red { background: #FF5F57; }
+    .terminal-dot.yellow { background: #FEBC2E; }
+    .terminal-dot.green { background: #28C840; }
+    .terminal-body {
+      padding: 22px 28px;
+      font-family: 'JetBrains Mono', monospace; font-size: 14px; line-height: 2;
+    }
+    .t-comment { color: rgba(255,255,255,0.28); font-style: italic; }
+    .t-prompt { color: rgba(255,255,255,0.3); }
+    .t-cmd { color: var(--accent); }
+    .t-out { color: #60A5FA; }
+
+    /* FEATURE CARDS */
+    .features-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px; padding: 28px;
+      transition: all 0.3s;
+    }
+    .feature-card:hover { border-color: var(--border-hover); background: var(--bg-card-hover); transform: translateY(-2px); }
+    .feature-icon {
+      font-size: 28px; margin-bottom: 14px; display: block;
+    }
+    .feature-card h3 { font-size: 17px; font-weight: 600; margin-bottom: 8px; }
+    .feature-card p { font-size: 14px; color: var(--text-muted); line-height: 1.6; }
+
+    /* SCREENSHOTS */
+    .screenshots-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+    .screenshot-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px; overflow: hidden;
+      transition: all 0.3s;
+    }
+    .screenshot-card:hover { border-color: var(--border-hover); transform: translateY(-2px); }
+    .screenshot-card img {
+      width: 100%; display: block;
       border-bottom: 1px solid var(--border);
     }
-    .compare-table thead th {
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--text-muted);
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
-    .compare-table thead th.nemo-col {
-      color: var(--accent);
-    }
-    .compare-table tbody tr:last-child td { border-bottom: none; }
-    .compare-table tbody tr:hover td { background: rgba(255,255,255,0.02); }
-    .compare-table td:first-child { color: var(--text-muted); font-size: 14px; }
-    .tick { color: var(--accent); font-size: 16px; }
-    .cross { color: #555; font-size: 16px; }
-    .partial { color: var(--text-dim); font-size: 14px; }
-
-    .compare-wrap {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      overflow: hidden;
+    .screenshot-caption {
+      padding: 14px 16px;
+      font-size: 13px; color: var(--text-muted);
     }
 
-    /* ── Install block ── */
-    .install-section {
-      background: var(--bg-card);
-      border: 1px solid var(--border-nemo);
-      border-radius: 20px;
-      padding: 60px 48px;
+    /* CTA */
+    .cta-section {
       text-align: center;
-      position: relative;
-      overflow: hidden;
+      border-top: 1px solid var(--border);
+      padding: 72px 24px;
     }
-    .install-section::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(ellipse 600px 300px at 50% 0%, var(--accent-glow) 0%, transparent 70%);
-      pointer-events: none;
+    .cta-section h2 {
+      font-size: clamp(1.6rem, 4vw, 2.2rem);
+      font-weight: 700; margin-bottom: 16px;
+      letter-spacing: -0.02em;
     }
-    .install-section h2 {
-      font-size: clamp(26px, 4vw, 40px);
-      font-weight: 800;
-      letter-spacing: -0.025em;
-      margin-bottom: 12px;
-    }
-    .install-section p {
-      color: var(--text-muted);
-      font-size: 17px;
-      margin-bottom: 36px;
-    }
-    .install-cmd {
-      display: inline-flex;
-      align-items: center;
-      gap: 12px;
-      background: #0f0f0f;
-      border: 1px solid var(--border-nemo);
-      border-radius: 12px;
-      padding: 16px 24px;
-      font-family: var(--mono);
-      font-size: 16px;
-      color: var(--accent);
-      margin-bottom: 32px;
-      cursor: pointer;
-      transition: box-shadow 0.2s;
-    }
-    .install-cmd:hover { box-shadow: 0 0 20px var(--accent-glow); }
-    .install-cmd .dollar { color: var(--text-dim); }
-
-    /* ── FAQ ── */
-    .faq-list { display: flex; flex-direction: column; gap: 2px; }
-    .faq-item {
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      overflow: hidden;
-      transition: border-color 0.2s;
-    }
-    .faq-item:hover { border-color: var(--border-nemo); }
-    .faq-q {
-      padding: 20px 24px;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      background: var(--bg-card);
-      user-select: none;
+    .cta-code-block {
+      display: inline-block;
+      font-family: 'JetBrains Mono', monospace;
       font-size: 15px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 8px;
+      padding: 12px 24px;
+      margin-bottom: 28px;
+      color: var(--text);
     }
-    .faq-q .arrow {
-      color: var(--text-dim);
-      font-size: 18px;
-      transition: transform 0.2s;
-      flex-shrink: 0;
-    }
-    .faq-item.open .faq-q .arrow { transform: rotate(180deg); color: var(--accent); }
-    .faq-a {
-      display: none;
-      padding: 0 24px 20px;
-      color: var(--text-muted);
-      font-size: 14px;
-      line-height: 1.7;
-      background: var(--bg-card);
-    }
-    .faq-item.open .faq-a { display: block; }
+    .cta-code-block .cmd-green { color: var(--accent); }
 
-    /* ── Footer ── */
+    /* FOOTER */
     footer {
       border-top: 1px solid var(--border);
-      padding: 40px 24px;
+      padding: 32px 24px;
     }
     .footer-inner {
-      max-width: 1100px;
-      margin: 0 auto;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 16px;
+      max-width: 1100px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 16px;
     }
-    .footer-logo {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      text-decoration: none;
-    }
-    .footer-logo img { width: 24px; height: 24px; border-radius: 5px; }
-    .footer-logo span { font-size: 15px; font-weight: 700; color: var(--text); }
-    .footer-logo span .metry { color: var(--accent); }
-    .footer-links {
-      display: flex;
-      gap: 20px;
-      flex-wrap: wrap;
-    }
+    .footer-text { font-size: 13px; color: var(--text-dim); }
+    .footer-text a { color: var(--text-muted); text-decoration: none; transition: color 0.2s; }
+    .footer-text a:hover { color: var(--accent); }
+    .footer-links { display: flex; gap: 20px; }
     .footer-links a {
-      color: var(--text-dim);
-      text-decoration: none;
-      font-size: 13px;
-      transition: color 0.15s;
+      font-size: 13px; color: var(--text-dim); text-decoration: none;
+      transition: color 0.2s;
     }
-    .footer-links a:hover { color: var(--text-muted); }
-    .footer-copy { font-size: 13px; color: var(--text-dim); }
+    .footer-links a:hover { color: var(--text); }
 
-    /* ── Responsive ── */
+    /* DIVIDER */
+    .section-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      max-width: 1100px; margin: 0 auto;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+      .steps-grid { grid-template-columns: 1fr; }
+      .features-grid { grid-template-columns: 1fr; }
+      .screenshots-grid { grid-template-columns: 1fr; }
+    }
     @media (max-width: 640px) {
-      nav { padding: 0 16px; }
-      .nav-links { display: none; }
-      section { padding: 60px 16px; }
-      .hero { padding: 72px 16px 60px; }
-      .install-section { padding: 40px 24px; }
+      .hero { padding-top: 110px; }
+      .hero-buttons { flex-direction: column; align-items: center; }
+      .footer-inner { flex-direction: column; text-align: center; }
+      .nav-links .nav-link-hide { display: none; }
+    }
+    @media (max-width: 768px) {
+      .nav-links { gap: 10px; }
+      .nav-links a { font-size: 12px; }
+      .nav-links .nav-link-hide { display: none; }
+      .nav-logo-text { font-size: 15px; }
+      .nav-inner { padding: 0 12px; }
     }
   </style>
 </head>
 <body>
 
-<!-- Nav -->
+<!-- NAV -->
 <nav>
-  <a href="/" class="nav-logo">
-    <img src="/favicon.svg" alt="ClawMetry">
-    <div class="nav-logo-text">
-      <span class="claw">Claw</span><span class="metry">Metry</span>
+  <div class="nav-inner">
+    <a href="/" class="nav-logo">
+      <img src="/favicon.svg" width="36" height="36" alt="ClawMetry">
+      <div class="nav-logo-text">Claw<span>Metry</span></div>
+      <span class="nav-badge">NemoClaw</span>
+    </a>
+    <div class="nav-links">
+      <a href="/" class="nav-link-hide">Home</a>
+      <a href="/cloud" class="nav-link-hide">Cloud</a>
+      <a href="/docs" class="nav-link-hide">Docs</a>
+      <a href="https://app.clawmetry.com" class="nav-cta">Open Dashboard</a>
     </div>
-  </a>
-  <span class="nav-badge">NemoClaw</span>
-  <div class="nav-links">
-    <a href="https://github.com/vivekchand/clawmetry" target="_blank">GitHub</a>
-    <a href="/roadmap.html">Roadmap</a>
-    <a href="https://pypi.org/project/clawmetry/" target="_blank" class="nav-cta">Install free</a>
   </div>
 </nav>
 
-<!-- Hero -->
+<!-- HERO -->
 <section class="hero">
-  <div class="hero-eyebrow">
-    <span class="dot"></span>
-    Now supporting NemoClaw agents
+  <div class="hero-glow"></div>
+  <div style="position:relative;z-index:1;">
+
+    <!-- Logo lockup -->
+    <div class="hero-lockup">
+      <span class="hero-lockup-nemo">NVIDIA NeMo</span>
+      <span class="hero-lockup-sep">×</span>
+      <span class="hero-lockup-cm">ClawMetry</span>
+    </div>
+
+    <h1>
+      Know what your<br>
+      <span class="accent">NeMo agents</span> are doing
+    </h1>
+    <p class="hero-sub">
+      Install ClawMetry inside NemoClaw. Your agents sync E2E encrypted data to the cloud. Monitor from anywhere.
+    </p>
+    <div class="hero-buttons">
+      <a href="https://app.clawmetry.com" class="btn-primary">
+        Open Dashboard →
+      </a>
+      <a href="https://github.com/vivekchand/clawmetry" target="_blank" rel="noopener" class="btn-secondary">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        View on GitHub
+      </a>
+    </div>
+    <p style="margin-top:20px;font-size:13px;color:rgba(255,255,255,0.3);">Free to install &middot; Open source &middot; E2E encrypted</p>
   </div>
-  <h1>
-    Full observability for<br>
-    <span class="nemo">NemoClaw</span> agents
-  </h1>
-  <p class="hero-sub">
-    ClawMetry gives NVIDIA NeMo Agent Toolkit users real-time visibility into token costs,
-    sub-agent trees, cron health, and memory — without any code changes.
-    Free. Open-source. One command.
-  </p>
-  <div class="hero-actions">
-    <a href="https://pypi.org/project/clawmetry/" target="_blank" class="btn-primary">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      Install free
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section" style="padding-bottom:80px;">
+  <h2 class="section-title">How it works</h2>
+  <p class="section-sub">Three steps to full observability inside your NemoClaw environment.</p>
+  <div class="steps-grid">
+
+    <div class="step-card">
+      <div class="step-num">01</div>
+      <h3>Install ClawMetry</h3>
+      <p>Drop one package into your NemoClaw environment. No config files, no agents to restart.</p>
+      <span class="step-cmd">pip install clawmetry</span>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">02</div>
+      <h3>Run onboard</h3>
+      <p>One command syncs your node to the cloud with E2E encryption. Keys never leave your machine.</p>
+      <span class="step-cmd">clawmetry onboard</span>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">03</div>
+      <h3>Monitor from anywhere</h3>
+      <p>Open app.clawmetry.com. Live agent activity, token costs, and memory — from any browser.</p>
+      <span class="step-cmd">app.clawmetry.com</span>
+    </div>
+
+  </div>
+</section>
+
+<hr class="section-divider">
+
+<!-- QUICK START -->
+<section class="section" style="padding-top:72px;padding-bottom:80px;">
+  <h2 class="section-title">Quick Start</h2>
+  <p class="section-sub">Get running in 30 seconds inside your NemoClaw environment.</p>
+
+  <div style="max-width:700px;margin:0 auto;background:linear-gradient(180deg, #111 0%, #0a0a0a 100%);border:1px solid rgba(255,255,255,0.08);border-radius:12px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,0.5);">
+    <div style="display:flex;align-items:center;padding:11px 16px;border-bottom:1px solid rgba(255,255,255,0.06);gap:12px;">
+      <div style="display:flex;gap:6px;flex-shrink:0;">
+        <div style="width:12px;height:12px;border-radius:50%;background:#ff5f57;"></div>
+        <div style="width:12px;height:12px;border-radius:50%;background:#febc2e;"></div>
+        <div style="width:12px;height:12px;border-radius:50%;background:#28c840;"></div>
+      </div>
+      <div style="display:flex;gap:2px;margin-left:8px;flex-wrap:wrap;">
+        <button onclick="showNemoTab('oneliner')" id="ntab-oneliner" style="padding:5px 14px;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;background:#76b900;color:#000;font-family:'JetBrains Mono',monospace;transition:all 0.15s;">One-liner</button>
+        <button onclick="showNemoTab('agent')" id="ntab-agent" style="padding:5px 14px;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;background:transparent;color:rgba(255,255,255,0.5);font-family:'JetBrains Mono',monospace;transition:all 0.15s;">&#x1F916; Agent</button>
+      </div>
+      <div style="margin-left:auto;display:flex;align-items:center;">
+        <button id="nemo-copy-btn" onclick="copyNemoCmd()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:rgba(255,255,255,0.5);cursor:pointer;padding:5px 8px;display:flex;align-items:center;transition:all 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+      </div>
+    </div>
+    <div style="padding:20px 28px;font-family:'JetBrains Mono',monospace;font-size:14px;line-height:2.1;">
+
+      <div id="npanel-oneliner">
+        <div style="color:rgba(255,255,255,0.28);font-style:italic;"># Install and connect inside your NemoClaw env</div>
+        <div><span style="color:rgba(255,255,255,0.3);">$ </span><span style="color:#76b900;">pip install clawmetry</span><span style="color:rgba(255,255,255,0.5);"> &amp;&amp; </span><span style="color:#76b900;">clawmetry onboard</span></div>
+        <div style="margin-top:8px;padding:8px 12px;background:rgba(118,185,0,0.07);border:1px solid rgba(118,185,0,0.18);border-radius:6px;font-size:13px;">
+          <span style="color:#76b900;">&#10003; Node connected.</span> <span style="color:#555;">Opening app.clawmetry.com...</span>
+        </div>
+      </div>
+
+      <div id="npanel-agent" style="display:none;text-align:center;padding:12px 0 8px;">
+        <div style="font-size:13px;color:rgba(255,255,255,0.4);margin-bottom:18px;font-style:italic;">Already running a NemoClaw agent? Just ask it:</div>
+        <div style="display:inline-block;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:16px 28px;font-size:15px;color:#fff;letter-spacing:0.01em;">
+          &ldquo;Help me install <code style="color:#76b900;background:rgba(118,185,0,0.1);padding:2px 8px;border-radius:4px;font-size:14px;">pip install clawmetry &amp;&amp; clawmetry onboard</code>&rdquo;
+        </div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.3);margin-top:18px;line-height:1.7;">
+          Your NeMo agent will install the package, connect your node,<br>and open app.clawmetry.com automatically.
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <p style="text-align:center;color:var(--text-dim);font-size:13px;margin-top:16px;">Works inside any NemoClaw environment &middot; Python 3.8+</p>
+
+  <script>
+  var nemoCmds = {
+    oneliner: 'pip install clawmetry && clawmetry onboard',
+    agent: 'Help me install pip install clawmetry && clawmetry onboard'
+  };
+  var nemoActiveTab = 'oneliner';
+  function showNemoTab(id) {
+    nemoActiveTab = id;
+    ['oneliner','agent'].forEach(function(t) {
+      var panel = document.getElementById('npanel-'+t);
+      if(panel) panel.style.display = t===id ? 'block' : 'none';
+      var tab = document.getElementById('ntab-'+t);
+      if(tab) {
+        tab.style.background = t===id ? '#76b900' : 'transparent';
+        tab.style.color = t===id ? '#000' : 'rgba(255,255,255,0.5)';
+        tab.style.fontWeight = t===id ? '700' : '500';
+      }
+    });
+  }
+  function copyNemoCmd() {
+    var cmd = nemoCmds[nemoActiveTab];
+    if(cmd) navigator.clipboard.writeText(cmd).catch(function(){});
+    fetch('/api/copy-track',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tab:nemoActiveTab,command:cmd||nemoActiveTab,source:'nemoclaw'})}).catch(function(){});
+    var btn = document.getElementById('nemo-copy-btn');
+    if(btn) {
+      btn.innerHTML = '<span style="font-size:11px;color:#76b900;">Copied!</span>';
+      setTimeout(function(){ btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'; }, 1500);
+    }
+  }
+  </script>
+</section>
+
+<hr class="section-divider">
+
+<!-- FEATURES -->
+<section class="section" style="padding-top:72px;padding-bottom:80px;">
+  <h2 class="section-title">Built for NeMo environments</h2>
+  <p class="section-sub">Everything you need to understand what your agents are doing at runtime.</p>
+  <div class="features-grid">
+
+    <div class="feature-card">
+      <span class="feature-icon">🔐</span>
+      <h3>E2E Encrypted</h3>
+      <p>All data is encrypted before leaving your NemoClaw sandbox. Keys never leave your machine. We see nothing.</p>
+    </div>
+
+    <div class="feature-card">
+      <span class="feature-icon">📊</span>
+      <h3>Live Agent Activity</h3>
+      <p>See every tool call, token spend, and sub-agent spawn in real time. No more guessing what your agents are doing.</p>
+    </div>
+
+    <div class="feature-card">
+      <span class="feature-icon">🌐</span>
+      <h3>Access from Anywhere</h3>
+      <p>Web dashboard at app.clawmetry.com. Works from any browser, any device. Mobile coming soon.</p>
+    </div>
+
+  </div>
+</section>
+
+<hr class="section-divider">
+
+<!-- SCREENSHOTS -->
+<section class="section" style="padding-top:72px;padding-bottom:80px;">
+  <h2 class="section-title">See your agents think</h2>
+  <p class="section-sub">Real-time observability for every tool call, token cost, and memory operation.</p>
+  <div class="screenshots-grid">
+
+    <div class="screenshot-card">
+      <img src="/dashboard-full.png" alt="ClawMetry dashboard — full agent activity view" loading="lazy">
+      <div class="screenshot-caption">
+        <strong style="color:var(--text);">Agent Activity Dashboard</strong><br>
+        Live feed of every tool call, session, and sub-agent spawn from your NeMo agents.
+      </div>
+    </div>
+
+    <div class="screenshot-card">
+      <img src="/dashboard-overview-og.png" alt="ClawMetry overview — token costs and memory" loading="lazy">
+      <div class="screenshot-caption">
+        <strong style="color:var(--text);">Token Cost Overview</strong><br>
+        Per-model token spend, cost breakdown, and memory usage. No surprises on your bill.
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- CTA -->
+<div class="cta-section">
+  <div style="max-width:560px;margin:0 auto;">
+    <h2>Start monitoring your NeMo agents<br>in 30 seconds</h2>
+    <p style="color:var(--text-muted);font-size:15px;margin-bottom:24px;">One command. E2E encrypted. Free to start.</p>
+    <div class="cta-code-block">
+      <span class="cmd-green">pip install clawmetry</span> &amp;&amp; <span class="cmd-green">clawmetry onboard</span>
+    </div>
+    <br>
+    <a href="https://app.clawmetry.com" class="btn-primary" style="margin-top:8px;">
+      Open Dashboard →
     </a>
-    <a href="https://github.com/vivekchand/clawmetry" target="_blank" class="btn-secondary">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
-      View on GitHub
-    </a>
+    <p style="margin-top:20px;font-size:13px;color:rgba(255,255,255,0.25);">Free to install &middot; Open source &middot; MIT license</p>
   </div>
+</div>
 
-  <!-- Terminal -->
-  <div class="terminal-wrap">
-    <div class="terminal-bar">
-      <span class="dot dot-r"></span>
-      <span class="dot dot-y"></span>
-      <span class="dot dot-g"></span>
-      <span class="terminal-title">terminal — nemoclaw</span>
-    </div>
-    <div class="terminal-body">
-      <div><span class="prompt">$</span> <span class="cmd">pip install clawmetry</span></div>
-      <div class="out">Successfully installed clawmetry-0.12.81</div>
-      <br>
-      <div><span class="prompt">$</span> <span class="cmd">clawmetry</span></div>
-      <div class="out-green">✓ ClawMetry started on http://localhost:8900</div>
-      <div class="out-green">✓ NemoClaw agents detected (3 active)</div>
-      <div class="out-cyan">✓ Token tracking: ON  ·  Cost alerts: ON</div>
-      <br>
-      <div class="comment"># Open browser → real-time agent dashboard</div>
-      <div class="out-yellow">Session cost today: $0.34  ·  Calls: 47  ·  Crons: 12 OK</div>
-    </div>
-  </div>
-</section>
-
-<!-- Features -->
-<section style="background: rgba(118,185,0,0.02); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
-  <div class="container">
-    <div class="section-label">What you get</div>
-    <h2 class="section-title">Everything you need to see<br>what your agents are actually doing</h2>
-    <p class="section-sub">No instrumentation. No config. Just install ClawMetry and open your browser.</p>
-
-    <div class="features-grid">
-      <div class="feat-card">
-        <div class="feat-icon">💸</div>
-        <h3>Real-time token cost tracking</h3>
-        <p>See exactly what each NemoClaw agent session costs per model call. Live updates. Budget alerts before you overspend.</p>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon">🌲</div>
-        <h3>Sub-agent tree view</h3>
-        <p>Visualise parent–child agent relationships as they execute. See which sub-agent spawned what, when, and how long each took.</p>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon">⏱</div>
-        <h3>Cron job health monitor</h3>
-        <p>Track scheduled agent tasks — last run, next run, failure count, last error. Get alerted before a silent cron failure costs you a day.</p>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon">🧠</div>
-        <h3>Memory file tracking</h3>
-        <p>Watch agent memory files change in real time. See what context your agents are reading and writing across sessions.</p>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon">📊</div>
-        <h3>Model attribution</h3>
-        <p>Know which model responded per turn. Compare primary vs fallback model usage. See cost delta across model switches.</p>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon">🔔</div>
-        <h3>Budget &amp; anomaly alerts</h3>
-        <p>Set per-session or daily spend limits. Get notified when costs spike unexpectedly — before the $50/day silent burn.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- How it works -->
-<section>
-  <div class="container">
-    <div class="section-label">Setup</div>
-    <h2 class="section-title">Up in 30 seconds</h2>
-    <p class="section-sub">No SDK to install. No API key. No changes to your NemoClaw agent code.</p>
-
-    <div class="steps">
-      <div class="step">
-        <div class="step-num">01</div>
-        <h3>Install ClawMetry</h3>
-        <p><code style="background:#111;padding:3px 7px;border-radius:5px;font-size:13px;color:var(--accent);">pip install clawmetry</code> — single package, no dependencies beyond Flask.</p>
-      </div>
-      <div class="step">
-        <div class="step-num">02</div>
-        <h3>Run it</h3>
-        <p><code style="background:#111;padding:3px 7px;border-radius:5px;font-size:13px;color:var(--accent);">clawmetry</code> — auto-detects your agent workspace, connects to the gateway, starts reading session logs.</p>
-      </div>
-      <div class="step">
-        <div class="step-num">03</div>
-        <h3>Open your browser</h3>
-        <p>Navigate to <strong>http://localhost:8900</strong>. Dashboard loads instantly. No login. No cloud account required.</p>
-      </div>
-      <div class="step">
-        <div class="step-num">04</div>
-        <h3>Run your agents</h3>
-        <p>Start your NemoClaw agents as normal. ClawMetry picks them up automatically — real-time token flow, costs, and health.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- Comparison -->
-<section style="background: rgba(118,185,0,0.02); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
-  <div class="container">
-    <div class="section-label">vs alternatives</div>
-    <h2 class="section-title">Why ClawMetry for NemoClaw</h2>
-    <p class="section-sub">Built for agent stacks. Runs locally. Nothing leaves your machine.</p>
-
-    <div class="compare-wrap">
-      <table class="compare-table">
-        <thead>
-          <tr>
-            <th>Feature</th>
-            <th class="nemo-col">ClawMetry</th>
-            <th>LangSmith</th>
-            <th>Generic APM</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Zero config install</td>
-            <td><span class="tick">✓</span></td>
-            <td><span class="partial">API key needed</span></td>
-            <td><span class="cross">✕</span></td>
-          </tr>
-          <tr>
-            <td>Fully local / offline</td>
-            <td><span class="tick">✓</span></td>
-            <td><span class="cross">✕ cloud only</span></td>
-            <td><span class="cross">✕</span></td>
-          </tr>
-          <tr>
-            <td>Sub-agent tree view</td>
-            <td><span class="tick">✓</span></td>
-            <td><span class="partial">Trace only</span></td>
-            <td><span class="cross">✕</span></td>
-          </tr>
-          <tr>
-            <td>Cron job health</td>
-            <td><span class="tick">✓</span></td>
-            <td><span class="cross">✕</span></td>
-            <td><span class="partial">Custom setup</span></td>
-          </tr>
-          <tr>
-            <td>Memory file tracking</td>
-            <td><span class="tick">✓</span></td>
-            <td><span class="cross">✕</span></td>
-            <td><span class="cross">✕</span></td>
-          </tr>
-          <tr>
-            <td>NemoClaw native support</td>
-            <td><span class="tick">✓</span></td>
-            <td><span class="cross">✕</span></td>
-            <td><span class="cross">✕</span></td>
-          </tr>
-          <tr>
-            <td>Open source</td>
-            <td><span class="tick">✓ MIT</span></td>
-            <td><span class="cross">✕</span></td>
-            <td><span class="partial">Varies</span></td>
-          </tr>
-          <tr>
-            <td>Free tier</td>
-            <td><span class="tick">✓ Always free</span></td>
-            <td><span class="partial">Limited</span></td>
-            <td><span class="partial">Limited</span></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</section>
-
-<!-- FAQ -->
-<section>
-  <div class="container">
-    <div class="section-label">FAQ</div>
-    <h2 class="section-title">Common questions</h2>
-    <p class="section-sub" style="margin-bottom: 40px;">Everything about ClawMetry + NemoClaw.</p>
-
-    <div class="faq-list">
-      <div class="faq-item">
-        <div class="faq-q" onclick="toggleFaq(this)">
-          Do I need to change my NemoClaw agent code?
-          <span class="arrow">▾</span>
-        </div>
-        <div class="faq-a">No. ClawMetry reads your agent's session logs and workspace files directly. It connects to the agent gateway — no SDK, no decorators, no changes to your agent code required.</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q" onclick="toggleFaq(this)">
-          Does ClawMetry send my agent data anywhere?
-          <span class="arrow">▾</span>
-        </div>
-        <div class="faq-a">No. ClawMetry runs entirely on your machine. All data stays local. The dashboard is served at localhost:8900 — nothing leaves your environment unless you explicitly enable cloud sync (opt-in, separate feature).</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q" onclick="toggleFaq(this)">
-          Which NVIDIA NeMo versions are supported?
-          <span class="arrow">▾</span>
-        </div>
-        <div class="faq-a">ClawMetry works with NeMo Agent Toolkit (NemoClaw) via the standard gateway interface. We test against the latest stable releases. If you hit a compatibility issue, open a GitHub issue — we respond fast.</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q" onclick="toggleFaq(this)">
-          Can I use ClawMetry with other agent frameworks too?
-          <span class="arrow">▾</span>
-        </div>
-        <div class="faq-a">Yes. ClawMetry started as an OpenClaw observability tool but now supports any agent stack that produces OpenTelemetry traces or standard session log files. NemoClaw, LangGraph, CrewAI, AutoGen — all work.</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q" onclick="toggleFaq(this)">
-          Is ClawMetry really free?
-          <span class="arrow">▾</span>
-        </div>
-        <div class="faq-a">Yes — ClawMetry OSS is MIT licensed and free forever. We also offer ClawMetry Cloud (opt-in, paid) for teams that want multi-node fleet management and centralized dashboards. The local dashboard is always free.</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q" onclick="toggleFaq(this)">
-          How is this different from NeMo's built-in logging?
-          <span class="arrow">▾</span>
-        </div>
-        <div class="faq-a">NeMo's built-in logging gives you trace-level call data. ClawMetry adds the operational layer on top: real-time cost tracking, budget alerts, sub-agent trees, cron health, memory file diffs, and a live browser dashboard — all without touching your agent code.</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- Install CTA -->
-<section style="padding: 60px 24px 100px;">
-  <div class="container">
-    <div class="install-section">
-      <h2>Start monitoring your NemoClaw agents in 30 seconds</h2>
-      <p>Free, open-source, zero config. Works on Linux, macOS, and Windows.</p>
-      <div class="install-cmd" onclick="copyCmd(this)" title="Click to copy">
-        <span class="dollar">$</span> pip install clawmetry &amp;&amp; clawmetry
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.4;flex-shrink:0"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-      </div>
-      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-        <a href="https://github.com/vivekchand/clawmetry" target="_blank" class="btn-secondary">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
-          Star on GitHub
-        </a>
-        <a href="/roadmap.html" class="btn-secondary">View roadmap →</a>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- Footer -->
+<!-- FOOTER -->
 <footer>
   <div class="footer-inner">
-    <a href="/" class="footer-logo">
-      <img src="/favicon.svg" alt="ClawMetry">
-      <span>Claw<span class="metry">Metry</span></span>
-    </a>
-    <div class="footer-links">
-      <a href="https://github.com/vivekchand/clawmetry" target="_blank">GitHub</a>
-      <a href="https://pypi.org/project/clawmetry/" target="_blank">PyPI</a>
-      <a href="/roadmap.html">Roadmap</a>
-      <a href="/privacy.html">Privacy</a>
+    <div class="footer-text">
+      🦞 ClawMetry for <a href="https://github.com/openclaw/openclaw">OpenClaw</a> &middot; Built by <a href="https://github.com/vivekchand">vivekchand</a> &middot; MIT licensed
     </div>
-    <span class="footer-copy">© 2026 ClawMetry · MIT License</span>
+    <div class="footer-links">
+      <a href="https://github.com/vivekchand/clawmetry" target="_blank" rel="noopener">GitHub</a>
+      <a href="/pricing">Pricing</a>
+      <a href="/terms">Terms</a>
+      <a href="/privacy">Privacy</a>
+      <a href="/">Home</a>
+    </div>
   </div>
 </footer>
 
 <script>
-  function toggleFaq(el) {
-    const item = el.closest('.faq-item');
-    item.classList.toggle('open');
+(function() {
+  function getOrCreateVisitorId() {
+    var key = "cm_vid";
+    var vid = localStorage.getItem(key);
+    if (!vid) { vid = "v_" + Math.random().toString(36).substr(2,9) + Date.now().toString(36); localStorage.setItem(key, vid); }
+    return vid;
   }
-
-  function copyCmd(el) {
-    const text = 'pip install clawmetry && clawmetry';
-    navigator.clipboard.writeText(text).then(() => {
-      const orig = el.innerHTML;
-      el.innerHTML = '<span style="color:var(--accent)">✓ Copied!</span>';
-      setTimeout(() => { el.innerHTML = orig; }, 1800);
-    });
-  }
+  try {
+    fetch("/api/track", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ event_type: "page_visit", visitor_id: getOrCreateVisitorId(), page: "/nemoclaw", metadata: {} })
+    }).catch(function(){});
+  } catch(e) {}
+})();
 </script>
 
 </body>

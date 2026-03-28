@@ -2876,6 +2876,7 @@ def static_files(path):
         'showcase': 'showcase.html',
         'how-it-works': 'how-it-works.html',
         'cloud': 'cloud.html',
+        'nemoclaw': 'nemoclaw.html',
         'docs': 'docs.html',
         'globe': 'globe.html',
     }
