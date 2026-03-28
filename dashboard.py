@@ -8245,6 +8245,10 @@ function clawmetryLogout(){
   </div>
   <div class="section-title">💰 Cost Breakdown <span id="usage-cost-info-icon" class="tooltip-info-icon" style="display:none;">i</span></div>
   <div class="card"><table class="usage-table" id="usage-cost-table"><tbody><tr><td colspan="3" style="color:#666;">Loading...</td></tr></tbody></table></div>
+  <div id="usage-anomaly-section" style="display:none;">
+    <div class="section-title">⚠️ Anomaly Alerts <span id="usage-anomaly-badge" style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;background:#7f1d1d;color:#fca5a5;margin-left:8px;"></span></div>
+    <div class="card" id="usage-anomaly-list" style="font-size:13px;"></div>
+  </div>
   <div class="section-title">🧩 Cost By Plugin / Skill</div>
   <div class="card">
     <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;">
@@ -11678,6 +11682,48 @@ async function loadUsage() {
     }).catch(function() {
       var el = document.getElementById('usage-session-cost-table');
       if (el) el.innerHTML = '<span style="color:var(--text-muted)">No session cost data available</span>';
+    });
+    // Load anomaly alerts
+    fetch('/api/usage/anomalies').then(r => r.json()).then(function(ad) {
+      var anomalies = ad.anomalies || [];
+      var section = document.getElementById('usage-anomaly-section');
+      var listEl = document.getElementById('usage-anomaly-list');
+      var badge = document.getElementById('usage-anomaly-badge');
+      if (!section || !listEl) return;
+      if (anomalies.length === 0) {
+        section.style.display = 'none';
+        return;
+      }
+      section.style.display = '';
+      if (badge) badge.textContent = anomalies.length + ' detected';
+      var baselineAvg = ad.baseline_7d_avg_usd || 0;
+      var html = '<div style="margin-bottom:8px;font-size:12px;color:var(--text-muted);">Sessions with cost &gt;2x their 7-day rolling average ($' + baselineAvg.toFixed(4) + ' avg). Review for runaway loops or unexpected usage.</div>';
+      html += '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
+      html += '<thead><tr style="color:var(--text-muted);text-align:left;">';
+      html += '<th style="padding:4px 8px;">Session</th>';
+      html += '<th style="padding:4px 8px;text-align:right;">Cost</th>';
+      html += '<th style="padding:4px 8px;text-align:right;">Baseline avg</th>';
+      html += '<th style="padding:4px 8px;text-align:right;">Ratio</th>';
+      html += '<th style="padding:4px 8px;text-align:right;">Time</th>';
+      html += '</tr></thead><tbody>';
+      anomalies.forEach(function(a) {
+        var sid = a.session_id || '?';
+        var shortId = sid.length > 16 ? sid.substring(0, 16) + '…' : sid;
+        var ts = a.timestamp ? new Date(a.timestamp).toLocaleString() : '--';
+        var ratio = Number(a.ratio || 0).toFixed(1);
+        var ratioColor = a.ratio >= 5 ? '#f87171' : a.ratio >= 3 ? '#fb923c' : '#fbbf24';
+        html += '<tr style="border-top:1px solid var(--border-primary);">';
+        html += '<td style="padding:6px 8px;font-family:monospace;color:var(--text-primary);">' + escHtml(shortId) + '</td>';
+        html += '<td style="padding:6px 8px;text-align:right;color:#f87171;font-weight:600;">$' + Number(a.cost_usd || 0).toFixed(4) + '</td>';
+        html += '<td style="padding:6px 8px;text-align:right;color:var(--text-muted);">$' + Number(a.rolling_avg_usd || 0).toFixed(4) + '</td>';
+        html += '<td style="padding:6px 8px;text-align:right;font-weight:700;color:' + ratioColor + ';">' + ratio + 'x</td>';
+        html += '<td style="padding:6px 8px;text-align:right;color:var(--text-muted);font-size:11px;">' + escHtml(ts) + '</td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table>';
+      listEl.innerHTML = html;
+    }).catch(function() {
+      // anomaly panel is optional — silent fail is fine
     });
   } catch(e) {
     document.getElementById('usage-chart').innerHTML = '<span style="color:#555">No usage data available</span>';
