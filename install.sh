@@ -97,6 +97,40 @@ echo ""
 echo -e "  $(printf '%.0s─' {1..50})"
 echo ""
 
+# ── NemoClaw detection ───────────────────────────────────────────────────────
+
+if command -v nemoclaw &>/dev/null; then
+  echo -e "  ${BOLD}🟢 NemoClaw detected${NC}"
+  echo ""
+
+  # Step 1: Find and auto-apply the bundled preset script
+  PRESET_SCRIPT=$("$INSTALL_DIR/bin/python3" -c "
+import importlib.resources
+try:
+    pkg = importlib.resources.files('clawmetry') / 'resources' / 'add-nemoclaw-clawmetry-preset.sh'
+    print(str(pkg))
+except Exception:
+    pass
+" 2>/dev/null || true)
+
+  if [ -n "$PRESET_SCRIPT" ] && [ -f "$PRESET_SCRIPT" ]; then
+    echo -e "  → Applying ClawMetry preset to NemoClaw sandboxes..."
+    bash "$PRESET_SCRIPT" \
+      && echo -e "  ${GREEN}${BOLD}✓ NemoClaw preset applied${NC}" \
+      || echo -e "  ${DIM}⚠  Preset incomplete. Run manually: bash $PRESET_SCRIPT${NC}"
+    echo ""
+  fi
+
+  echo -e "  ${BOLD}Next: set up ClawMetry inside your NemoClaw OpenClaw sandbox${NC}"
+  echo -e "  ${DIM}Open a NemoClaw sandbox shell and run:${NC}"
+  echo ""
+  echo -e "    ${GREEN}python3 -m venv .venv${NC}"
+  echo -e "    ${GREEN}.venv/bin/pip install clawmetry${NC}"
+  echo -e "    ${GREEN}.venv/bin/clawmetry onboard${NC}"
+  echo -e "    ${GREEN}.venv/bin/clawmetry --host 0.0.0.0 --port 8900 &${NC}"
+  echo ""
+fi
+
 # ── Onboarding ───────────────────────────────────────────────────────────────
 # Runs: clawmetry onboard
 
