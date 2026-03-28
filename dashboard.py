@@ -3732,10 +3732,23 @@ function clawmetryLogout(){
       </div>
     </div>
     <!-- Applied Presets -->
-    <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:14px;">
+    <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:12px;">
       <div style="font-size:11px;font-weight:700;color:#76b900;letter-spacing:1px;margin-bottom:10px;">APPLIED PRESETS</div>
       <div id="nc-presets" style="display:flex;flex-wrap:wrap;gap:6px;">
         <span style="color:var(--text-muted);font-size:12px;">None detected</span>
+      </div>
+    </div>
+    <!-- Egress Approvals Panel -->
+    <div style="background:var(--bg-secondary);border:1px solid rgba(118,185,0,0.35);border-radius:8px;padding:14px;" id="nc-approvals-panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:11px;font-weight:700;color:#76b900;letter-spacing:1px;">PENDING EGRESS APPROVALS</span>
+          <span id="nc-approvals-count" style="display:none;font-size:11px;font-weight:700;background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:1px 8px;"></span>
+        </div>
+        <button class="refresh-btn" onclick="loadNemoClawApprovals()" style="font-size:11px;">&#8635; Refresh</button>
+      </div>
+      <div id="nc-approvals-list">
+        <div style="color:var(--text-muted);font-size:12px;padding:8px 0;">Loading...</div>
       </div>
     </div>
   </div>
@@ -4052,7 +4065,8 @@ function switchTab(name) {
   if (name === 'security') { loadSecurityPage(); loadSecurityPosture(); }
   if (name === 'logs') { if (!logStream || logStream.readyState === EventSource.CLOSED) startLogStream(); loadLogs(); }
   if (name === 'models') loadModelAttribution();
-  if (name === 'nemoclaw') loadNemoClaw();
+  if (name === 'nemoclaw') { loadNemoClaw(); _startNcApprovalsAutoRefresh(); }
+  if (name !== 'nemoclaw') _stopNcApprovalsAutoRefresh();
 }
 
 function exportUsageData() {
@@ -9028,10 +9042,23 @@ function clawmetryLogout(){
       </div>
     </div>
     <!-- Applied Presets -->
-    <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:14px;">
+    <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:12px;">
       <div style="font-size:11px;font-weight:700;color:#76b900;letter-spacing:1px;margin-bottom:10px;">APPLIED PRESETS</div>
       <div id="nc-presets" style="display:flex;flex-wrap:wrap;gap:6px;">
         <span style="color:var(--text-muted);font-size:12px;">None detected</span>
+      </div>
+    </div>
+    <!-- Egress Approvals Panel -->
+    <div style="background:var(--bg-secondary);border:1px solid rgba(118,185,0,0.35);border-radius:8px;padding:14px;" id="nc-approvals-panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:11px;font-weight:700;color:#76b900;letter-spacing:1px;">PENDING EGRESS APPROVALS</span>
+          <span id="nc-approvals-count" style="display:none;font-size:11px;font-weight:700;background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:1px 8px;"></span>
+        </div>
+        <button class="refresh-btn" onclick="loadNemoClawApprovals()" style="font-size:11px;">&#8635; Refresh</button>
+      </div>
+      <div id="nc-approvals-list">
+        <div style="color:var(--text-muted);font-size:12px;padding:8px 0;">Loading...</div>
       </div>
     </div>
   </div>
@@ -9404,7 +9431,8 @@ function switchTab(name) {
   if (name === 'security') { loadSecurityPage(); loadSecurityPosture(); }
   if (name === 'logs') { if (!logStream || logStream.readyState === EventSource.CLOSED) startLogStream(); loadLogs(); }
   if (name === 'models') loadModelAttribution();
-  if (name === 'nemoclaw') loadNemoClaw();
+  if (name === 'nemoclaw') { loadNemoClaw(); _startNcApprovalsAutoRefresh(); }
+  if (name !== 'nemoclaw') _stopNcApprovalsAutoRefresh();
 }
 
 function exportUsageData() {
@@ -10525,6 +10553,131 @@ async function loadNemoClaw() {
     var tab = document.getElementById('nemoclaw-tab');
     if (tab) tab.style.display = 'none';
     console.warn('NemoClaw governance load failed:', e);
+  }
+  // Also load approvals
+  loadNemoClawApprovals();
+}
+
+// Auto-refresh approvals every 15 seconds when NemoClaw tab is active
+var _ncApprovalsTimer = null;
+function _startNcApprovalsAutoRefresh() {
+  if (_ncApprovalsTimer) return;
+  loadNemoClawApprovals();
+  _ncApprovalsTimer = setInterval(loadNemoClawApprovals, 15000);
+}
+function _stopNcApprovalsAutoRefresh() {
+  if (_ncApprovalsTimer) { clearInterval(_ncApprovalsTimer); _ncApprovalsTimer = null; }
+}
+
+async function loadNemoClawApprovals() {
+  var listEl = document.getElementById('nc-approvals-list');
+  var countEl = document.getElementById('nc-approvals-count');
+  if (!listEl) return;
+  try {
+    var data = await fetchJsonWithTimeout('/api/nemoclaw/pending-approvals', 8000);
+    if (!data.installed) {
+      listEl.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:6px 0;">openshell not available on this host</div>';
+      if (countEl) countEl.style.display = 'none';
+      return;
+    }
+    var approvals = data.approvals || [];
+    if (countEl) {
+      if (approvals.length > 0) {
+        countEl.textContent = approvals.length;
+        countEl.style.display = '';
+      } else {
+        countEl.style.display = 'none';
+      }
+    }
+    if (approvals.length === 0) {
+      listEl.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:8px 0;text-align:center;">✓ No pending requests</div>';
+      return;
+    }
+    var html = '';
+    approvals.forEach(function(a) {
+      var ruleDisplay = '';
+      if (a.host) {
+        ruleDisplay = escHtml(a.host);
+        if (a.port) ruleDisplay += ':' + escHtml(String(a.port));
+        if (a.protocol) ruleDisplay += ' (' + escHtml(a.protocol.toUpperCase()) + ')';
+      } else if (a.rule_name) {
+        ruleDisplay = escHtml(a.rule_name);
+      }
+      var timeAgo = '';
+      if (a.ts) {
+        try {
+          var diff = Math.floor((Date.now() - new Date(a.ts).getTime()) / 1000);
+          if (diff < 60) timeAgo = diff + 's ago';
+          else if (diff < 3600) timeAgo = Math.floor(diff/60) + 'm ago';
+          else timeAgo = Math.floor(diff/3600) + 'h ago';
+        } catch(e) {}
+      }
+      html += '<div style="border:1px solid rgba(118,185,0,0.25);border-radius:6px;padding:12px;margin-bottom:8px;background:var(--bg-primary);">';
+      html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">';
+      html += '<div style="font-size:12px;">';
+      html += '<span style="color:var(--text-muted);">sandbox: </span><span style="color:#76b900;font-weight:600;font-family:\'JetBrains Mono\',monospace;">' + escHtml(a.sandbox || '') + '</span>';
+      if (a.rule_name) html += '<span style="color:var(--text-muted);margin-left:10px;">rule: </span><span style="color:var(--text-secondary);font-family:\'JetBrains Mono\',monospace;font-size:11px;">' + escHtml(a.rule_name) + '</span>';
+      html += '</div>';
+      if (timeAgo) html += '<span style="font-size:11px;color:var(--text-muted);">' + escHtml(timeAgo) + '</span>';
+      html += '</div>';
+      if (ruleDisplay) {
+        html += '<div style="font-size:13px;font-weight:600;color:var(--text-primary);font-family:\'JetBrains Mono\',monospace;margin-bottom:10px;">' + ruleDisplay + '</div>';
+      }
+      var chunkId = escHtml(a.chunk_id || '');
+      var sandbox = escHtml(a.sandbox || '');
+      html += '<div style="display:flex;gap:8px;">';
+      html += '<button onclick="ncApprove(\'' + sandbox + '\',\'' + chunkId + '\',this)" style="flex:1;padding:6px 12px;background:rgba(118,185,0,0.15);color:#76b900;border:1px solid rgba(118,185,0,0.4);border-radius:5px;cursor:pointer;font-size:12px;font-weight:600;">&#10003; Approve</button>';
+      html += '<button onclick="ncReject(\'' + sandbox + '\',\'' + chunkId + '\',this)" style="flex:1;padding:6px 12px;background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:5px;cursor:pointer;font-size:12px;font-weight:600;">&#10007; Reject</button>';
+      html += '</div>';
+      html += '</div>';
+    });
+    listEl.innerHTML = html;
+  } catch(e) {
+    listEl.innerHTML = '<div style="color:var(--text-muted);font-size:12px;">Failed to load approvals</div>';
+  }
+}
+
+async function ncApprove(sandbox, chunkId, btn) {
+  if (btn) { btn.disabled = true; btn.textContent = 'Approving...'; }
+  try {
+    var resp = await fetch('/api/nemoclaw/approve', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({sandbox: sandbox, chunk_id: chunkId})
+    });
+    var data = await resp.json();
+    if (data.ok) {
+      setTimeout(loadNemoClawApprovals, 500);
+    } else {
+      if (btn) { btn.disabled = false; btn.textContent = '✓ Approve'; }
+      alert('Approve failed: ' + (data.output || 'unknown error'));
+    }
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = '✓ Approve'; }
+    console.error('ncApprove error:', e);
+  }
+}
+
+async function ncReject(sandbox, chunkId, btn) {
+  var reason = window.prompt('Reject reason (optional):') || '';
+  if (reason === null) return; // cancelled
+  if (btn) { btn.disabled = true; btn.textContent = 'Rejecting...'; }
+  try {
+    var resp = await fetch('/api/nemoclaw/reject', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({sandbox: sandbox, chunk_id: chunkId, reason: reason})
+    });
+    var data = await resp.json();
+    if (data.ok) {
+      setTimeout(loadNemoClawApprovals, 500);
+    } else {
+      if (btn) { btn.disabled = false; btn.textContent = '✗ Reject'; }
+      alert('Reject failed: ' + (data.output || 'unknown error'));
+    }
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = '✗ Reject'; }
+    console.error('ncReject error:', e);
   }
 }
 
@@ -23828,6 +23981,114 @@ def api_nemoclaw_policy():
     if data.get("policy_yaml"):
         result["network_policies"] = _parse_network_policies(data["policy_yaml"])
     return jsonify(result)
+
+
+@bp_nemoclaw.route('/api/nemoclaw/approve', methods=['POST'])
+def api_nemoclaw_approve():
+    """Approve a pending NemoClaw egress chunk."""
+    data = request.get_json() or {}
+    sandbox = data.get('sandbox')
+    chunk_id = data.get('chunk_id')
+    if not sandbox or not chunk_id:
+        return jsonify({'error': 'missing sandbox or chunk_id'}), 400
+    import subprocess as _sp
+    r = _sp.run(
+        ['openshell', 'draft', 'approve', sandbox, chunk_id],
+        capture_output=True, text=True, timeout=10
+    )
+    return jsonify({'ok': r.returncode == 0, 'output': r.stdout or r.stderr})
+
+
+@bp_nemoclaw.route('/api/nemoclaw/reject', methods=['POST'])
+def api_nemoclaw_reject():
+    """Reject a pending NemoClaw egress chunk."""
+    data = request.get_json() or {}
+    sandbox = data.get('sandbox')
+    chunk_id = data.get('chunk_id')
+    reason = data.get('reason', '')
+    if not sandbox or not chunk_id:
+        return jsonify({'error': 'missing sandbox or chunk_id'}), 400
+    import subprocess as _sp
+    cmd = ['openshell', 'draft', 'reject', sandbox, chunk_id]
+    if reason:
+        cmd += ['--reason', reason]
+    r = _sp.run(cmd, capture_output=True, text=True, timeout=10)
+    return jsonify({'ok': r.returncode == 0, 'output': r.stdout or r.stderr})
+
+
+@bp_nemoclaw.route('/api/nemoclaw/pending-approvals')
+def api_nemoclaw_pending_approvals():
+    """Return pending egress approval requests from openshell."""
+    import shutil as _shutil
+    if not _shutil.which('openshell'):
+        return jsonify({'installed': False, 'approvals': []})
+    try:
+        # Get sandbox names
+        import subprocess as _sp
+        r = _sp.run(['nemoclaw', 'list'], capture_output=True, text=True, timeout=5)
+        approvals = []
+        sandboxes = []
+        for line in r.stdout.splitlines():
+            line = line.strip()
+            if not line or line.startswith('#') or line.lower().startswith('name') or line.startswith('-'):
+                continue
+            parts = line.split()
+            if parts:
+                sandboxes.append(parts[0])
+        for sandbox in sandboxes:
+            # Try JSON output first
+            r2 = _sp.run(
+                ['openshell', 'draft', 'get', sandbox, '--status', 'pending', '--json'],
+                capture_output=True, text=True, timeout=5
+            )
+            if r2.returncode == 0 and r2.stdout.strip():
+                try:
+                    import json as _j
+                    chunks = _j.loads(r2.stdout)
+                    if not isinstance(chunks, list):
+                        chunks = [chunks] if isinstance(chunks, dict) else []
+                    for chunk in chunks:
+                        endpoints = chunk.get('proposed_rule', {}).get('endpoints', [{}])
+                        first_ep = endpoints[0] if endpoints else {}
+                        approvals.append({
+                            'sandbox': sandbox,
+                            'chunk_id': chunk.get('id'),
+                            'rule_name': chunk.get('rule_name'),
+                            'host': first_ep.get('host'),
+                            'port': first_ep.get('port'),
+                            'protocol': first_ep.get('protocol'),
+                            'status': 'pending',
+                            'ts': chunk.get('created_at'),
+                        })
+                    continue
+                except (ValueError, KeyError):
+                    pass
+            # Fallback: plain text
+            r3 = _sp.run(
+                ['openshell', 'draft', 'get', sandbox, '--status', 'pending'],
+                capture_output=True, text=True, timeout=5
+            )
+            if r3.returncode == 0:
+                for line in r3.stdout.splitlines():
+                    line = line.strip()
+                    if not line or line.startswith('#') or line.lower().startswith('id'):
+                        continue
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        approvals.append({
+                            'sandbox': sandbox,
+                            'chunk_id': parts[0],
+                            'rule_name': parts[1] if len(parts) > 1 else None,
+                            'host': parts[2] if len(parts) > 2 else None,
+                            'port': parts[3] if len(parts) > 3 else None,
+                            'protocol': None,
+                            'status': 'pending',
+                            'ts': None,
+                        })
+        return jsonify({'installed': True, 'approvals': approvals})
+    except Exception as e:
+        return jsonify({'installed': True, 'approvals': [], 'error': str(e)})
+
 
 # ── Context Inspector (GH #9) ─────────────────────────────────────────
 

@@ -792,6 +792,86 @@ def _detect_ollama_for_heartbeat():
     return result
 
 
+def _parse_sandbox_names(output: str) -> list:
+    """Parse sandbox names from `nemoclaw list` output."""
+    names = []
+    for line in output.splitlines():
+        line = line.strip()
+        if not line or line.startswith('#') or line.lower().startswith('name') or line.startswith('-'):
+            continue
+        parts = line.split()
+        if parts:
+            names.append(parts[0])
+    return names
+
+
+def _get_pending_approvals() -> list:
+    """Get pending NemoClaw egress approval requests via openshell CLI."""
+    import shutil as _shutil
+    if not _shutil.which("openshell"):
+        return []
+    try:
+        # Get sandbox names first
+        r = subprocess.run(["nemoclaw", "list"], capture_output=True, text=True, timeout=5)
+        sandboxes = _parse_sandbox_names(r.stdout)
+        if not sandboxes:
+            return []
+
+        approvals = []
+        for sandbox in sandboxes:
+            # Try --json flag first; fall back to text parsing
+            r2 = subprocess.run(
+                ["openshell", "draft", "get", sandbox, "--status", "pending", "--json"],
+                capture_output=True, text=True, timeout=5
+            )
+            if r2.returncode == 0 and r2.stdout.strip():
+                try:
+                    chunks = json.loads(r2.stdout)
+                    if not isinstance(chunks, list):
+                        chunks = [chunks] if isinstance(chunks, dict) else []
+                    for chunk in chunks:
+                        endpoints = chunk.get("proposed_rule", {}).get("endpoints", [{}])
+                        first_ep = endpoints[0] if endpoints else {}
+                        approvals.append({
+                            "sandbox": sandbox,
+                            "chunk_id": chunk.get("id"),
+                            "rule_name": chunk.get("rule_name"),
+                            "host": first_ep.get("host"),
+                            "port": first_ep.get("port"),
+                            "protocol": first_ep.get("protocol"),
+                            "status": "pending",
+                            "ts": chunk.get("created_at"),
+                        })
+                    continue
+                except (ValueError, KeyError):
+                    pass
+            # Fallback: text output parsing (if no --json flag or JSON parse failed)
+            r3 = subprocess.run(
+                ["openshell", "draft", "get", sandbox, "--status", "pending"],
+                capture_output=True, text=True, timeout=5
+            )
+            if r3.returncode == 0:
+                for line in r3.stdout.splitlines():
+                    line = line.strip()
+                    if not line or line.startswith('#') or line.lower().startswith('id'):
+                        continue
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        approvals.append({
+                            "sandbox": sandbox,
+                            "chunk_id": parts[0],
+                            "rule_name": parts[1] if len(parts) > 1 else None,
+                            "host": parts[2] if len(parts) > 2 else None,
+                            "port": parts[3] if len(parts) > 3 else None,
+                            "protocol": None,
+                            "status": "pending",
+                            "ts": None,
+                        })
+        return approvals
+    except Exception:
+        return []
+
+
 def send_heartbeat(config: dict) -> bool:
     """Send heartbeat to cloud. Returns True on success, False on failure."""
     payload = {
@@ -801,6 +881,7 @@ def send_heartbeat(config: dict) -> bool:
         "version": _get_version(),
         "e2e": bool(config.get("encryption_key")),
         "ollama": _detect_ollama_for_heartbeat(),
+        "nemoclaw_approvals": _get_pending_approvals(),
     }
     last_err = None
     for attempt in range(3):
