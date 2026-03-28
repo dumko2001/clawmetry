@@ -404,7 +404,7 @@
       <a href="/" class="nav-link-hide">Home</a>
       <a href="/cloud" class="nav-link-hide">Cloud</a>
       <a href="/docs" class="nav-link-hide">Docs</a>
-      <a href="https://app.clawmetry.com" class="nav-cta">Open Dashboard</a>
+      <a href="https://app.clawmetry.com" style="color:rgba(255,255,255,0.5);font-size:14px;text-decoration:none;margin-right:4px;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.5)'">Sign in</a><a href="#get-started" class="nav-cta">Get Started</a>
     </div>
   </div>
 </nav>
@@ -444,8 +444,8 @@
     </div>
 
     <div class="hero-buttons">
-      <a href="https://app.clawmetry.com" class="btn-primary">
-        Open Dashboard →
+      <a href="#get-started" class="btn-primary">
+        Get Started →
       </a>
       <a href="https://github.com/vivekchand/clawmetry" target="_blank" rel="noopener" class="btn-secondary">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
@@ -533,6 +533,37 @@
     </div>
   </div>
   <p style="text-align:center;color:var(--text-dim);font-size:13px;margin-top:16px;">Works inside any NemoClaw environment &middot; Python 3.8+</p>
+
+  <!-- Need help form -->
+  <div style="max-width:480px;margin:32px auto 0;background:rgba(118,185,0,0.05);border:1px solid rgba(118,185,0,0.18);border-radius:12px;padding:24px 28px;text-align:center;">
+    <div style="font-size:1.3rem;margin-bottom:8px;">🙋</div>
+    <div style="font-weight:700;color:#fff;margin-bottom:6px;font-size:15px;">Need help setting up?</div>
+    <div style="font-size:13px;color:rgba(255,255,255,0.45);margin-bottom:18px;">Drop your email and we'll help you get ClawMetry running on your NemoClaw fleet.</div>
+    <form id="nemo-help-form" onsubmit="submitNemoHelp(event)" style="display:flex;gap:8px;flex-direction:column;">
+      <input type="text" id="nemo-help-name" placeholder="Your name" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:10px 14px;color:#fff;font-size:14px;outline:none;width:100%;box-sizing:border-box;" onfocus="this.style.borderColor='#76b900'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'">
+      <input type="email" id="nemo-help-email" placeholder="your@email.com" required style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:10px 14px;color:#fff;font-size:14px;outline:none;width:100%;box-sizing:border-box;" onfocus="this.style.borderColor='#76b900'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'">
+      <button type="submit" style="background:#76b900;color:#000;border:none;border-radius:8px;padding:11px 20px;font-weight:700;font-size:14px;cursor:pointer;transition:filter 0.15s;" onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='none'">Request Setup Help</button>
+    </form>
+    <div id="nemo-help-thanks" style="display:none;color:#76b900;font-size:14px;font-weight:600;margin-top:8px;">✓ Got it! We'll be in touch shortly.</div>
+  </div>
+  <script>
+  function submitNemoHelp(e) {
+    e.preventDefault();
+    var name = document.getElementById('nemo-help-name').value;
+    var email = document.getElementById('nemo-help-email').value;
+    fetch('/api/feature-request', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({feature: 'NemoClaw setup help request from: ' + name, email: email})
+    }).then(function() {
+      document.getElementById('nemo-help-form').style.display = 'none';
+      document.getElementById('nemo-help-thanks').style.display = 'block';
+    }).catch(function() {
+      document.getElementById('nemo-help-form').style.display = 'none';
+      document.getElementById('nemo-help-thanks').style.display = 'block';
+    });
+  }
+  </script>
 
   <script>
   var nemoCmds = {
