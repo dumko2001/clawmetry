@@ -473,7 +473,7 @@
 
       <div id="npanel-oneliner">
         <div style="color:rgba(255,255,255,0.28);font-style:italic;"># Install and connect inside your NemoClaw env</div>
-        <div><span style="color:rgba(255,255,255,0.3);">$ </span><span style="color:#76b900;">pip install clawmetry</span><span style="color:rgba(255,255,255,0.5);"> &amp;&amp; </span><span style="color:#76b900;">clawmetry onboard</span></div>
+        <div><span style="color:rgba(255,255,255,0.3);">$ </span><span style="color:#76b900;">curl -fsSL https://clawmetry.com/install.sh | bash</span></div>
         <div style="margin-top:8px;padding:8px 12px;background:rgba(118,185,0,0.07);border:1px solid rgba(118,185,0,0.18);border-radius:6px;font-size:13px;">
           <span style="color:#76b900;">&#10003; Node connected.</span> <span style="color:#555;">Opening app.clawmetry.com...</span>
         </div>
@@ -482,7 +482,7 @@
       <div id="npanel-agent" style="display:none;text-align:center;padding:12px 0 8px;">
         <div style="font-size:13px;color:rgba(255,255,255,0.4);margin-bottom:18px;font-style:italic;">Already running a NemoClaw agent? Just ask it:</div>
         <div style="display:inline-block;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:16px 28px;font-size:15px;color:#fff;letter-spacing:0.01em;">
-          &ldquo;Help me install <code style="color:#76b900;background:rgba(118,185,0,0.1);padding:2px 8px;border-radius:4px;font-size:14px;">pip install clawmetry &amp;&amp; clawmetry onboard</code>&rdquo;
+          &ldquo;Help me install <code style="color:#76b900;background:rgba(118,185,0,0.1);padding:2px 8px;border-radius:4px;font-size:14px;">curl -fsSL https://clawmetry.com/install.sh | bash</code>&rdquo;
         </div>
         <div style="font-size:12px;color:rgba(255,255,255,0.3);margin-top:18px;line-height:1.7;">
           Your NeMo agent will install the package, connect your node,<br>and open app.clawmetry.com automatically.
@@ -495,8 +495,8 @@
 
   <script>
   var nemoCmds = {
-    oneliner: 'pip install clawmetry && clawmetry onboard',
-    agent: 'Help me install pip install clawmetry && clawmetry onboard'
+    oneliner: 'curl -fsSL https://clawmetry.com/install.sh | bash',
+    agent: 'Help me install curl -fsSL https://clawmetry.com/install.sh | bash'
   };
   var nemoActiveTab = 'oneliner';
   function showNemoTab(id) {
@@ -587,7 +587,7 @@
     <h2>Start monitoring your NeMo agents<br>in 30 seconds</h2>
     <p style="color:var(--text-muted);font-size:15px;margin-bottom:24px;">One command. E2E encrypted. Free to start.</p>
     <div class="cta-code-block">
-      <span class="cmd-green">pip install clawmetry</span> &amp;&amp; <span class="cmd-green">clawmetry onboard</span>
+      <span class="cmd-green">curl -fsSL https://clawmetry.com/install.sh | bash</span>
     </div>
     <br>
     <a href="https://app.clawmetry.com" class="btn-primary" style="margin-top:8px;">
