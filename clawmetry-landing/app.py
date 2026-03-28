@@ -2845,28 +2845,24 @@ def pitch_scorecard():
 
 @app.route('/api/feature-request', methods=['POST'])
 def api_feature_request():
-    import json as _json
     data = request.get_json(silent=True) or {}
     feature = (data.get('feature') or '').strip()
     email = (data.get('email') or '').strip()
+    name = (data.get('name') or '').strip()
     if not feature:
         return jsonify({'error': 'No feature described'}), 400
-    # Send email to Vivek
-    resend_key = os.environ.get('RESEND_API_KEY', '')
-    if resend_key:
-        try:
-            import urllib.request as _ur
-            body = _json.dumps({
-                'from': 'ClawMetry <vivek@clawmetry.com>',
-                'to': ['vivekchand19@gmail.com'],
-                'subject': 'Feature Request from Roadmap',
-                'text': 'New feature request from the roadmap page:\n\nFeature: ' + feature + '\n\nEmail: ' + (email or 'not provided') + '\n\nView roadmap: https://clawmetry.com/roadmap'
-            }).encode()
-            req = _ur.Request('https://api.resend.com/emails', data=body,
-                headers={'Authorization': 'Bearer ' + resend_key, 'Content-Type': 'application/json'}, method='POST')
-            _ur.urlopen(req, timeout=10)
-        except Exception:
-            pass
+    subject = f"NemoClaw Setup Help Request" if 'NemoClaw setup help' in feature else f"Feature Request: {feature[:60]}"
+    notify_vivek(
+        subject,
+        f"""<div style="font-family:sans-serif;max-width:500px;">
+        <h2 style="color:#E5443A;">{subject}</h2>
+        <div style="background:#f8f9fa;border-radius:8px;padding:16px;margin:12px 0;">
+          <p style="margin:8px 0;"><strong>Name:</strong> {name or 'not provided'}</p>
+          <p style="margin:8px 0;"><strong>Email:</strong> {email or 'not provided'}</p>
+          <p style="margin:8px 0;"><strong>Message:</strong> {feature}</p>
+        </div>
+        </div>"""
+    )
     return jsonify({'ok': True})
 
 @app.route("/<path:path>")
