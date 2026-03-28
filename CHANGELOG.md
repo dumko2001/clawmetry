@@ -1,3 +1,9 @@
+## [0.12.83] — 2026-03-28
+
+### Fixed
+- NemoClaw detection and preset setup in install.sh
+- Show nemoclaw connect + sandbox setup instructions in install.sh
+
 ## v0.12.63 (2026-03-22)
 - fix: robust Ollama detection -- PATH fallback + HTTP ping to localhost:11434
 - feat: sync daemon heartbeat includes ollama status (installed, running, models)
