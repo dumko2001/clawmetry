@@ -17934,6 +17934,13 @@ FLEET_HTML = r"""
   .node-card .metric { }
   .node-card .metric .ml { font-size: 11px; color: #667; }
   .node-card .metric .mv { font-size: 15px; font-weight: 600; }
+  .node-card .svc-bar { display: flex; gap: 6px; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid #2a2d37; flex-wrap: wrap; }
+  .svc-dot { display: flex; align-items: center; gap: 4px; font-size: 11px; color: #889; }
+  .svc-dot .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .svc-dot .dot.green { background: #22c55e; box-shadow: 0 0 4px rgba(34,197,94,0.5); }
+  .svc-dot .dot.yellow { background: #eab308; box-shadow: 0 0 4px rgba(234,179,8,0.5); }
+  .svc-dot .dot.red { background: #ef4444; box-shadow: 0 0 4px rgba(239,68,68,0.5); }
+  .svc-dot .dot.gray { background: #4b5563; }
   .empty { text-align: center; padding: 60px; color: #667; }
   .empty h2 { font-size: 20px; margin-bottom: 8px; color: #888; }
   .empty code { background: #1a1d27; padding: 2px 8px; border-radius: 4px; font-size: 13px; }
@@ -17984,6 +17991,32 @@ async function load() {
   `;
   renderNodes(allNodes);
 }
+function svcDot(label, colorClass) {
+  return `<div class="svc-dot"><div class="dot ${colorClass}"></div>${esc(label)}</div>`;
+}
+function renderServiceBar(m) {
+  // Build service status bar from metrics service_status field
+  const ss = m.service_status || {};
+  if (!ss || Object.keys(ss).length === 0) return '';
+  const items = [];
+  // Gateway
+  if ('gateway' in ss) items.push(svcDot('GW', ss.gateway ? 'green' : 'red'));
+  // Channels (array of {name, connected})
+  const channels = Array.isArray(ss.channels) ? ss.channels : [];
+  channels.forEach(function(ch) {
+    const c = ch.connected ? 'green' : 'red';
+    items.push(svcDot(esc(ch.name||'ch'), c));
+  });
+  // Sync daemon
+  if ('sync' in ss) items.push(svcDot('sync', ss.sync ? 'green' : 'red'));
+  // Resources (yellow if degraded)
+  if ('resources' in ss) {
+    const rc = ss.resources === 'ok' ? 'green' : (ss.resources === 'warn' ? 'yellow' : 'red');
+    items.push(svcDot('res', rc));
+  }
+  if (!items.length) return '';
+  return `<div class="svc-bar">${items.join('')}</div>`;
+}
 function renderNodes(nodes) {
   const grid = document.getElementById('grid');
   const empty = document.getElementById('empty');
@@ -17996,6 +18029,7 @@ function renderNodes(nodes) {
     const sessions = (m.sessions && m.sessions.total_today) || 0;
     const model = m.model || 'unknown';
     const disk = (m.health && m.health.disk_pct) ? m.health.disk_pct.toFixed(0)+'%' : '-';
+    const svcBar = renderServiceBar(m);
     return `<div class="node-card" onclick="location.href='/api/nodes/${n.node_id}'">
       <div class="top"><div class="name">${esc(n.name||n.node_id)}</div><div class="status ${n.status}">${n.status}</div></div>
       <div class="meta">${esc(n.hostname||'')} - last seen ${ago}</div>
@@ -18005,6 +18039,7 @@ function renderNodes(nodes) {
         <div class="metric"><div class="ml">Model</div><div class="mv">${esc(model)}</div></div>
         <div class="metric"><div class="ml">Disk</div><div class="mv">${disk}</div></div>
       </div>
+      ${svcBar}
     </div>`;
   }).join('');
 }
@@ -22559,6 +22594,22 @@ def api_system_health():
 
     sa_pct = round((sa_success / sa_runs * 100) if sa_runs > 0 else 100, 0)
 
+    # Build compact service_status dict (fleet node card format)
+    gw_up = any(s['name'] == 'OpenClaw Gateway' and s['up'] for s in services)
+    resources_state = 'ok'
+    if disks:
+        max_pct = max(d['pct'] for d in disks)
+        if max_pct >= 95:
+            resources_state = 'critical'
+        elif max_pct >= 80:
+            resources_state = 'warn'
+    service_status = {
+        'gateway': gw_up,
+        'channels': [],   # populated by sync daemon from live gateway data
+        'sync': True,     # dashboard is running = sync present
+        'resources': resources_state,
+    }
+
     return jsonify({
         'services': services,
         'disks': disks,
@@ -22568,6 +22619,7 @@ def api_system_health():
         'sandbox': _detect_sandbox_metadata(),
         'inference': _detect_inference_metadata(),
         'security': _detect_security_metadata(),
+        'service_status': service_status,
     })
 
 
@@ -22658,6 +22710,116 @@ def api_health():
 
     return jsonify({'checks': checks})
 
+
+
+@bp_health.route('/api/service-status')
+def api_service_status():
+    """Compact service status for fleet heartbeat payloads.
+
+    Returns a ``service_status`` dict suitable for inclusion in sync-daemon
+    metrics pushes (``POST /api/nodes/<id>/metrics``).  The fleet overview
+    uses this shape to render per-node status dots.
+
+    Shape::
+
+        {
+          "gateway": true,          # bool: gateway port responding
+          "channels": [             # active OpenClaw channels
+            {"name": "telegram", "connected": true},
+            {"name": "discord",  "connected": false}
+          ],
+          "sync": true,             # bool: clawmetry sync process running
+          "resources": "ok"         # "ok" | "warn" | "critical"
+        }
+    """
+    cfg = _load_gw_config()
+    # ── Gateway ──────────────────────────────────────────────────────────────
+    gw_port = _detect_gateway_port()
+    if cfg.get('url'):
+        try:
+            from urllib.parse import urlparse as _upl
+            gw_port = _upl(cfg['url']).port or gw_port
+        except Exception:
+            pass
+    try:
+        _s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        _s.settimeout(2)
+        gw_up = _s.connect_ex(('127.0.0.1', gw_port)) == 0
+        _s.close()
+    except Exception:
+        gw_up = False
+
+    # ── Channels ─────────────────────────────────────────────────────────────
+    channels_out = []
+    try:
+        gw_data = _gw_invoke('status', {})
+        if gw_data and isinstance(gw_data.get('channels'), list):
+            for ch in gw_data['channels']:
+                channels_out.append({
+                    'name': str(ch.get('name', ch.get('kind', 'unknown'))),
+                    'connected': bool(ch.get('connected', ch.get('ok', False))),
+                })
+    except Exception:
+        pass
+    # Fallback: detect from config file
+    if not channels_out:
+        try:
+            raw_cfg = cfg.get('channels') or []
+            for ch in raw_cfg:
+                if isinstance(ch, dict):
+                    channels_out.append({
+                        'name': str(ch.get('kind', ch.get('name', 'channel'))),
+                        'connected': None,  # unknown without live data
+                    })
+        except Exception:
+            pass
+
+    # ── Sync daemon (is clawmetry running?) ──────────────────────────────────
+    sync_up = False
+    try:
+        if sys.platform != 'win32':
+            result = subprocess.run(
+                ['pgrep', '-f', 'clawmetry'],
+                capture_output=True, text=True, timeout=3,
+            )
+            sync_up = result.returncode == 0
+        else:
+            sync_up = True  # cannot easily detect on Windows; assume ok
+    except Exception:
+        sync_up = True  # dashboard IS running, so sync is present
+
+    # ── Resources ────────────────────────────────────────────────────────────
+    resources = 'ok'
+    try:
+        st = os.statvfs('/')
+        free_gb = (st.f_bavail * st.f_frsize) / (1024 ** 3)
+        if free_gb < 2:
+            resources = 'critical'
+        elif free_gb < 5:
+            resources = 'warn'
+    except Exception:
+        pass
+    try:
+        mem_out = subprocess.run(['free', '-m'], capture_output=True, text=True, timeout=3)
+        if mem_out.returncode == 0:
+            parts = mem_out.stdout.strip().split('\n')[1].split()
+            used_mb = int(parts[2])
+            total_mb = int(parts[1])
+            if total_mb > 0 and (used_mb / total_mb) > 0.95:
+                resources = 'critical' if resources == 'ok' else resources
+            elif total_mb > 0 and (used_mb / total_mb) > 0.85:
+                resources = 'warn' if resources == 'ok' else resources
+    except Exception:
+        pass
+
+    return jsonify({
+        'service_status': {
+            'gateway': gw_up,
+            'channels': channels_out,
+            'sync': sync_up,
+            'resources': resources,
+        }
+    })
 
 
 @bp_health.route('/api/heartbeat-status')
