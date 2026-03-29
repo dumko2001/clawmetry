@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XDF9MFD8FJ"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-XDF9MFD8FJ');gtag('config','G-6H5W9Y2B79');</script>
+  <title>Build an IT Ops Agent with OpenClaw — Step-by-Step Guide | ClawMetry</title>
+  <meta name="description" content="Build a self-hosted IT operations agent that monitors servers, checks uptime, and responds to alerts. Running on OpenClaw via Telegram. Step-by-step guide.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--accent:#E5443A;--accent-hover:#ff5a50;--code-bg:#0d1117;--green:#3fb950}
+    html{scroll-behavior:smooth}
+    body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;-webkit-font-smoothing:antialiased}
+    nav{position:sticky;top:0;z-index:100;background:rgba(13,17,23,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+    .nav-inner{max-width:900px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:56px}
+    .nav-logo{display:flex;align-items:center;gap:8px;text-decoration:none;font-size:17px;font-weight:700;color:var(--text)}
+    .nav-logo span{color:var(--accent)}
+    .nav-logo img{width:28px;height:28px;border-radius:6px}
+    .nav-links{display:flex;gap:20px;align-items:center}
+    .nav-links a{color:var(--muted);font-size:13px;font-weight:500;text-decoration:none;transition:color 0.2s}
+    .nav-links a:hover{color:var(--text)}
+    .container{max-width:720px;margin:0 auto;padding:48px 24px 80px}
+    .hero{text-align:center;margin-bottom:48px}
+    .hero-emoji{font-size:64px;margin-bottom:16px;display:block}
+    .hero h1{font-size:36px;font-weight:800;letter-spacing:-0.5px;margin-bottom:12px;line-height:1.2}
+    .hero p{font-size:18px;color:var(--muted);max-width:540px;margin:0 auto}
+    h2{font-size:22px;font-weight:700;margin:40px 0 16px;padding-top:12px;border-top:1px solid var(--border);color:var(--text)}
+    h2:first-of-type{border-top:none;margin-top:0}
+    h3{font-size:17px;font-weight:600;margin:24px 0 10px}
+    p{margin-bottom:14px;color:var(--text)}
+    ul,ol{margin:0 0 16px 20px;color:var(--text)}
+    li{margin-bottom:6px}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--accent-hover)}
+    .what-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:32px}
+    .what-card ul{list-style:none;margin:0;padding:0}
+    .what-card li{padding:8px 0;border-bottom:1px solid var(--border);font-size:15px}
+    .what-card li:last-child{border-bottom:none}
+    .what-card li::before{content:'✅ ';margin-right:4px}
+    .prereq{background:linear-gradient(135deg,rgba(229,68,58,0.06),rgba(229,68,58,0.02));border:1px solid rgba(229,68,58,0.15);border-radius:12px;padding:20px 24px;margin-bottom:32px}
+    .prereq h3{margin-top:0;color:var(--accent)}
+    .prereq ul{margin:8px 0 0 18px}
+    .prereq li{color:var(--muted);font-size:14px}
+    pre{position:relative;background:var(--code-bg);border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin:12px 0 20px;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.6}
+    code{font-family:'JetBrains Mono',monospace;font-size:13px}
+    p code,li code{background:var(--surface);padding:2px 7px;border-radius:5px;font-size:12px;border:1px solid var(--border)}
+    .copy-btn{position:absolute;top:10px;right:10px;background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s}
+    .copy-btn:hover{color:var(--text);border-color:var(--accent)}
+    .copy-btn.copied{color:var(--green);border-color:var(--green)}
+    .conversation{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin:16px 0 24px}
+    .msg{margin-bottom:14px;display:flex;gap:10px;align-items:flex-start}
+    .msg:last-child{margin-bottom:0}
+    .msg-user .bubble{background:rgba(229,68,58,0.1);border:1px solid rgba(229,68,58,0.2);border-radius:12px 12px 4px 12px;padding:10px 14px;font-size:14px;max-width:85%}
+    .msg-agent .bubble{background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.15);border-radius:12px 12px 12px 4px;padding:10px 14px;font-size:14px;max-width:85%}
+    .msg-label{font-size:11px;font-weight:600;color:var(--muted);margin-bottom:3px}
+    .clawmetry-step{background:linear-gradient(135deg,#161b22,#1c2333);border:1px solid rgba(229,68,58,0.25);border-radius:14px;padding:28px;margin:16px 0 32px}
+    .clawmetry-step .cm-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+    .clawmetry-step .cm-header img{width:36px;height:36px;border-radius:8px}
+    .clawmetry-step .cm-header h3{margin:0;font-size:18px;color:var(--text)}
+    .clawmetry-step .cm-tagline{font-size:15px;font-weight:600;color:var(--accent);margin-bottom:12px}
+    .clawmetry-step .cm-features{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0}
+    .clawmetry-step .cm-feat{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--muted)}
+    .clawmetry-step .cm-feat span{color:var(--accent);font-size:14px;flex-shrink:0}
+    .clawmetry-step .cm-screenshot{border:1px solid var(--border);border-radius:10px;margin:16px 0;width:100%;display:block}
+    .clawmetry-step .cm-bottom{display:flex;align-items:center;justify-content:space-between;margin-top:16px;flex-wrap:wrap;gap:12px}
+    .clawmetry-step .cm-bottom a{color:var(--accent);font-size:13px;font-weight:600}
+    .inspiration{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin:24px 0}
+    .inspiration blockquote{border-left:3px solid var(--accent);padding-left:14px;margin:10px 0;font-style:italic;color:var(--muted);font-size:14px}
+    .more-guides{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:32px}
+    .more-guides a{display:block;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;text-decoration:none;transition:all 0.2s;font-size:14px;font-weight:500;color:var(--text)}
+    .more-guides a:hover{border-color:var(--accent);transform:translateY(-2px)}
+    .more-guides a em{display:block;font-size:12px;color:var(--muted);margin-top:4px;font-style:normal}
+    footer{border-top:1px solid var(--border);padding:32px 24px;text-align:center;color:var(--muted);font-size:13px;margin-top:48px}
+    footer a{color:var(--accent)}
+    @media(max-width:600px){.hero h1{font-size:28px}.hero-emoji{font-size:48px}h2{font-size:19px}.more-guides{grid-template-columns:1fr}.clawmetry-step .cm-features{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="nav-inner">
+      <a href="https://clawmetry.com" class="nav-logo"><img src="/favicon.svg" alt="ClawMetry">Claw<span>Metry</span></a>
+      <div class="nav-links">
+        <a href="/slides/openclaw-intro">Slides</a>
+        <a href="https://clawmetry.com">Home</a>
+        <a href="https://github.com/vivekchand/clawmetry">GitHub</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="hero">
+      <span class="hero-emoji">🖥️</span>
+      <h1>Build an IT Ops Agent</h1>
+      <p>A self-hosted AI agent that monitors your servers, checks uptime, creates incident reports, and responds to alerts. All from Telegram.</p>
+    </div>
+
+    <div class="what-card">
+      <h3 style="margin-top:0;margin-bottom:12px">What this agent does</h3>
+      <ul>
+        <li>Monitors server health and uptime across your infrastructure</li>
+        <li>Runs scheduled health checks and alerts you when something is down</li>
+        <li>Creates and tracks incident reports automatically</li>
+        <li>Executes diagnostic commands on your servers</li>
+        <li>Sends you a daily infrastructure summary every morning</li>
+      </ul>
+    </div>
+
+    <div class="prereq">
+      <h3>Prerequisites</h3>
+      <ul>
+        <li>A machine to run OpenClaw (any Linux box, Mac, or VPS)</li>
+        <li>An Anthropic API key (<a href="https://console.anthropic.com" target="_blank">get one here</a>)</li>
+        <li>A Telegram bot token (<a href="https://t.me/BotFather" target="_blank">create via BotFather</a>)</li>
+        <li>SSH access to the servers you want to monitor</li>
+      </ul>
+    </div>
+
+    <h2>Step 1: Install OpenClaw</h2>
+    <p>One command to get OpenClaw running on your machine:</p>
+    <pre><code>npm install -g openclaw && openclaw init</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+    <p>Follow the prompts. Pick your AI model (we recommend <strong>Claude Sonnet</strong> for IT ops, great balance of speed and cost) and enter your Anthropic API key.</p>
+
+    <h2>Step 2: Configure Telegram</h2>
+    <p>Open <code>~/.config/openclaw/config.yaml</code> and add your Telegram bot token:</p>
+    <pre><code>channels:
+  telegram:
+    bot_token: "YOUR_BOT_TOKEN_HERE"
+    allowed_users:
+      - YOUR_TELEGRAM_USER_ID</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+    <p>Start a chat with your bot on Telegram. That's your ops console now.</p>
+
+    <h2>Step 3: Set up ClawMetry</h2>
+    <p style="font-weight:600;color:var(--accent);font-size:15px;margin-bottom:8px">You wouldn't run a server without monitoring. Don't run an AI agent without observability.</p>
+    <p>Before you start using your agent, set up observability so you can see exactly what it's doing, what it's costing, and catch issues early.</p>
+
+    <div class="clawmetry-step">
+      <div class="cm-header">
+        <img src="/favicon.svg" alt="ClawMetry">
+        <h3>ClawMetry — Full Agent Observability</h3>
+      </div>
+      <pre><code>pip install clawmetry && clawmetry onboard</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+      <p style="color:var(--muted);font-size:14px;margin-bottom:0">That's it. ClawMetry auto-detects OpenClaw on the same machine and starts streaming data to your dashboard in real time.</p>
+
+      <div class="cm-features">
+        <div class="cm-feat"><span>●</span> See every health check your agent runs</div>
+        <div class="cm-feat"><span>●</span> Track every alert and cron execution</div>
+        <div class="cm-feat"><span>●</span> Monitor token costs per session</div>
+        <div class="cm-feat"><span>●</span> Catch failed cron jobs before they go silent</div>
+      </div>
+
+      <img src="/screenshots/flow.png" alt="ClawMetry Flow view showing agent tool calls" class="cm-screenshot" loading="lazy">
+
+      <div class="cm-bottom">
+        <span style="font-size:12px;color:var(--muted)">Free &amp; open source. Works with any AI model.</span>
+        <a href="https://clawmetry.com/cloud">Access remotely via ClawMetry Cloud →</a>
+      </div>
+    </div>
+
+    <h2>Step 4: Set up SOUL.md</h2>
+    <p>Create <code>~/openclaw/SOUL.md</code> to give your agent its mission:</p>
+    <pre><code># SOUL.md — IT Operations Agent
+
+You are an IT operations agent. Your job is to keep our
+infrastructure running smoothly.
+
+## What you do
+- Monitor servers and check uptime on demand
+- Run health checks: disk space, memory, CPU, services
+- Create incident reports when something goes wrong
+- Respond to alerts with diagnostic information
+- Send daily infrastructure summaries at 9am
+
+## How you work
+- When I say "check servers", run health checks on all
+  configured hosts
+- Be concise. Status: green/yellow/red for each service
+- If something is down, immediately suggest remediation steps
+- Log all incidents to memory/incidents/ with timestamps
+
+## Servers to monitor
+- prod-web-01: 10.0.1.10 (nginx, app)
+- prod-db-01: 10.0.1.20 (postgres)
+- prod-cache-01: 10.0.1.30 (redis)
+
+## Model
+Use Claude Sonnet for all tasks. Fast, accurate, cost-effective.</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+    <h2>Step 5: Example Conversation</h2>
+    <p>Here's what it looks like in action:</p>
+    <div class="conversation">
+      <div class="msg msg-user">
+        <div><div class="msg-label">You</div><div class="bubble">Check if production servers are up</div></div>
+      </div>
+      <div class="msg msg-agent">
+        <div><div class="msg-label">Agent</div><div class="bubble">Running health checks on all 3 servers...<br><br>
+🟢 <strong>prod-web-01</strong> — nginx: running, app: running, load: 0.4, disk: 62% used<br>
+🟢 <strong>prod-db-01</strong> — postgres: running, connections: 23/100, disk: 45% used<br>
+🟡 <strong>prod-cache-01</strong> — redis: running, memory: 89% used (⚠️ approaching limit)<br><br>
+Action: Redis memory is high. Recommend reviewing eviction policy or scaling up.</div></div>
+      </div>
+      <div class="msg msg-user">
+        <div><div class="msg-label">You</div><div class="bubble">Set up a cron to check every 30 minutes and alert me if anything is down</div></div>
+      </div>
+      <div class="msg msg-agent">
+        <div><div class="msg-label">Agent</div><div class="bubble">Done. Created cron job: every 30 minutes, run health checks on all servers. I'll message you immediately if any service goes red. Otherwise, you'll get a quiet summary at 9am daily.</div></div>
+      </div>
+    </div>
+
+    <h2>Inspiration</h2>
+    <div class="inspiration">
+      <p>Real people running OpenClaw agents just like this:</p>
+      <blockquote>"30 mins later: controlling Gmail, Calendar, WordPress, Hetzner from Telegram like a boss" — <strong>@Abhay08</strong></blockquote>
+      <blockquote>"5 mins to set everything up. Fetches directly from whoop, gives updates" — <strong>@sharoni_k</strong></blockquote>
+      <p style="margin-bottom:0"><a href="https://openclaw.ai/shoutouts" target="_blank">See more on openclaw.ai/shoutouts →</a></p>
+    </div>
+
+    <h2>More Guides</h2>
+    <div class="more-guides">
+      <a href="/guides/recruiter-agent">🎯 Recruiter Agent<em>Screen CVs, rank candidates, draft outreach</em></a>
+      <a href="/guides/business-assistant">💼 Business Assistant<em>Customer messages, social media, meetings</em></a>
+      <a href="/guides/job-search-agent">🔍 Job Search Agent<em>Find roles, personalize CVs, track applications</em></a>
+      <a href="/guides/builder-agent">🚀 Builder Agent<em>Validate ideas, research markets, build MVPs</em></a>
+    </div>
+  </div>
+
+  <footer>
+    <p>Built with <a href="https://openclaw.ai">OpenClaw</a> · Monitored with <a href="https://clawmetry.com">ClawMetry</a></p>
+    <p style="margin-top:8px">© 2026 ClawMetry. All guides are free and open.</p>
+  </footer>
+
+  <script>
+    function copyCode(btn){const code=btn.parentElement.querySelector('code');navigator.clipboard.writeText(code.textContent).then(()=>{btn.textContent='Copied!';btn.classList.add('copied');setTimeout(()=>{btn.textContent='Copy';btn.classList.remove('copied')},2000)})}
+  </script>
+</body>
+</html>

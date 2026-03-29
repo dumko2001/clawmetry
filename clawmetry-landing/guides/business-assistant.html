@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XDF9MFD8FJ"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-XDF9MFD8FJ');gtag('config','G-6H5W9Y2B79');</script>
+  <title>Build a Business Assistant Agent with OpenClaw — Step-by-Step Guide | ClawMetry</title>
+  <meta name="description" content="Build a self-hosted AI business assistant that handles customer enquiries, schedules social media, summarizes meetings, and tracks action items. Via Telegram.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--accent:#E5443A;--accent-hover:#ff5a50;--code-bg:#0d1117;--green:#3fb950}
+    html{scroll-behavior:smooth}
+    body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;-webkit-font-smoothing:antialiased}
+    nav{position:sticky;top:0;z-index:100;background:rgba(13,17,23,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+    .nav-inner{max-width:900px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:56px}
+    .nav-logo{display:flex;align-items:center;gap:8px;text-decoration:none;font-size:17px;font-weight:700;color:var(--text)}
+    .nav-logo span{color:var(--accent)}
+    .nav-logo img{width:28px;height:28px;border-radius:6px}
+    .nav-links{display:flex;gap:20px;align-items:center}
+    .nav-links a{color:var(--muted);font-size:13px;font-weight:500;text-decoration:none;transition:color 0.2s}
+    .nav-links a:hover{color:var(--text)}
+    .container{max-width:720px;margin:0 auto;padding:48px 24px 80px}
+    .hero{text-align:center;margin-bottom:48px}
+    .hero-emoji{font-size:64px;margin-bottom:16px;display:block}
+    .hero h1{font-size:36px;font-weight:800;letter-spacing:-0.5px;margin-bottom:12px;line-height:1.2}
+    .hero p{font-size:18px;color:var(--muted);max-width:540px;margin:0 auto}
+    h2{font-size:22px;font-weight:700;margin:40px 0 16px;padding-top:12px;border-top:1px solid var(--border);color:var(--text)}
+    h2:first-of-type{border-top:none;margin-top:0}
+    h3{font-size:17px;font-weight:600;margin:24px 0 10px}
+    p{margin-bottom:14px;color:var(--text)}
+    ul,ol{margin:0 0 16px 20px;color:var(--text)}
+    li{margin-bottom:6px}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{color:var(--accent-hover)}
+    .what-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:32px}
+    .what-card ul{list-style:none;margin:0;padding:0}
+    .what-card li{padding:8px 0;border-bottom:1px solid var(--border);font-size:15px}
+    .what-card li:last-child{border-bottom:none}
+    .what-card li::before{content:'✅ ';margin-right:4px}
+    .prereq{background:linear-gradient(135deg,rgba(229,68,58,0.06),rgba(229,68,58,0.02));border:1px solid rgba(229,68,58,0.15);border-radius:12px;padding:20px 24px;margin-bottom:32px}
+    .prereq h3{margin-top:0;color:var(--accent)}
+    .prereq ul{margin:8px 0 0 18px}
+    .prereq li{color:var(--muted);font-size:14px}
+    pre{position:relative;background:var(--code-bg);border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin:12px 0 20px;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.6}
+    code{font-family:'JetBrains Mono',monospace;font-size:13px}
+    p code,li code{background:var(--surface);padding:2px 7px;border-radius:5px;font-size:12px;border:1px solid var(--border)}
+    .copy-btn{position:absolute;top:10px;right:10px;background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s}
+    .copy-btn:hover{color:var(--text);border-color:var(--accent)}
+    .copy-btn.copied{color:var(--green);border-color:var(--green)}
+    .conversation{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin:16px 0 24px}
+    .msg{margin-bottom:14px;display:flex;gap:10px;align-items:flex-start}
+    .msg:last-child{margin-bottom:0}
+    .msg-user .bubble{background:rgba(229,68,58,0.1);border:1px solid rgba(229,68,58,0.2);border-radius:12px 12px 4px 12px;padding:10px 14px;font-size:14px;max-width:85%}
+    .msg-agent .bubble{background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.15);border-radius:12px 12px 12px 4px;padding:10px 14px;font-size:14px;max-width:85%}
+    .msg-label{font-size:11px;font-weight:600;color:var(--muted);margin-bottom:3px}
+    .clawmetry-step{background:linear-gradient(135deg,#161b22,#1c2333);border:1px solid rgba(229,68,58,0.25);border-radius:14px;padding:28px;margin:16px 0 32px}
+    .clawmetry-step .cm-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+    .clawmetry-step .cm-header img{width:36px;height:36px;border-radius:8px}
+    .clawmetry-step .cm-header h3{margin:0;font-size:18px;color:var(--text)}
+    .clawmetry-step .cm-features{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0}
+    .clawmetry-step .cm-feat{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--muted)}
+    .clawmetry-step .cm-feat span{color:var(--accent);font-size:14px;flex-shrink:0}
+    .clawmetry-step .cm-screenshot{border:1px solid var(--border);border-radius:10px;margin:16px 0;width:100%;display:block}
+    .clawmetry-step .cm-bottom{display:flex;align-items:center;justify-content:space-between;margin-top:16px;flex-wrap:wrap;gap:12px}
+    .clawmetry-step .cm-bottom a{color:var(--accent);font-size:13px;font-weight:600}
+    .inspiration{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin:24px 0}
+    .inspiration blockquote{border-left:3px solid var(--accent);padding-left:14px;margin:10px 0;font-style:italic;color:var(--muted);font-size:14px}
+    .more-guides{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:32px}
+    .more-guides a{display:block;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;text-decoration:none;transition:all 0.2s;font-size:14px;font-weight:500;color:var(--text)}
+    .more-guides a:hover{border-color:var(--accent);transform:translateY(-2px)}
+    .more-guides a em{display:block;font-size:12px;color:var(--muted);margin-top:4px;font-style:normal}
+    footer{border-top:1px solid var(--border);padding:32px 24px;text-align:center;color:var(--muted);font-size:13px;margin-top:48px}
+    footer a{color:var(--accent)}
+    @media(max-width:600px){.hero h1{font-size:28px}.hero-emoji{font-size:48px}h2{font-size:19px}.more-guides{grid-template-columns:1fr}.clawmetry-step .cm-features{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="nav-inner">
+      <a href="https://clawmetry.com" class="nav-logo"><img src="/favicon.svg" alt="ClawMetry">Claw<span>Metry</span></a>
+      <div class="nav-links">
+        <a href="/slides/openclaw-intro">Slides</a>
+        <a href="https://clawmetry.com">Home</a>
+        <a href="https://github.com/vivekchand/clawmetry">GitHub</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="hero">
+      <span class="hero-emoji">💼</span>
+      <h1>Build a Business Assistant</h1>
+      <p>A self-hosted AI assistant that handles customer enquiries, schedules social media, summarizes meetings, and tracks your action items. All from Telegram.</p>
+    </div>
+
+    <div class="what-card">
+      <h3 style="margin-top:0;margin-bottom:12px">What this agent does</h3>
+      <ul>
+        <li>Summarizes and drafts replies to customer messages</li>
+        <li>Schedules and drafts social media posts across platforms</li>
+        <li>Summarizes meeting recordings and extracts action items</li>
+        <li>Sends you a daily business briefing every morning at 9am</li>
+        <li>Tracks tasks and follow-ups so nothing falls through the cracks</li>
+      </ul>
+    </div>
+
+    <div class="prereq">
+      <h3>Prerequisites</h3>
+      <ul>
+        <li>A machine to run OpenClaw (any Linux box, Mac, or VPS)</li>
+        <li>An Anthropic API key (<a href="https://console.anthropic.com" target="_blank">get one here</a>)</li>
+        <li>A Telegram bot token (<a href="https://t.me/BotFather" target="_blank">create via BotFather</a>)</li>
+        <li>Access to your email/CRM (Gmail, Outlook, or any inbox)</li>
+      </ul>
+    </div>
+
+    <h2>Step 1: Install OpenClaw</h2>
+    <p>One command to get OpenClaw running on your machine:</p>
+    <pre><code>npm install -g openclaw && openclaw init</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+    <p>Follow the prompts. We recommend <strong>Claude Sonnet</strong> for business operations. It's fast, handles multi-step tasks well, and keeps costs reasonable for daily use.</p>
+
+    <h2>Step 2: Configure Telegram</h2>
+    <p>Open <code>~/.config/openclaw/config.yaml</code> and add your Telegram bot token:</p>
+    <pre><code>channels:
+  telegram:
+    bot_token: "YOUR_BOT_TOKEN_HERE"
+    allowed_users:
+      - YOUR_TELEGRAM_USER_ID</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+    <p>Start a chat with your bot on Telegram. Your business command center, always in your pocket.</p>
+
+    <h2>Step 3: Set up ClawMetry</h2>
+    <p style="font-weight:600;color:var(--accent);font-size:15px;margin-bottom:8px">You wouldn't run a server without monitoring. Don't run an AI agent without observability.</p>
+    <p>A business assistant runs daily cron jobs, processes customer data, and makes decisions on your behalf. You need to see what it's doing and what it's costing you.</p>
+
+    <div class="clawmetry-step">
+      <div class="cm-header">
+        <img src="/favicon.svg" alt="ClawMetry">
+        <h3>ClawMetry — Full Agent Observability</h3>
+      </div>
+      <pre><code>pip install clawmetry && clawmetry onboard</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+      <p style="color:var(--muted);font-size:14px;margin-bottom:0">Auto-detects OpenClaw. Starts streaming data to your dashboard in real time.</p>
+
+      <div class="cm-features">
+        <div class="cm-feat"><span>●</span> Monitor customer reply quality and tone</div>
+        <div class="cm-feat"><span>●</span> See token spend per day and per task</div>
+        <div class="cm-feat"><span>●</span> Track daily briefing cron reliability</div>
+        <div class="cm-feat"><span>●</span> Full audit trail of every customer interaction</div>
+      </div>
+
+      <img src="/screenshots/flow.png" alt="ClawMetry Flow view showing agent tool calls" class="cm-screenshot" loading="lazy">
+
+      <div class="cm-bottom">
+        <span style="font-size:12px;color:var(--muted)">Free &amp; open source. Works with any AI model.</span>
+        <a href="https://clawmetry.com/cloud">Access remotely via ClawMetry Cloud →</a>
+      </div>
+    </div>
+
+    <h2>Step 4: Set up SOUL.md</h2>
+    <p>Create <code>~/openclaw/SOUL.md</code> to define your business assistant:</p>
+    <pre><code># SOUL.md — Business Operations Assistant
+
+You are a business operations assistant. Your job is to keep
+the business running smoothly and nothing slipping through.
+
+## What you do
+- Handle customer enquiries: summarize, draft replies, flag urgent ones
+- Schedule and draft social media posts (LinkedIn, Twitter/X)
+- Summarize meetings and extract action items
+- Track tasks and follow-ups in memory/tasks/
+- Send a daily business briefing at 9am
+
+## Daily briefing includes
+- New customer messages since yesterday (count + summary)
+- Open action items and deadlines approaching
+- Social media performance (if connected)
+- Calendar overview for the day
+
+## Communication style
+- Customer replies: professional, friendly, helpful
+- Social posts: authentic, value-driven, no corporate jargon
+- Briefings: concise, scannable, actionable
+
+## Tools you have access to
+- Email (Gmail via API)
+- Calendar
+- File system for drafts and tracking
+
+## Model
+Use Claude Sonnet for all tasks.</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+    <h2>Step 5: Example Conversation</h2>
+    <p>Here's what it looks like in action:</p>
+    <div class="conversation">
+      <div class="msg msg-user">
+        <div><div class="msg-label">You</div><div class="bubble">Summarize today's customer messages and draft replies</div></div>
+      </div>
+      <div class="msg msg-agent">
+        <div><div class="msg-label">Agent</div><div class="bubble">Checked your inbox. 7 new customer messages since yesterday:<br><br>
+🔴 <strong>Urgent (1):</strong> Payment issue from Acme Corp, invoice #4521 not processing. Drafted an apology + escalation to billing.<br>
+🟡 <strong>Follow-up (2):</strong> Demo requests from two prospects. Drafted scheduling replies with your available slots.<br>
+🟢 <strong>Routine (4):</strong> Feature questions, onboarding help. Drafted helpful replies with links to docs.<br><br>
+All 7 drafts saved to memory/customer-replies/. Want me to send them or review first?</div></div>
+      </div>
+      <div class="msg msg-user">
+        <div><div class="msg-label">You</div><div class="bubble">Send the routine ones. I'll review the urgent and follow-ups.</div></div>
+      </div>
+      <div class="msg msg-agent">
+        <div><div class="msg-label">Agent</div><div class="bubble">Done. 4 routine replies sent. The urgent (Acme Corp) and 2 demo follow-ups are in your drafts folder for review. I also added "follow up with Acme billing" to your task list for tomorrow.</div></div>
+      </div>
+    </div>
+
+    <h2>Inspiration</h2>
+    <div class="inspiration">
+      <p>Real people running OpenClaw agents for business operations:</p>
+      <blockquote>"30 mins later: controlling Gmail, Calendar, WordPress, Hetzner from Telegram like a boss" — <strong>@Abhay08</strong></blockquote>
+      <blockquote>"Automate tasks from Todoist, claw created a skill for it on its own" — <strong>@iamsubhrajyoti</strong></blockquote>
+      <p style="margin-bottom:0"><a href="https://openclaw.ai/shoutouts" target="_blank">See more on openclaw.ai/shoutouts →</a></p>
+    </div>
+
+    <h2>More Guides</h2>
+    <div class="more-guides">
+      <a href="/guides/it-ops-agent">🖥️ IT Ops Agent<em>Monitor servers, uptime checks, incident reports</em></a>
+      <a href="/guides/recruiter-agent">🎯 Recruiter Agent<em>Screen CVs, rank candidates, draft outreach</em></a>
+      <a href="/guides/job-search-agent">🔍 Job Search Agent<em>Find roles, personalize CVs, track applications</em></a>
+      <a href="/guides/builder-agent">🚀 Builder Agent<em>Validate ideas, research markets, build MVPs</em></a>
+    </div>
+  </div>
+
+  <footer>
+    <p>Built with <a href="https://openclaw.ai">OpenClaw</a> · Monitored with <a href="https://clawmetry.com">ClawMetry</a></p>
+    <p style="margin-top:8px">© 2026 ClawMetry. All guides are free and open.</p>
+  </footer>
+
+  <script>
+    function copyCode(btn){const code=btn.parentElement.querySelector('code');navigator.clipboard.writeText(code.textContent).then(()=>{btn.textContent='Copied!';btn.classList.add('copied');setTimeout(()=>{btn.textContent='Copy';btn.classList.remove('copied')},2000)})}
+  </script>
+</body>
+</html>

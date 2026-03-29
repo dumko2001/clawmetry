@@ -2751,6 +2751,26 @@ def nemoclaw():
 def slides_openclaw_intro():
     return send_from_directory("slides", "openclaw-intro.html")
 
+@app.route("/guides/it-ops-agent")
+def guide_it_ops():
+    return send_from_directory("guides", "it-ops-agent.html")
+
+@app.route("/guides/recruiter-agent")
+def guide_recruiter():
+    return send_from_directory("guides", "recruiter-agent.html")
+
+@app.route("/guides/business-assistant")
+def guide_business():
+    return send_from_directory("guides", "business-assistant.html")
+
+@app.route("/guides/job-search-agent")
+def guide_job_search():
+    return send_from_directory("guides", "job-search-agent.html")
+
+@app.route("/guides/builder-agent")
+def guide_builder():
+    return send_from_directory("guides", "builder-agent.html")
+
 
 
 
