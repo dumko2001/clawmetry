@@ -781,6 +781,74 @@
   </div>
   <div class="presenter-notes"><h4>📝 Presenter Notes — Slide 3</h4>Think of OpenClaw as an employee who works overnight and never complains. You tell it what you need, it figures out how to do it, and it comes back with results. It uses tools — so it can actually browse the web, open files, send emails. 220,000+ developers already use it. And you don't need to write a single line of code to benefit from it.</div>
 
+  <!-- SLIDE 3b: UNDER THE HOOD -->
+  <div class="slide" id="slide-3b">
+    <div class="slide-tag">Under the Hood</div>
+    <h2>How OpenClaw <span class="gradient-text">actually works</span></h2>
+
+    <div style="display:flex;flex-direction:column;gap:20px;max-width:800px;margin:0 auto;">
+
+      <!-- Architecture diagram -->
+      <div style="display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+        <div style="background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);border-radius:12px;padding:14px 20px;text-align:center;min-width:120px;">
+          <div style="font-size:1.5rem;">💬</div>
+          <div style="font-weight:700;color:#fff;font-size:0.85rem;margin-top:4px;">You</div>
+          <div style="font-size:0.7rem;color:rgba(255,255,255,0.4);">Telegram / Web / CLI</div>
+        </div>
+        <div style="font-size:1.2rem;color:rgba(255,255,255,0.3);">→</div>
+        <div style="background:rgba(229,68,58,0.15);border:1px solid rgba(229,68,58,0.3);border-radius:12px;padding:14px 20px;text-align:center;min-width:140px;">
+          <div style="font-size:1.5rem;">🧠</div>
+          <div style="font-weight:700;color:#fff;font-size:0.85rem;margin-top:4px;">Gateway</div>
+          <div style="font-size:0.7rem;color:rgba(255,255,255,0.4);">Routes messages, manages sessions</div>
+        </div>
+        <div style="font-size:1.2rem;color:rgba(255,255,255,0.3);">→</div>
+        <div style="background:rgba(118,185,0,0.15);border:1px solid rgba(118,185,0,0.3);border-radius:12px;padding:14px 20px;text-align:center;min-width:140px;">
+          <div style="font-size:1.5rem;">🤖</div>
+          <div style="font-weight:700;color:#fff;font-size:0.85rem;margin-top:4px;">AI Model</div>
+          <div style="font-size:0.7rem;color:rgba(255,255,255,0.4);">Claude / GPT / Gemini / Nemotron</div>
+        </div>
+        <div style="font-size:1.2rem;color:rgba(255,255,255,0.3);">→</div>
+        <div style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);border-radius:12px;padding:14px 20px;text-align:center;min-width:120px;">
+          <div style="font-size:1.5rem;">🔧</div>
+          <div style="font-weight:700;color:#fff;font-size:0.85rem;margin-top:4px;">Tools</div>
+          <div style="font-size:0.7rem;color:rgba(255,255,255,0.4);">Browser, files, email, APIs</div>
+        </div>
+      </div>
+
+      <!-- Key concepts -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:14px;">
+          <div style="font-size:1.1rem;margin-bottom:6px;">🏠 Gateway</div>
+          <div style="font-size:0.8rem;color:rgba(255,255,255,0.5);">The brain. Always running on your machine. Receives your messages, picks the right AI model, and manages everything.</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:14px;">
+          <div style="font-size:1.1rem;margin-bottom:6px;">📋 Sessions</div>
+          <div style="font-size:0.8rem;color:rgba(255,255,255,0.5);">Each conversation is a session. The AI remembers context within a session and can spawn sub-agents for parallel work.</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:14px;">
+          <div style="font-size:1.1rem;margin-bottom:6px;">🧩 MCP + Skills</div>
+          <div style="font-size:0.8rem;color:rgba(255,255,255,0.5);">Model Context Protocol lets AI use external tools. Skills are pre-built recipes (web search, coding, browser, camera, etc).</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:14px;">
+          <div style="font-size:1.1rem;margin-bottom:6px;">📂 SOUL.md + MEMORY.md</div>
+          <div style="font-size:0.8rem;color:rgba(255,255,255,0.5);">Your agent has a personality (SOUL.md) and memory (MEMORY.md). It learns and remembers across sessions.</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:14px;">
+          <div style="font-size:1.1rem;margin-bottom:6px;">🔄 Sub-Agents</div>
+          <div style="font-size:0.8rem;color:rgba(255,255,255,0.5);">Your main agent can spawn child agents for parallel tasks. Like a manager delegating work to a team.</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:14px;">
+          <div style="font-size:1.1rem;margin-bottom:6px;">⏰ Cron Jobs</div>
+          <div style="font-size:0.8rem;color:rgba(255,255,255,0.5);">Schedule tasks. "Check my email every morning at 8am." "Send me a weather update before I leave for work."</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="presenter-notes"><h4>📝 Presenter Notes — Slide 3b</h4>For those who want to know how it works: OpenClaw has a Gateway that's always running on your machine. When you send a message, the Gateway routes it to an AI model, which thinks and decides what tools to use. Tools include browsing the web, reading files, sending emails. Each conversation is a session with memory. The agent has a personality file (SOUL.md) and a memory file (MEMORY.md) — it actually learns over time. It can spawn sub-agents for parallel work, and you can schedule recurring tasks with cron jobs. All of this runs locally on your machine.</div>
+
   <!-- SLIDE 4: USE CASES -->
   <div class="slide" id="slide-4">
     <div class="slide-tag">Use Cases</div>
