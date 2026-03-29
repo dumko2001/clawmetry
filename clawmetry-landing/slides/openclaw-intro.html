@@ -1746,7 +1746,7 @@
       </div>
       <div class="qr-item">
         <div class="qr-box" style="border-color:rgba(118,185,0,0.3);">
-          <div style="width:140px;height:140px;display:flex;align-items:center;justify-content:center;background:rgba(118,185,0,0.08);border-radius:8px;font-size:2.5rem;">🛡️</div>
+          <img src="/slides/qr-nemoclaw.jpg" width="140" height="140" alt="NemoClaw QR" style="border-radius:8px;">
         </div>
         <div class="qr-label" style="color:#76b900;">NemoClaw</div>
         <div style="font-size:11px;color:var(--text2);">Secure your agent</div>
@@ -1846,11 +1846,11 @@
     }
   });
 
-  // Click to advance (not on buttons)
-  document.getElementById('deck').addEventListener('click', e => {
-    if (e.target.closest('.nav-btn') || overviewOpen) return;
-    next();
-  });
+  // Click to advance disabled — use arrow keys or spacebar only
+  // document.getElementById('deck').addEventListener('click', e => {
+  //   if (e.target.closest('.nav-btn') || overviewOpen) return;
+  //   next();
+  // });
 
   // Nav buttons
   document.getElementById('btn-next').addEventListener('click', e => { e.stopPropagation(); next(); });
