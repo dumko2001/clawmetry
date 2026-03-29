@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How to Install ClawMetry on KiloClaw — One Command, Full Observability | ClawMetry</title>
+<meta name="description" content="KiloClaw users can install ClawMetry by simply asking their agent. No SSH, no config files. One prompt, full observability in under 2 minutes.">
+<meta name="keywords" content="KiloClaw, ClawMetry, OpenClaw, Kilo.ai, AI agent monitoring, hosted OpenClaw, agent observability, token cost tracking">
+<meta name="author" content="ClawMetry">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://clawmetry.com/blog/kiloclaw-setup">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+<!-- Open Graph -->
+<meta property="og:title" content="How to Install ClawMetry on KiloClaw — One Command, Full Observability">
+<meta property="og:description" content="KiloClaw users can install ClawMetry by asking their agent. No SSH, no config files. Full observability in under 2 minutes.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://clawmetry.com/blog/kiloclaw-setup">
+<meta property="og:site_name" content="ClawMetry">
+<meta property="og:image" content="https://clawmetry.com/screenshots/flow.png">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="How to Install ClawMetry on KiloClaw — One Command, Full Observability">
+<meta name="twitter:description" content="One prompt to your KiloClaw agent. Full observability. No manual setup required.">
+<meta name="twitter:image" content="https://clawmetry.com/screenshots/flow.png">
+
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #0a0a0a; color: #e0e0e0;
+  line-height: 1.7; font-size: 17px;
+}
+a { color: #E5443A; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.header {
+  border-bottom: 1px solid #1a1a1a;
+  padding: 16px 0;
+  position: sticky; top: 0; background: #0a0a0a; z-index: 100;
+}
+.header-inner {
+  max-width: 720px; margin: 0 auto; padding: 0 24px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.header .logo { font-size: 18px; font-weight: 700; color: #fff; text-decoration: none; }
+.header .logo span { color: #E5443A; }
+.header nav a { color: #888; font-size: 14px; margin-left: 24px; text-decoration: none; }
+.header nav a:hover { color: #fff; }
+
+article {
+  max-width: 720px; margin: 0 auto; padding: 48px 24px 80px;
+}
+h1 {
+  font-size: 36px; font-weight: 800; color: #fff;
+  line-height: 1.2; margin-bottom: 16px;
+  letter-spacing: -0.5px;
+}
+.meta {
+  color: #666; font-size: 14px; margin-bottom: 40px;
+  border-bottom: 1px solid #1a1a1a; padding-bottom: 24px;
+}
+.meta time { color: #888; }
+
+h2 {
+  font-size: 24px; font-weight: 700; color: #fff;
+  margin: 48px 0 16px; padding-top: 16px;
+  border-top: 1px solid #141414;
+}
+h2:first-of-type { border-top: none; margin-top: 0; }
+
+h3 {
+  font-size: 19px; font-weight: 600; color: #ddd;
+  margin: 32px 0 12px;
+}
+
+p { margin-bottom: 16px; color: #ccc; }
+
+ul, ol {
+  margin: 0 0 16px 24px; color: #ccc;
+}
+li { margin-bottom: 8px; }
+
+pre {
+  background: #111; border: 1px solid #222; border-radius: 8px;
+  padding: 16px 20px; overflow-x: auto; margin: 16px 0 24px;
+  font-size: 14px; line-height: 1.6;
+}
+code {
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  color: #e8e8e8;
+}
+p code, li code {
+  background: #1a1a1a; padding: 2px 6px; border-radius: 4px;
+  font-size: 15px; color: #E5443A;
+}
+
+.callout {
+  background: #1a0d0d; border-left: 3px solid #E5443A;
+  padding: 16px 20px; border-radius: 0 8px 8px 0;
+  margin: 24px 0;
+}
+.callout p { margin: 0; color: #d4a0a0; }
+.callout strong { color: #E5443A; }
+
+.warning {
+  background: #1a1408; border-left: 3px solid #f59e0b;
+}
+.warning p { color: #d4b87a; }
+.warning strong { color: #f59e0b; }
+
+.agent-prompt {
+  background: linear-gradient(135deg, #111 0%, #0d1117 100%);
+  border: 1px solid #2a2a2a; border-radius: 12px;
+  padding: 24px 28px; margin: 24px 0;
+  font-size: 16px; color: #fff;
+  position: relative;
+}
+.agent-prompt::before {
+  content: '🤖';
+  position: absolute; top: -12px; left: 16px;
+  background: #0a0a0a; padding: 0 8px;
+  font-size: 20px;
+}
+.agent-prompt code {
+  display: block; margin-top: 12px;
+  background: rgba(40,200,64,0.1); border: 1px solid rgba(40,200,64,0.2);
+  padding: 12px 16px; border-radius: 8px;
+  color: #28c840; font-size: 14px; line-height: 1.6;
+  word-break: break-word;
+}
+
+.screenshot-container {
+  margin: 32px 0;
+  border: 1px solid #222; border-radius: 12px;
+  overflow: hidden;
+}
+.screenshot-container img {
+  width: 100%; display: block;
+}
+.screenshot-caption {
+  padding: 12px 16px; background: #111;
+  font-size: 13px; color: #666; text-align: center;
+}
+
+.cta-box {
+  background: linear-gradient(135deg, #1a0d0d 0%, #0a0a0a 100%);
+  border: 1px solid #3a1a1a; border-radius: 12px;
+  padding: 32px; text-align: center; margin: 48px 0;
+}
+.cta-box h3 { color: #fff; margin: 0 0 12px; }
+.cta-box p { color: #a08080; margin-bottom: 20px; }
+.cta-box a.btn {
+  display: inline-block; background: #E5443A; color: #fff;
+  font-weight: 700; padding: 12px 28px; border-radius: 8px;
+  text-decoration: none; font-size: 15px;
+}
+.cta-box a.btn:hover { background: #ff5a50; }
+
+.footer {
+  border-top: 1px solid #1a1a1a; padding: 24px;
+  text-align: center; color: #444; font-size: 13px;
+}
+
+@media (max-width: 600px) {
+  h1 { font-size: 26px; }
+  h2 { font-size: 20px; }
+  pre { font-size: 12px; padding: 12px; }
+  article { padding: 32px 16px 60px; }
+}
+</style>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  "name": "How to Install ClawMetry on KiloClaw",
+  "description": "Install ClawMetry on your KiloClaw hosted OpenClaw agent with a single prompt. Full observability in under 2 minutes.",
+  "totalTime": "PT2M",
+  "tool": [
+    { "@type": "HowToTool", "name": "KiloClaw account (Kilo.ai)" },
+    { "@type": "HowToTool", "name": "ClawMetry (free, open source)" }
+  ],
+  "step": [
+    { "@type": "HowToStep", "name": "Tell your agent to install ClawMetry", "text": "Paste one prompt into your KiloClaw agent chat. It installs ClawMetry, connects to the cloud, and sets up supervisord." },
+    { "@type": "HowToStep", "name": "Open the dashboard", "text": "Go to app.clawmetry.com to see your live agent activity." }
+  ],
+  "author": {
+    "@type": "Organization",
+    "name": "ClawMetry",
+    "url": "https://clawmetry.com"
+  },
+  "datePublished": "2026-03-30",
+  "publisher": {
+    "@type": "Organization",
+    "name": "ClawMetry",
+    "url": "https://clawmetry.com"
+  }
+}
+</script>
+
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <a href="/" class="logo">Claw<span>Metry</span></a>
+    <nav>
+      <a href="/">Home</a>
+      <a href="https://github.com/vivekchand/clawmetry">GitHub</a>
+      <a href="/blog">Blog</a>
+    </nav>
+  </div>
+</div>
+
+<article>
+
+<h1>How to Install ClawMetry on KiloClaw &mdash; One Command, Full Observability</h1>
+
+<div class="meta">
+  <time datetime="2026-03-30">March 30, 2026</time> &middot; 4 min read &middot; By ClawMetry Team
+</div>
+
+<p>If you're running your OpenClaw agent on <strong>KiloClaw</strong>, you can install ClawMetry by simply asking your agent. No SSH. No config files. No Docker. Just paste one prompt.</p>
+
+<p><strong>Total time:</strong> about 2 minutes.</p>
+
+
+<h2 id="what-is-kiloclaw">What is KiloClaw?</h2>
+
+<p><a href="https://kilo.ai" target="_blank" rel="noopener">KiloClaw</a> is hosted OpenClaw by Kilo.ai. You get a fully managed agent running in the cloud. No server to provision, no setup wizard to fight through. Sign up, pick your model, and your agent is live.</p>
+
+<p>It's the fastest way to get an OpenClaw agent running. Your agent gets persistent storage, channels (Telegram, Discord, etc.), cron jobs, sub-agents, and the full OpenClaw runtime. All managed for you.</p>
+
+
+<h2 id="the-problem">The problem</h2>
+
+<p>Your KiloClaw agent runs 24/7. It processes messages, spawns sub-agents, runs cron jobs, calls tools, burns tokens. And you have <strong>zero visibility</strong> into any of it.</p>
+
+<ul>
+  <li>How many tokens did it use today?</li>
+  <li>Which model is costing you the most?</li>
+  <li>Is that cron job actually running?</li>
+  <li>Did the sub-agent it spawned succeed or fail silently?</li>
+  <li>What was it doing at 3 AM when you were asleep?</li>
+</ul>
+
+<p>You don't know. You're flying blind. And the invoice at the end of the month is your only feedback loop.</p>
+
+
+<h2 id="the-setup">The one-command setup</h2>
+
+<p>Open your KiloClaw agent chat and paste this:</p>
+
+<div class="agent-prompt">
+  <strong>Tell your agent:</strong>
+  <code>Help me install in a long running PTY pip install clawmetry && clawmetry connect && setup clawmetry sync via supervisord</code>
+</div>
+
+<p>That's it. Your agent takes it from here.</p>
+
+<div class="callout">
+  <p><strong>Why "long running PTY"?</strong> The <code>clawmetry connect</code> step needs interactive input (it asks for your email to authenticate). Running in a PTY ensures the agent can handle the interactive prompts.</p>
+</div>
+
+
+<h2 id="what-happens">What happens</h2>
+
+<p>Your agent will do three things:</p>
+
+<ol>
+  <li><strong>Install ClawMetry</strong> via pip. Takes a few seconds.</li>
+  <li><strong>Connect to ClawMetry Cloud</strong> using <code>clawmetry connect</code>. This authenticates your instance with end-to-end encryption. Your data stays yours.</li>
+  <li><strong>Set up supervisord</strong> to keep the sync daemon running. Even if your agent restarts, the ClawMetry sync process comes back automatically.</li>
+</ol>
+
+<p>The whole process takes about a minute. Your agent handles every step, including answering the interactive prompts.</p>
+
+<div class="callout warning">
+  <p><strong>E2E encrypted.</strong> The connection between your KiloClaw instance and ClawMetry Cloud is end-to-end encrypted. We can't read your session data, memory files, or tool calls. Only you can.</p>
+</div>
+
+
+<h2 id="what-you-get">What you get</h2>
+
+<p>Once connected, open <a href="https://app.clawmetry.com" target="_blank" rel="noopener">app.clawmetry.com</a>. You'll see your KiloClaw agent's activity in real time:</p>
+
+<ul>
+  <li><strong>Agent sessions</strong> with full tool call traces and thinking</li>
+  <li><strong>Token costs</strong> broken down by model, session, and tool</li>
+  <li><strong>Memory changes</strong> to SOUL.md, MEMORY.md, and other workspace files</li>
+  <li><strong>Cron jobs</strong> with status, schedule, and failure history</li>
+  <li><strong>Sub-agents</strong> with real-time progress, commands, and outcomes</li>
+  <li><strong>Session history</strong> with timeline and cost breakdown</li>
+</ul>
+
+<div class="screenshot-container">
+  <img src="/screenshots/flow.png" alt="ClawMetry dashboard showing real-time agent flow" loading="lazy">
+  <div class="screenshot-caption">ClawMetry dashboard showing real-time token flow across your agent's sessions</div>
+</div>
+
+<p>You go from "I hope my agent is working" to "I can see exactly what it's doing, what it costs, and whether it succeeded."</p>
+
+
+<h2 id="thats-it">That's it</h2>
+
+<p>No SSH into a server. No editing config files. No Docker containers. No manual pip installs in a terminal you don't have access to.</p>
+
+<p>You pasted one prompt. Your agent did the rest. And now you have full observability into everything it does.</p>
+
+<p>This is the beauty of hosted agents: the agent itself is the installer. You just tell it what you want.</p>
+
+<div class="callout">
+  <p><strong>Works on Hostinger too.</strong> Running OpenClaw on a Hostinger VPS? The same prompt works. Or check our <a href="/blog/nemoclaw-hostinger-setup">full Hostinger setup guide</a> for a step-by-step walkthrough.</p>
+</div>
+
+
+<div class="cta-box">
+  <h3>See what your KiloClaw agent is doing</h3>
+  <p>Free, open source, E2E encrypted. One prompt to install.</p>
+  <a href="https://clawmetry.com" class="btn">Get ClawMetry</a>
+</div>
+
+</article>
+
+<div class="footer">
+  &copy; 2026 ClawMetry &middot; <a href="https://clawmetry.com">clawmetry.com</a> &middot; <a href="https://github.com/vivekchand/clawmetry">Open Source</a>
+</div>
+
+</body>
+</html>

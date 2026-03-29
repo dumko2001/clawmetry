@@ -7,3 +7,4 @@ EXPOSE 8080
 ENV PYTHONUNBUFFERED=1
 CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "1", "--threads", "4", "--timeout", "30", "--log-level", "info", "--capture-output", "app:app"]
 # force rebuild
+# force rebuild za 28 mrt 2026 15:27:30 CET
