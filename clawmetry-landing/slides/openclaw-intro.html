@@ -1180,6 +1180,66 @@
   </div>
   <div class="presenter-notes"><h4>📝 Presenter Notes — Slide 5</h4>This is a story that resonates with recruiters but applies to everyone. The 10x moment isn't about replacing people — it's about reclaiming time. 3 hours → 12 minutes. That's not science fiction. That's OpenClaw today. What would YOU do with those 3 hours back every week? Pause here. Let that land.</div>
 
+  <!-- SLIDE: SECURITY -->
+  <div class="slide" id="slide-security">
+    <div class="slide-tag">The Elephant in the Room</div>
+    <h2>But is it <span class="gradient-text">safe?</span></h2>
+
+    <div style="max-width:800px;margin:0 auto;display:flex;flex-direction:column;gap:16px;">
+
+      <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:12px;padding:18px 22px;">
+        <div style="font-weight:700;color:#ef4444;font-size:1rem;margin-bottom:8px;">⚠️ The risk is real</div>
+        <div style="font-size:0.88rem;color:rgba(255,255,255,0.6);line-height:1.7;">
+          OpenClaw has full access to your machine: files, terminal, browser, APIs, credentials. A malicious skill or prompt injection could delete files, exfiltrate data, or run unauthorized commands. Early OpenClaw had no sandboxing — everything ran with your user permissions.
+        </div>
+      </div>
+
+      <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:12px;padding:18px 22px;">
+        <div style="font-weight:700;color:#f59e0b;font-size:1rem;margin-bottom:8px;">🔒 What OpenClaw does now</div>
+        <div style="font-size:0.88rem;color:rgba(255,255,255,0.6);line-height:1.7;">
+          Exec approvals (ask before running risky commands), skill allowlists, authorized sender lists, elevated permission controls. But these are guardrails, not a sandbox. The agent still runs on your machine.
+        </div>
+      </div>
+
+      <div style="background:rgba(118,185,0,0.08);border:1px solid rgba(118,185,0,0.2);border-radius:12px;padding:18px 22px;">
+        <div style="font-weight:700;color:#76b900;font-size:1rem;margin-bottom:8px;">🛡️ Enter NVIDIA NemoClaw</div>
+        <div style="font-size:0.88rem;color:rgba(255,255,255,0.6);line-height:1.7;">
+          NVIDIA saw the security gap and built NemoClaw: a full sandbox layer around OpenClaw. Default-deny network policy, filesystem isolation, egress approval flows, and managed inference routing. Your agent runs inside a secure container.
+        </div>
+      </div>
+
+      <div style="text-align:center;font-size:0.8rem;color:rgba(255,255,255,0.35);margin-top:4px;">
+        Best practice: review what your agent does, use exec approvals, consider NemoClaw for production.
+      </div>
+    </div>
+  </div>
+  <div class="presenter-notes"><h4>📝 Presenter Notes — Security</h4>This is important to address head-on. OpenClaw is incredibly powerful but with great power comes responsibility. Your agent has full access to your machine. In early days there were incidents with malicious skills. OpenClaw has added guardrails like exec approvals and skill allowlists. But the real answer for production is NVIDIA NemoClaw, which sandboxes the entire agent. Always review what your agent is doing, especially with new skills.</div>
+
+  <!-- SLIDE: NVIDIA + NEMOCLAW -->
+  <div class="slide" id="slide-nvidia">
+    <div class="slide-tag">NVIDIA Recognized This</div>
+    <h2>OpenClaw is now a <span class="gradient-text">platform</span></h2>
+
+    <div style="max-width:850px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div style="border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);">
+        <img src="/slides/gtc-star-history.jpg" alt="OpenClaw star history — faster than React and Linux" style="width:100%;display:block;">
+      </div>
+      <div style="border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);">
+        <img src="/slides/gtc-nemoclaw.jpg" alt="NVIDIA NemoClaw announcement at GTC" style="width:100%;display:block;">
+      </div>
+    </div>
+
+    <div style="max-width:850px;margin:16px auto 0;display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:0.82rem;color:rgba(255,255,255,0.5);">
+      <div style="text-align:center;">OpenClaw grew faster than React and Linux on GitHub. <strong style="color:#fff;">220K+ stars.</strong></div>
+      <div style="text-align:center;">NVIDIA announced NemoClaw at GTC 2026 — <strong style="color:#76b900;">secure sandbox + managed inference</strong> for OpenClaw.</div>
+    </div>
+
+    <div style="text-align:center;margin-top:16px;font-size:0.9rem;color:rgba(255,255,255,0.4);">
+      This is not a toy. The biggest companies in the world are building infrastructure around it.
+    </div>
+  </div>
+  <div class="presenter-notes"><h4>📝 Presenter Notes — NVIDIA</h4>Just to put this in perspective: OpenClaw grew faster than React and Linux on GitHub. NVIDIA, the most valuable company in the world, built an entire product around it — NemoClaw — to add security and managed inference. Jensen Huang presented it at GTC 2026. This is not a hobby project. This is the future of how we interact with AI.</div>
+
   <!-- SLIDE 6: GET STARTED -->
   <div class="slide" id="slide-6">
     <div class="slide-tag">Get Started</div>
