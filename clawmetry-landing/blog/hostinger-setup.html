@@ -3,26 +3,26 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>How to Install ClawMetry on KiloClaw — One Command, Full Observability | ClawMetry</title>
-<meta name="description" content="KiloClaw users can install ClawMetry by simply asking their agent. No SSH, no config files. One prompt, full observability in under 2 minutes.">
-<meta name="keywords" content="KiloClaw, ClawMetry, OpenClaw, Kilo.ai, AI agent monitoring, hosted OpenClaw, agent observability, token cost tracking">
+<title>How to Install ClawMetry on Hostinger OpenClaw — One Command Setup | ClawMetry</title>
+<meta name="description" content="Install ClawMetry on your Hostinger OpenClaw instance with a single agent command. No SSH needed. Full observability in under 2 minutes.">
+<meta name="keywords" content="Hostinger, ClawMetry, OpenClaw, Hostinger VPS, AI agent monitoring, agent observability, token cost tracking, Nexos AI">
 <meta name="author" content="ClawMetry">
 <meta name="robots" content="index, follow">
-<link rel="canonical" href="https://clawmetry.com/blog/kiloclaw-setup">
+<link rel="canonical" href="https://clawmetry.com/blog/hostinger-setup">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 
 <!-- Open Graph -->
-<meta property="og:title" content="How to Install ClawMetry on KiloClaw — One Command, Full Observability">
-<meta property="og:description" content="KiloClaw users can install ClawMetry by asking their agent. No SSH, no config files. Full observability in under 2 minutes.">
+<meta property="og:title" content="How to Install ClawMetry on Hostinger OpenClaw — One Command Setup">
+<meta property="og:description" content="Hostinger OpenClaw users can install ClawMetry with one agent command. No SSH, no config. Full observability in under 2 minutes.">
 <meta property="og:type" content="article">
-<meta property="og:url" content="https://clawmetry.com/blog/kiloclaw-setup">
+<meta property="og:url" content="https://clawmetry.com/blog/hostinger-setup">
 <meta property="og:site_name" content="ClawMetry">
 <meta property="og:image" content="https://clawmetry.com/screenshots/flow.png">
 
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="How to Install ClawMetry on KiloClaw — One Command, Full Observability">
-<meta name="twitter:description" content="One prompt to your KiloClaw agent. Full observability. No manual setup required.">
+<meta name="twitter:title" content="How to Install ClawMetry on Hostinger OpenClaw — One Command Setup">
+<meta name="twitter:description" content="One prompt to your Hostinger OpenClaw agent. Full observability. No manual setup required.">
 <meta name="twitter:image" content="https://clawmetry.com/screenshots/flow.png">
 
 <style>
@@ -158,6 +158,16 @@ p code, li code {
 }
 .cta-box a.btn:hover { background: #ff5a50; }
 
+.more-guides {
+  margin: 48px 0 0;
+  padding: 32px 0 0;
+  border-top: 1px solid #1a1a1a;
+}
+.more-guides h3 { color: #fff; margin-bottom: 16px; }
+.more-guides ul { list-style: none; margin: 0; padding: 0; }
+.more-guides li { margin-bottom: 10px; }
+.more-guides a { color: #E5443A; font-size: 15px; }
+
 .footer {
   border-top: 1px solid #1a1a1a; padding: 24px;
   text-align: center; color: #444; font-size: 13px;
@@ -175,15 +185,15 @@ p code, li code {
 {
   "@context": "https://schema.org",
   "@type": "HowTo",
-  "name": "How to Install ClawMetry on KiloClaw",
-  "description": "Install ClawMetry on your KiloClaw hosted OpenClaw agent with a single prompt. Full observability in under 2 minutes.",
+  "name": "How to Install ClawMetry on Hostinger OpenClaw",
+  "description": "Install ClawMetry on your Hostinger OpenClaw instance with a single agent command. Full observability in under 2 minutes.",
   "totalTime": "PT2M",
   "tool": [
-    { "@type": "HowToTool", "name": "KiloClaw account (Kilo.ai)" },
+    { "@type": "HowToTool", "name": "Hostinger OpenClaw account" },
     { "@type": "HowToTool", "name": "ClawMetry (free, open source)" }
   ],
   "step": [
-    { "@type": "HowToStep", "name": "Tell your agent to install ClawMetry", "text": "Paste one prompt into your KiloClaw agent chat. It installs ClawMetry, connects to the cloud, and sets up supervisord." },
+    { "@type": "HowToStep", "name": "Tell your agent to install ClawMetry", "text": "Paste one prompt into your Hostinger OpenClaw agent chat. It installs ClawMetry, connects to the cloud, and sets up supervisord." },
     { "@type": "HowToStep", "name": "Open the dashboard", "text": "Go to app.clawmetry.com to see your live agent activity." }
   ],
   "author": {
@@ -216,27 +226,31 @@ p code, li code {
 
 <article>
 
-<h1>How to Install ClawMetry on KiloClaw &mdash; One Command, Full Observability</h1>
+<h1>How to Install ClawMetry on Hostinger OpenClaw &mdash; One Command Setup</h1>
 
 <div class="meta">
   <time datetime="2026-03-30">March 30, 2026</time> &middot; 4 min read &middot; By ClawMetry Team
 </div>
 
-<p>If you're running your OpenClaw agent on <strong>KiloClaw</strong>, you can install ClawMetry by simply asking your agent. No SSH. No config files. No Docker. Just paste one prompt.</p>
+<p><a href="https://hostinger.com/tutorials/best-openclaw-hosting" target="_blank" rel="noopener">Hostinger</a> makes it dead simple to deploy OpenClaw. One-click install, managed infrastructure, and Nexos AI credits built right in. But once your agent is running, you have no idea what it's actually doing.</p>
+
+<p>ClawMetry fixes that. And installing it takes one prompt.</p>
 
 <p><strong>Total time:</strong> about 2 minutes.</p>
 
 
-<h2 id="what-is-kiloclaw">What is KiloClaw?</h2>
+<h2 id="what-is-hostinger-openclaw">What is Hostinger OpenClaw?</h2>
 
-<p><a href="https://kilo.ai" target="_blank" rel="noopener">KiloClaw</a> is hosted OpenClaw by Kilo.ai. You get a fully managed agent running in the cloud. No server to provision, no setup wizard to fight through. Sign up, pick your model, and your agent is live.</p>
+<p>Hostinger offers <a href="https://hostinger.com/tutorials/best-openclaw-hosting" target="_blank" rel="noopener">1-click OpenClaw deployment</a> on their VPS plans. You pick a plan, click deploy, and your OpenClaw agent is live. No Docker, no manual server config, no fighting with dependencies.</p>
 
-<p>It's the fastest way to get an OpenClaw agent running. Your agent gets persistent storage, channels (Telegram, Discord, etc.), cron jobs, sub-agents, and the full OpenClaw runtime. All managed for you.</p>
+<p>What makes Hostinger especially attractive is the <strong>built-in Nexos AI credits</strong>. You don't need to bring your own API key or set up billing with a separate AI provider. The AI credits come with your hosting plan, so your agent works out of the box.</p>
+
+<p>Channels like Telegram and Discord, cron jobs, sub-agents, persistent storage, and the full OpenClaw runtime are all included.</p>
 
 
 <h2 id="the-problem">The problem</h2>
 
-<p>Your KiloClaw agent runs 24/7. It processes messages, spawns sub-agents, runs cron jobs, calls tools, burns tokens. And you have <strong>zero visibility</strong> into any of it.</p>
+<p>Your Hostinger OpenClaw agent runs 24/7. It processes messages, spawns sub-agents, runs cron jobs, calls tools, burns tokens. And you have <strong>zero visibility</strong> into any of it.</p>
 
 <ul>
   <li>How many tokens did it use today?</li>
@@ -246,12 +260,12 @@ p code, li code {
   <li>What was it doing at 3 AM when you were asleep?</li>
 </ul>
 
-<p>You don't know. You're flying blind. And the invoice at the end of the month is your only feedback loop.</p>
+<p>You don't know. You're flying blind. The Nexos AI credits are convenient, but without observability you have no idea how fast they're being consumed or whether they're being spent wisely.</p>
 
 
 <h2 id="the-setup">The one-command setup</h2>
 
-<p>Open your KiloClaw agent chat and paste this:</p>
+<p>Open your Hostinger OpenClaw agent chat (Telegram, Discord, or wherever you talk to it) and paste this:</p>
 
 <div class="agent-prompt">
   <strong>Tell your agent:</strong>
@@ -272,23 +286,24 @@ p code, li code {
 <ol>
   <li><strong>Install ClawMetry</strong> via pip. Takes a few seconds.</li>
   <li><strong>Connect to ClawMetry Cloud</strong> using <code>clawmetry connect</code>. This authenticates your instance with end-to-end encryption. Your data stays yours.</li>
-  <li><strong>Set up supervisord</strong> to keep the sync daemon running. Even if your agent restarts, the ClawMetry sync process comes back automatically.</li>
+  <li><strong>Set up supervisord</strong> to keep the sync daemon running. Even if your Hostinger instance restarts, the ClawMetry sync process comes back automatically.</li>
 </ol>
 
 <p>The whole process takes about a minute. Your agent handles every step, including answering the interactive prompts.</p>
 
 <div class="callout warning">
-  <p><strong>E2E encrypted.</strong> The connection between your KiloClaw instance and ClawMetry Cloud is end-to-end encrypted. We can't read your session data, memory files, or tool calls. Only you can.</p>
+  <p><strong>E2E encrypted.</strong> The connection between your Hostinger instance and ClawMetry Cloud is end-to-end encrypted. We can't read your session data, memory files, or tool calls. Only you can.</p>
 </div>
 
 
 <h2 id="what-you-get">What you get</h2>
 
-<p>Once connected, open <a href="https://app.clawmetry.com" target="_blank" rel="noopener">app.clawmetry.com</a>. You'll see your KiloClaw agent's activity in real time:</p>
+<p>Once connected, open <a href="https://app.clawmetry.com" target="_blank" rel="noopener">app.clawmetry.com</a>. You'll see your Hostinger agent's activity in real time:</p>
 
 <ul>
   <li><strong>Agent sessions</strong> with full tool call traces and thinking</li>
   <li><strong>Token costs</strong> broken down by model, session, and tool</li>
+  <li><strong>Nexos AI credit usage</strong> so you know exactly how fast you're burning through your included credits</li>
   <li><strong>Memory changes</strong> to SOUL.md, MEMORY.md, and other workspace files</li>
   <li><strong>Cron jobs</strong> with status, schedule, and failure history</li>
   <li><strong>Sub-agents</strong> with real-time progress, commands, and outcomes</li>
@@ -305,29 +320,22 @@ p code, li code {
 
 <h2 id="thats-it">That's it</h2>
 
-<p>No SSH into a server. No editing config files. No Docker containers. No manual pip installs in a terminal you don't have access to.</p>
+<p>Hostinger made deploying OpenClaw a one-click affair. ClawMetry makes monitoring it a one-prompt affair. No SSH, no config files, no Docker containers.</p>
 
-<p>You pasted one prompt. Your agent did the rest. And now you have full observability into everything it does.</p>
+<p>You pasted one prompt. Your agent did the rest. And now you have full observability into everything it does, including how it uses those built-in Nexos AI credits.</p>
 
-<p>This is the beauty of hosted agents: the agent itself is the installer. You just tell it what you want.</p>
-
-<div class="callout">
-  <p><strong>Works on Hostinger too.</strong> Running OpenClaw on a Hostinger VPS? The same prompt works. Or check our <a href="/blog/nemoclaw-hostinger-setup">full Hostinger setup guide</a> for a step-by-step walkthrough.</p>
-</div>
-
-
-<div class="more-guides" style="margin: 48px 0 0; padding: 32px 0 0; border-top: 1px solid #1a1a1a;">
-  <h3 style="color: #fff; margin-bottom: 16px;">More setup guides</h3>
-  <ul style="list-style: none; margin: 0; padding: 0;">
-    <li style="margin-bottom: 10px;"><a href="/blog/hostinger-setup" style="color: #E5443A; font-size: 15px;">Install ClawMetry on Hostinger OpenClaw</a></li>
-    <li style="margin-bottom: 10px;"><a href="/blog/xcloud-setup" style="color: #E5443A; font-size: 15px;">Install ClawMetry on xCloud</a></li>
-    <li style="margin-bottom: 10px;"><a href="/blog/myclaw-setup" style="color: #E5443A; font-size: 15px;">Install ClawMetry on MyClaw</a></li>
-    <li style="margin-bottom: 10px;"><a href="/blog/self-hosted-setup" style="color: #E5443A; font-size: 15px;">Install ClawMetry on Self-Hosted OpenClaw (VPS, Pi, Mac)</a></li>
+<div class="more-guides">
+  <h3>More setup guides</h3>
+  <ul>
+    <li><a href="/blog/kiloclaw-setup">Install ClawMetry on KiloClaw</a></li>
+    <li><a href="/blog/xcloud-setup">Install ClawMetry on xCloud</a></li>
+    <li><a href="/blog/myclaw-setup">Install ClawMetry on MyClaw</a></li>
+    <li><a href="/blog/self-hosted-setup">Install ClawMetry on Self-Hosted OpenClaw (VPS, Pi, Mac)</a></li>
   </ul>
 </div>
 
 <div class="cta-box">
-  <h3>See what your KiloClaw agent is doing</h3>
+  <h3>See what your Hostinger agent is doing</h3>
   <p>Free, open source, E2E encrypted. One prompt to install.</p>
   <a href="https://clawmetry.com" class="btn">Get ClawMetry</a>
 </div>

@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How to Install ClawMetry on Your Self-Hosted OpenClaw (VPS, Raspberry Pi, Mac) | ClawMetry</title>
+<meta name="description" content="Install ClawMetry on your self-hosted OpenClaw instance. Works on Hetzner VPS, Raspberry Pi, Mac mini, or any Linux desktop. Two approaches: curl one-liner or agent command.">
+<meta name="keywords" content="ClawMetry, OpenClaw, self-hosted, VPS, Raspberry Pi, Mac, Hetzner, AI agent monitoring, agent observability, token tracking, Linux">
+<meta name="author" content="ClawMetry">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://clawmetry.com/blog/self-hosted-setup">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+<!-- Open Graph -->
+<meta property="og:title" content="How to Install ClawMetry on Your Self-Hosted OpenClaw (VPS, Raspberry Pi, Mac)">
+<meta property="og:description" content="Two ways to install ClawMetry on self-hosted OpenClaw: curl one-liner or agent command. Works on any hardware.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://clawmetry.com/blog/self-hosted-setup">
+<meta property="og:site_name" content="ClawMetry">
+<meta property="og:image" content="https://clawmetry.com/screenshots/flow.png">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="How to Install ClawMetry on Your Self-Hosted OpenClaw">
+<meta name="twitter:description" content="Two installation paths for self-hosted OpenClaw. Works on VPS, Raspberry Pi, Mac, or any Linux box.">
+<meta name="twitter:image" content="https://clawmetry.com/screenshots/flow.png">
+
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #0a0a0a; color: #e0e0e0;
+  line-height: 1.7; font-size: 17px;
+}
+a { color: #E5443A; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.header {
+  border-bottom: 1px solid #1a1a1a;
+  padding: 16px 0;
+  position: sticky; top: 0; background: #0a0a0a; z-index: 100;
+}
+.header-inner {
+  max-width: 720px; margin: 0 auto; padding: 0 24px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.header .logo { font-size: 18px; font-weight: 700; color: #fff; text-decoration: none; }
+.header .logo span { color: #E5443A; }
+.header nav a { color: #888; font-size: 14px; margin-left: 24px; text-decoration: none; }
+.header nav a:hover { color: #fff; }
+
+article {
+  max-width: 720px; margin: 0 auto; padding: 48px 24px 80px;
+}
+h1 {
+  font-size: 36px; font-weight: 800; color: #fff;
+  line-height: 1.2; margin-bottom: 16px;
+  letter-spacing: -0.5px;
+}
+.meta {
+  color: #666; font-size: 14px; margin-bottom: 40px;
+  border-bottom: 1px solid #1a1a1a; padding-bottom: 24px;
+}
+.meta time { color: #888; }
+
+h2 {
+  font-size: 24px; font-weight: 700; color: #fff;
+  margin: 48px 0 16px; padding-top: 16px;
+  border-top: 1px solid #141414;
+}
+h2:first-of-type { border-top: none; margin-top: 0; }
+
+h3 {
+  font-size: 19px; font-weight: 600; color: #ddd;
+  margin: 32px 0 12px;
+}
+
+p { margin-bottom: 16px; color: #ccc; }
+
+ul, ol {
+  margin: 0 0 16px 24px; color: #ccc;
+}
+li { margin-bottom: 8px; }
+
+pre {
+  background: #111; border: 1px solid #222; border-radius: 8px;
+  padding: 16px 20px; overflow-x: auto; margin: 16px 0 24px;
+  font-size: 14px; line-height: 1.6;
+}
+code {
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  color: #e8e8e8;
+}
+p code, li code {
+  background: #1a1a1a; padding: 2px 6px; border-radius: 4px;
+  font-size: 15px; color: #E5443A;
+}
+
+.callout {
+  background: #1a0d0d; border-left: 3px solid #E5443A;
+  padding: 16px 20px; border-radius: 0 8px 8px 0;
+  margin: 24px 0;
+}
+.callout p { margin: 0; color: #d4a0a0; }
+.callout strong { color: #E5443A; }
+
+.warning {
+  background: #1a1408; border-left: 3px solid #f59e0b;
+}
+.warning p { color: #d4b87a; }
+.warning strong { color: #f59e0b; }
+
+.agent-prompt {
+  background: linear-gradient(135deg, #111 0%, #0d1117 100%);
+  border: 1px solid #2a2a2a; border-radius: 12px;
+  padding: 24px 28px; margin: 24px 0;
+  font-size: 16px; color: #fff;
+  position: relative;
+}
+.agent-prompt::before {
+  content: '🤖';
+  position: absolute; top: -12px; left: 16px;
+  background: #0a0a0a; padding: 0 8px;
+  font-size: 20px;
+}
+.agent-prompt code {
+  display: block; margin-top: 12px;
+  background: rgba(40,200,64,0.1); border: 1px solid rgba(40,200,64,0.2);
+  padding: 12px 16px; border-radius: 8px;
+  color: #28c840; font-size: 14px; line-height: 1.6;
+  word-break: break-word;
+}
+
+.screenshot-container {
+  margin: 32px 0;
+  border: 1px solid #222; border-radius: 12px;
+  overflow: hidden;
+}
+.screenshot-container img {
+  width: 100%; display: block;
+}
+.screenshot-caption {
+  padding: 12px 16px; background: #111;
+  font-size: 13px; color: #666; text-align: center;
+}
+
+.cta-box {
+  background: linear-gradient(135deg, #1a0d0d 0%, #0a0a0a 100%);
+  border: 1px solid #3a1a1a; border-radius: 12px;
+  padding: 32px; text-align: center; margin: 48px 0;
+}
+.cta-box h3 { color: #fff; margin: 0 0 12px; }
+.cta-box p { color: #a08080; margin-bottom: 20px; }
+.cta-box a.btn {
+  display: inline-block; background: #E5443A; color: #fff;
+  font-weight: 700; padding: 12px 28px; border-radius: 8px;
+  text-decoration: none; font-size: 15px;
+}
+.cta-box a.btn:hover { background: #ff5a50; }
+
+.more-guides {
+  margin: 48px 0 0;
+  padding: 32px 0 0;
+  border-top: 1px solid #1a1a1a;
+}
+.more-guides h3 { color: #fff; margin-bottom: 16px; }
+.more-guides ul { list-style: none; margin: 0; padding: 0; }
+.more-guides li { margin-bottom: 10px; }
+.more-guides a { color: #E5443A; font-size: 15px; }
+
+.footer {
+  border-top: 1px solid #1a1a1a; padding: 24px;
+  text-align: center; color: #444; font-size: 13px;
+}
+
+@media (max-width: 600px) {
+  h1 { font-size: 26px; }
+  h2 { font-size: 20px; }
+  pre { font-size: 12px; padding: 12px; }
+  article { padding: 32px 16px 60px; }
+}
+</style>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  "name": "How to Install ClawMetry on Self-Hosted OpenClaw",
+  "description": "Install ClawMetry on your self-hosted OpenClaw instance running on a VPS, Raspberry Pi, Mac, or Linux desktop. Two installation methods available.",
+  "totalTime": "PT3M",
+  "tool": [
+    { "@type": "HowToTool", "name": "Self-hosted OpenClaw instance" },
+    { "@type": "HowToTool", "name": "ClawMetry (free, open source)" },
+    { "@type": "HowToTool", "name": "SSH access or agent chat" }
+  ],
+  "step": [
+    { "@type": "HowToStep", "name": "Choose your installation method", "text": "Option A: Run the curl one-liner directly on the host via SSH. Option B: Tell your agent to install it via chat." },
+    { "@type": "HowToStep", "name": "Install and connect ClawMetry", "text": "Run pip install clawmetry, then clawmetry connect to authenticate with E2E encryption." },
+    { "@type": "HowToStep", "name": "Set up auto-restart", "text": "Configure supervisord to keep the sync daemon running across reboots." },
+    { "@type": "HowToStep", "name": "Open the dashboard", "text": "Go to app.clawmetry.com to see your live agent activity." }
+  ],
+  "author": {
+    "@type": "Organization",
+    "name": "ClawMetry",
+    "url": "https://clawmetry.com"
+  },
+  "datePublished": "2026-03-30",
+  "publisher": {
+    "@type": "Organization",
+    "name": "ClawMetry",
+    "url": "https://clawmetry.com"
+  }
+}
+</script>
+
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <a href="/" class="logo">Claw<span>Metry</span></a>
+    <nav>
+      <a href="/">Home</a>
+      <a href="https://github.com/vivekchand/clawmetry">GitHub</a>
+      <a href="/blog">Blog</a>
+    </nav>
+  </div>
+</div>
+
+<article>
+
+<h1>How to Install ClawMetry on Your Self-Hosted OpenClaw (VPS, Raspberry Pi, Mac)</h1>
+
+<div class="meta">
+  <time datetime="2026-03-30">March 30, 2026</time> &middot; 5 min read &middot; By ClawMetry Team
+</div>
+
+<p>Running OpenClaw on your own hardware? Whether it's a Hetzner VPS, a Raspberry Pi under your desk, a Mac mini in your closet, or a Linux desktop, you have two ways to install ClawMetry. Pick whichever fits your workflow.</p>
+
+<p><strong>Total time:</strong> about 3 minutes.</p>
+
+
+<h2 id="who-this-is-for">Who this is for</h2>
+
+<p>You're running OpenClaw on hardware you control. Maybe it's:</p>
+
+<ul>
+  <li><strong>A Hetzner VPS</strong> (or DigitalOcean, Linode, Vultr, etc.)</li>
+  <li><strong>A Raspberry Pi</strong> running 24/7 at home</li>
+  <li><strong>A Mac mini</strong> tucked away as a home server</li>
+  <li><strong>A Linux desktop</strong> or workstation</li>
+</ul>
+
+<p>You have full control over the machine. You can SSH in. You can install packages. You own the whole stack. But you still need visibility into what your agent is actually doing.</p>
+
+
+<h2 id="the-problem">The problem</h2>
+
+<p>Your self-hosted OpenClaw agent runs 24/7. It processes messages, spawns sub-agents, runs cron jobs, calls tools, burns tokens. And unless you're tailing logs manually, you have <strong>zero visibility</strong> into any of it.</p>
+
+<ul>
+  <li>How many tokens did it use today?</li>
+  <li>Which model is costing you the most?</li>
+  <li>Is that cron job actually running?</li>
+  <li>Did the sub-agent it spawned succeed or fail silently?</li>
+  <li>What was it doing at 3 AM when you were asleep?</li>
+</ul>
+
+<p>Self-hosting gives you control. But control without visibility is just extra responsibility with no feedback loop.</p>
+
+
+<h2 id="option-a">Option A: The curl one-liner (SSH into your host)</h2>
+
+<p>If you have SSH access to your machine, this is the fastest path. Open a terminal and run:</p>
+
+<pre><code>pip install clawmetry && clawmetry connect</code></pre>
+
+<p>The <code>clawmetry connect</code> command will ask for your email to authenticate. It sets up E2E encryption between your instance and ClawMetry Cloud.</p>
+
+<p>Then set up supervisord to keep the sync daemon running across reboots:</p>
+
+<pre><code># Create a supervisord config for ClawMetry
+cat > /etc/supervisor/conf.d/clawmetry.conf &lt;&lt; 'EOF'
+[program:clawmetry-sync]
+command=clawmetry sync
+autostart=true
+autorestart=true
+stderr_logfile=/var/log/clawmetry-sync.err.log
+stdout_logfile=/var/log/clawmetry-sync.out.log
+EOF
+
+# Reload supervisord
+supervisorctl reread
+supervisorctl update
+supervisorctl start clawmetry-sync</code></pre>
+
+<p>Done. ClawMetry is installed, connected, and will survive reboots.</p>
+
+<div class="callout">
+  <p><strong>Raspberry Pi note:</strong> ClawMetry works on ARM64. If you're running a Pi 4 or Pi 5 with a 64-bit OS, <code>pip install clawmetry</code> works out of the box. For older 32-bit Pis, make sure you're running Python 3.9+.</p>
+</div>
+
+<div class="callout">
+  <p><strong>Mac note:</strong> On macOS, use <code>brew install supervisor</code> if you don't have supervisord, or use <code>launchd</code> to keep the sync daemon running. The pip install and connect steps are identical.</p>
+</div>
+
+
+<h2 id="option-b">Option B: The agent command (via Telegram or Discord)</h2>
+
+<p>Don't want to SSH in? Just tell your agent to do it. Open your agent chat and paste this:</p>
+
+<div class="agent-prompt">
+  <strong>Tell your agent:</strong>
+  <code>Help me install in a long running PTY pip install clawmetry && clawmetry connect && setup clawmetry sync via supervisord</code>
+</div>
+
+<p>Your agent will install ClawMetry, handle the interactive authentication prompts, and set up supervisord. All from a chat message.</p>
+
+<div class="callout">
+  <p><strong>Why "long running PTY"?</strong> The <code>clawmetry connect</code> step needs interactive input (it asks for your email to authenticate). Running in a PTY ensures the agent can handle the interactive prompts.</p>
+</div>
+
+<p>This approach is especially useful when your OpenClaw host is remote (a VPS you rarely SSH into) or when you just prefer talking to your agent over typing terminal commands.</p>
+
+
+<h2 id="what-happens">What happens</h2>
+
+<p>Regardless of which option you chose, the same three things happen:</p>
+
+<ol>
+  <li><strong>Install ClawMetry</strong> via pip. Takes a few seconds.</li>
+  <li><strong>Connect to ClawMetry Cloud</strong> using <code>clawmetry connect</code>. This authenticates your instance with end-to-end encryption. Your data stays yours.</li>
+  <li><strong>Set up supervisord</strong> to keep the sync daemon running. Even if your machine reboots, the ClawMetry sync process comes back automatically.</li>
+</ol>
+
+<div class="callout warning">
+  <p><strong>E2E encrypted.</strong> The connection between your self-hosted instance and ClawMetry Cloud is end-to-end encrypted. We can't read your session data, memory files, or tool calls. Only you can. This is especially important for self-hosters who chose to run their own hardware precisely because they care about data ownership.</p>
+</div>
+
+
+<h2 id="what-you-get">What you get</h2>
+
+<p>Once connected, open <a href="https://app.clawmetry.com" target="_blank" rel="noopener">app.clawmetry.com</a>. You'll see your agent's activity in real time:</p>
+
+<ul>
+  <li><strong>Agent sessions</strong> with full tool call traces and thinking</li>
+  <li><strong>Token costs</strong> broken down by model, session, and tool</li>
+  <li><strong>Memory changes</strong> to SOUL.md, MEMORY.md, and other workspace files</li>
+  <li><strong>Cron jobs</strong> with status, schedule, and failure history</li>
+  <li><strong>Sub-agents</strong> with real-time progress, commands, and outcomes</li>
+  <li><strong>Session history</strong> with timeline and cost breakdown</li>
+</ul>
+
+<div class="screenshot-container">
+  <img src="/screenshots/flow.png" alt="ClawMetry dashboard showing real-time agent flow" loading="lazy">
+  <div class="screenshot-caption">ClawMetry dashboard showing real-time token flow across your agent's sessions</div>
+</div>
+
+<p>You go from tailing log files and guessing to having a clean dashboard that shows everything your agent does, in real time, from any device.</p>
+
+
+<h2 id="hardware-specific">Hardware-specific tips</h2>
+
+<h3>Hetzner / Cloud VPS</h3>
+<p>The most common self-hosted setup. SSH in, run the one-liner, done. If you're using systemd instead of supervisord, create a <code>clawmetry-sync.service</code> unit file instead. ClawMetry is lightweight and won't compete with your agent for resources.</p>
+
+<h3>Raspberry Pi</h3>
+<p>ClawMetry runs great on Pi 4 and Pi 5. The sync daemon uses minimal CPU and memory. Make sure you're on a 64-bit OS (Raspberry Pi OS Lite 64-bit is recommended). If your Pi is headless, the agent command approach (Option B) is perfect since you're probably already talking to it via Telegram.</p>
+
+<h3>Mac mini / macOS</h3>
+<p>Works out of the box with Python 3.9+. For persistence, use either <code>brew services</code> with a supervisord formula or create a native <code>launchd</code> plist. If you're running OpenClaw as a background service via <code>launchctl</code>, ClawMetry's supervisord config fits right alongside it.</p>
+
+<h3>Linux desktop</h3>
+<p>Same as VPS. If you're not using supervisord, a systemd user service works too. Run <code>loginctl enable-linger $USER</code> so it survives logouts.</p>
+
+<div class="callout">
+  <p><strong>Video walkthrough:</strong> Want a visual guide? Check out our <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" rel="noopener">YouTube setup video</a> that walks through the entire process on a fresh Hetzner VPS.</p>
+</div>
+
+
+<h2 id="thats-it">That's it</h2>
+
+<p>Self-hosting means you own the stack. ClawMetry means you can actually see what's happening in it. Two installation options, one outcome: full observability into your self-hosted OpenClaw agent.</p>
+
+<p>Pick the approach that fits your workflow. Either way, you're up and running in under 3 minutes.</p>
+
+<div class="more-guides">
+  <h3>More setup guides</h3>
+  <ul>
+    <li><a href="/blog/kiloclaw-setup">Install ClawMetry on KiloClaw</a></li>
+    <li><a href="/blog/hostinger-setup">Install ClawMetry on Hostinger OpenClaw</a></li>
+    <li><a href="/blog/xcloud-setup">Install ClawMetry on xCloud</a></li>
+    <li><a href="/blog/myclaw-setup">Install ClawMetry on MyClaw</a></li>
+  </ul>
+</div>
+
+<div class="cta-box">
+  <h3>See what your self-hosted agent is doing</h3>
+  <p>Free, open source, E2E encrypted. Works on any hardware.</p>
+  <a href="https://clawmetry.com" class="btn">Get ClawMetry</a>
+</div>
+
+</article>
+
+<div class="footer">
+  &copy; 2026 ClawMetry &middot; <a href="https://clawmetry.com">clawmetry.com</a> &middot; <a href="https://github.com/vivekchand/clawmetry">Open Source</a>
+</div>
+
+</body>
+</html>
