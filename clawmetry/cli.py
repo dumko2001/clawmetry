@@ -452,9 +452,11 @@ def _cmd_connect(args) -> None:
         print()
         return
 
-    print("  Keep this secret key safe (like a password):")
-    print(f"  {enc_key}")
-    print()
+    # Only show enc key reminder in interactive mode (not when --enc-key was passed)
+    if not _enc_key_arg:
+        print("  Keep this secret key safe (like a password):")
+        print(f"  {enc_key}")
+        print()
 
     # Start daemon
     _start_daemon(config, args)
@@ -557,8 +559,9 @@ WantedBy=default.target
         print("  Running in the background. Your data is syncing to the cloud.")
         print('  To stop: clawmetry disconnect')
     else:
-        print("  ⚠️  systemctl not available (container/Docker?).")
-        print("  Falling back to background subprocess…")
+        if sys.stdout.isatty():
+            print("  ⚠️  systemctl not available (container/Docker?).")
+            print("  Falling back to background subprocess…")
         _start_subprocess()
 
 
