@@ -987,8 +987,12 @@ def _print_nemoclaw_nodes(args) -> None:
                     ["docker", "exec", cluster, "kubectl", "exec",
                      "-n", "openshell", pod, "--",
                      "bash", "-c",
-                     "pid=$(cat /root/.clawmetry/sync.pid 2>/dev/null); "
-                     "[ -n \"$pid\" ] && kill -0 \"$pid\" 2>/dev/null && echo running || echo stopped"],
+                     "python3 -c \""
+                     "import os,pathlib; "
+                     "p=pathlib.Path('/root/.clawmetry/sync.pid'); "
+                     "pid=int(p.read_text()) if p.exists() else 0; "
+                     "exit(0 if pid and not os.system(f'kill -0 {pid} 2>/dev/null') else 1)"
+                     "\" && echo running || echo stopped"],
                     capture_output=True, text=True, timeout=5
                 )
                 daemon_status = rd.stdout.strip()
