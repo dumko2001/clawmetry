@@ -234,6 +234,11 @@ import json; json.dump({'api_key':'$HOST_API_KEY','node_id':'$sb','platform':'Li
       fi
 
       echo ""
+      # Register LaunchAgents on macOS to keep sandbox daemons alive permanently
+      if [ "$(uname)" = "Darwin" ]; then
+        "$CLAWMETRY_BIN" nemoclaw-daemons 2>/dev/null || true
+      fi
+      echo ""
       echo -e "  ${GREEN}${BOLD}✓ All done! Open app.clawmetry.com to see your sandboxes${NC}"
     else
       # No cluster container found, fall back to manual instructions
