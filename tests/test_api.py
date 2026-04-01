@@ -278,6 +278,35 @@ class TestHeartbeatStatus:
         d = assert_ok(get(api, base_url, "/api/system-health"))
         assert "security" in d, "system-health should include security key"
 
+    def test_system_health_includes_service_status(self, api, base_url):
+        """System health includes compact service_status dict for fleet sync."""
+        d = assert_ok(get(api, base_url, "/api/system-health"))
+        assert "service_status" in d, "system-health should include service_status key"
+        ss = d["service_status"]
+        assert isinstance(ss, dict), "service_status must be a dict"
+        assert "gateway" in ss, "service_status.gateway must be present"
+        assert isinstance(ss["gateway"], bool), "service_status.gateway must be bool"
+        assert "channels" in ss, "service_status.channels must be present"
+        assert isinstance(ss["channels"], list), "service_status.channels must be a list"
+        assert "sync" in ss, "service_status.sync must be present"
+        assert "resources" in ss, "service_status.resources must be present"
+        assert ss["resources"] in ("ok", "warn", "critical"), \
+            f"service_status.resources must be ok/warn/critical, got {ss['resources']}"
+
+    def test_service_status_endpoint(self, api, base_url):
+        """Dedicated /api/service-status endpoint returns compact status."""
+        d = assert_ok(get(api, base_url, "/api/service-status"))
+        assert "service_status" in d, "/api/service-status must return service_status key"
+        ss = d["service_status"]
+        assert isinstance(ss, dict)
+        assert "gateway" in ss
+        assert isinstance(ss["gateway"], bool)
+        assert "channels" in ss
+        assert isinstance(ss["channels"], list)
+        assert "sync" in ss
+        assert "resources" in ss
+        assert ss["resources"] in ("ok", "warn", "critical")
+
 
 # ---------------------------------------------------------------------------
 # Security

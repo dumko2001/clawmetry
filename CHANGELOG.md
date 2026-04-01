@@ -1,3 +1,17 @@
+## [Unreleased]
+
+### Added
+- **Service status indicators** — fleet node cards now display color-coded status dots for Gateway, Channels, Sync, and Resources (closes #254)
+- New `/api/service-status` endpoint returns compact `{gateway, channels, sync, resources}` dict suitable for sync-daemon heartbeat payloads
+- `/api/system-health` now includes `service_status` field in the same format, enabling local-node fleet self-registration
+
+### How it works
+- Sync daemons include `service_status` in their `POST /api/nodes/<id>/metrics` push
+- Fleet overview renders a mini status bar under each node card: 🟢 GW · 🟢 telegram · 🟢 sync · 🟡 res
+- Color legend: green = healthy, yellow = degraded, red = down, gray = unknown
+
+---
+
 ## v0.12.63 (2026-03-22)
 - fix: robust Ollama detection -- PATH fallback + HTTP ping to localhost:11434
 - feat: sync daemon heartbeat includes ollama status (installed, running, models)
