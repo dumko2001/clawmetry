@@ -41,12 +41,13 @@ from flask import Flask, render_template_string, request, jsonify, Response, mak
 
 # History / time-series module
 try:
-    from history import HistoryDB, HistoryCollector
+    from history import HistoryDB, HistoryCollector, AgentReliabilityScorer
     _HAS_HISTORY = True
 except ImportError:
     _HAS_HISTORY = False
     HistoryDB = None
     HistoryCollector = None
+    AgentReliabilityScorer = None
 
 _history_db = None
 _history_collector = None
@@ -61,7 +62,7 @@ except ImportError:
     metrics_service_pb2 = None
     trace_service_pb2 = None
 
-__version__ = "0.12.96"
+__version__ = "0.12.99"
 
 # Extensions (Phase 2) — load plugins at import time; safe no-op if package not installed
 try:
@@ -2931,6 +2932,14 @@ function clawmetryLogout(){
   <button id="alert-resume-btn" onclick="resumeGateway()" style="display:none;background:#16a34a;color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:12px;cursor:pointer;font-weight:600;">Resume Gateway</button>
 </div>
 
+<!-- Upgrade Impact Banner -->
+<div id="upgrade-banner" style="display:none;padding:10px 16px;background:linear-gradient(90deg,#1e3a5f 0%,#1a1a2e 100%);border-bottom:2px solid #3b82f6;color:#93c5fd;font-size:13px;font-weight:500;align-items:center;gap:10px;">
+  <span style="font-size:16px;">&#128640;</span>
+  <span id="upgrade-banner-msg" style="flex:1;"></span>
+  <button onclick="switchTab('version-impact')" style="background:#3b82f6;color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:12px;cursor:pointer;font-weight:600;">View Details</button>
+  <button onclick="dismissUpgradeBanner()" style="background:transparent;color:#93c5fd;border:1px solid #3b82f680;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;">Dismiss</button>
+</div>
+
 <!-- Budget Settings Modal -->
 <div id="budget-modal" style="display:none;position:fixed;inset:0;z-index:1200;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;">
   <div style="background:var(--bg-primary);border:1px solid var(--border-primary);border-radius:16px;width:90%;max-width:560px;padding:24px;box-shadow:0 25px 50px rgba(0,0,0,0.25);">
@@ -3111,6 +3120,14 @@ function clawmetryLogout(){
       </div>
       <div id="hot-sessions-list" style="display:none;">Loading...</div>
     </div>
+    <div class="stats-footer-item" id="reliability-card">
+      <span class="stats-footer-icon" id="reliability-icon">🔄</span>
+      <div>
+        <div class="stats-footer-label">Reliability</div>
+        <div class="stats-footer-value" id="reliability-direction">--</div>
+      </div>
+      <span class="stats-footer-sub" style="margin-left:auto;" id="reliability-detail"></span>
+    </div>
   </div>
 
   <!-- Split Screen: Flow Left | Tasks Right -->
@@ -3146,6 +3163,8 @@ function clawmetryLogout(){
         <div id="sh-inference" style="margin-bottom:14px;"></div></div>
         <div id="sh-security-wrap" style="display:none;"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">🛡️ Security Posture</div>
         <div id="sh-security" style="margin-bottom:14px;"></div></div>
+        <div id="sh-reliability-wrap" style="display:none;"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">📊 Agent Reliability</div>
+        <div id="sh-reliability" style="margin-bottom:14px;"></div></div>
       </div>
     </div>
 
@@ -4293,6 +4312,7 @@ async function loadAll() {
     loadActivityStream().catch(function(e){console.warn('activity stream failed',e)});
     loadHealth().catch(function(e){console.warn('health failed',e)});
     loadMCTasks().catch(function(e){console.warn('mctasks failed',e)});
+    loadReliabilityCard().catch(function(e){console.warn('reliability card failed',e)});
     document.getElementById('refresh-time').textContent = 'Updated ' + new Date().toLocaleTimeString();
 
     if (overview.infra) {
@@ -4329,6 +4349,27 @@ async function loadAll() {
     document.getElementById('refresh-time').textContent = 'Load failed - retrying...';
     return false;
   }
+}
+
+async function loadReliabilityCard() {
+  try {
+    var r = await fetchJsonWithTimeout('/api/history/reliability', 5000);
+    var icons = {improving:'📈',degrading:'⚠️',stable:'✅',insufficient_data:'🔄'};
+    var icon = icons[r.direction] || '🔄';
+    var label = r.direction === 'insufficient_data' ? 'No data' : r.direction.charAt(0).toUpperCase() + r.direction.slice(1);
+    var el = document.getElementById('reliability-icon');
+    if (el) el.textContent = icon;
+    el = document.getElementById('reliability-direction');
+    if (el) el.textContent = label;
+    el = document.getElementById('reliability-detail');
+    if (el) el.textContent = r.session_count + ' sessions / ' + r.window_days + 'd';
+    el = document.getElementById('reliability-icon-lt');
+    if (el) el.textContent = icon;
+    el = document.getElementById('reliability-direction-lt');
+    if (el) el.textContent = label;
+    el = document.getElementById('reliability-detail-lt');
+    if (el) el.textContent = r.session_count + ' sessions / ' + r.window_days + 'd';
+  } catch(e) { console.warn('reliability card load failed', e); }
 }
 
 async function loadMiniWidgets(overview, usage) {
@@ -5133,12 +5174,13 @@ from flask import Flask, render_template_string, request, jsonify, Response, mak
 
 # History / time-series module
 try:
-    from history import HistoryDB, HistoryCollector
+    from history import HistoryDB, HistoryCollector, AgentReliabilityScorer
     _HAS_HISTORY = True
 except ImportError:
     _HAS_HISTORY = False
     HistoryDB = None
     HistoryCollector = None
+    AgentReliabilityScorer = None
 
 _history_db = None
 _history_collector = None
@@ -8150,6 +8192,14 @@ function clawmetryLogout(){
   <button onclick="dismissPausedBanner()" style="background:#991b1b;color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:12px;cursor:pointer;font-weight:600;">Dismiss</button>
 </div>
 
+<!-- Upgrade Impact Banner -->
+<div id="upgrade-banner" style="display:none;padding:10px 16px;background:linear-gradient(90deg,#1e3a5f 0%,#1a1a2e 100%);border-bottom:2px solid #3b82f6;color:#93c5fd;font-size:13px;font-weight:500;align-items:center;gap:10px;">
+  <span style="font-size:16px;">&#128640;</span>
+  <span id="upgrade-banner-msg" style="flex:1;"></span>
+  <button onclick="switchTab('version-impact')" style="background:#3b82f6;color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:12px;cursor:pointer;font-weight:600;">View Details</button>
+  <button onclick="dismissUpgradeBanner()" style="background:transparent;color:#93c5fd;border:1px solid #3b82f680;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;">Dismiss</button>
+</div>
+
 <!-- Heartbeat Gap Banner -->
 <div id="heartbeat-banner" style="display:none;padding:10px 16px;border-bottom:2px solid #f59e0b;font-size:13px;font-weight:600;align-items:center;gap:10px;background:#451a03;color:#fbbf24;">
   <span style="font-size:18px;">&#x1F494;</span>
@@ -8312,6 +8362,14 @@ function clawmetryLogout(){
       </div>
       <div id="hot-sessions-list" style="display:none;">Loading...</div>
     </div>
+    <div class="stats-footer-item" id="reliability-card-lt">
+      <span class="stats-footer-icon" id="reliability-icon-lt">🔄</span>
+      <div>
+        <div class="stats-footer-label">Reliability</div>
+        <div class="stats-footer-value" id="reliability-direction-lt">--</div>
+      </div>
+      <span class="stats-footer-sub" style="margin-left:auto;" id="reliability-detail-lt"></span>
+    </div>
   </div>
 
   <!-- Split Screen: Flow Left | Tasks Right -->
@@ -8347,6 +8405,8 @@ function clawmetryLogout(){
         <div id="sh-inference" style="margin-bottom:14px;"></div></div>
         <div id="sh-security-wrap" style="display:none;"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">🛡️ Security Posture</div>
         <div id="sh-security" style="margin-bottom:14px;"></div></div>
+        <div id="sh-reliability-wrap" style="display:none;"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">📊 Agent Reliability</div>
+        <div id="sh-reliability" style="margin-bottom:14px;"></div></div>
       </div>
     </div>
 
@@ -9622,6 +9682,7 @@ async function loadAll() {
     loadActivityStream().catch(function(e){console.warn('activity stream failed',e)});
     loadHealth().catch(function(e){console.warn('health failed',e)});
     loadMCTasks().catch(function(e){console.warn('mctasks failed',e)});
+    loadReliabilityCard().catch(function(e){console.warn('reliability card failed',e)});
     document.getElementById('refresh-time').textContent = 'Updated ' + new Date().toLocaleTimeString();
 
     if (overview.infra) {
@@ -11826,6 +11887,9 @@ async function loadSystemHealth() {
       if (secWrap) secWrap.style.display = '';
     } else if (secWrap) { secWrap.style.display = 'none'; }
 
+    // Agent Reliability (async, non-blocking)
+    _loadReliabilityWidget();
+
     return true;
   } catch(e) {
     console.error('System health load failed', e);
@@ -11835,6 +11899,51 @@ async function loadSystemHealth() {
     document.getElementById('sh-crons').innerHTML = msg;
     document.getElementById('sh-subagents').innerHTML = msg;
     return false;
+  }
+}
+async function _loadReliabilityWidget() {
+  var wrap = document.getElementById('sh-reliability-wrap');
+  var el = document.getElementById('sh-reliability');
+  if (!wrap || !el) return;
+  try {
+    var r = await fetch('/api/reliability').then(function(r) { return r.json(); });
+    if (r.direction === 'insufficient_data' || r.error) {
+      wrap.style.display = 'none';
+      return;
+    }
+    wrap.style.display = '';
+    var icon = r.direction === 'improving' ? '📈' : r.direction === 'degrading' ? '⚠️' : '✅';
+    var color = r.direction === 'improving' ? '#22c55e' : r.direction === 'degrading' ? '#dc2626' : '#3b82f6';
+    var label = r.direction.charAt(0).toUpperCase() + r.direction.slice(1);
+    var slope = r.slope_per_session > 0 ? '+' + (r.slope_per_session * 100).toFixed(2) + '%' : (r.slope_per_session * 100).toFixed(2) + '%';
+    var html = '<div style="padding:10px;background:var(--bg-secondary);border:1px solid var(--border-secondary);border-radius:8px;">';
+    html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">';
+    html += '<span style="font-size:16px;">' + icon + '</span>';
+    html += '<span style="font-weight:700;font-size:13px;color:' + color + ';">' + label + '</span>';
+    html += '<span style="font-size:11px;color:var(--text-muted);">(' + slope + '/session, ' + r.session_count + ' sessions, ' + r.window_days + 'd)</span>';
+    html += '</div>';
+    // Sparkline from points
+    if (r.points && r.points.length > 2) {
+      var pts = r.points;
+      var w = 200, h = 30;
+      var minD = 0, maxD = 1;
+      var stepX = w / Math.max(pts.length - 1, 1);
+      var pathD = '';
+      for (var i = 0; i < pts.length; i++) {
+        var x = Math.round(i * stepX);
+        var y = Math.round(h - (pts[i].delivery * h));
+        pathD += (i === 0 ? 'M' : 'L') + x + ',' + y;
+      }
+      var sparkColor = r.direction === 'degrading' ? '#dc2626' : r.direction === 'improving' ? '#22c55e' : '#3b82f6';
+      html += '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" style="display:block;"><path d="' + pathD + '" fill="none" stroke="' + sparkColor + '" stroke-width="1.5"/></svg>';
+    }
+    if (r.degrading_dimensions && r.degrading_dimensions.length > 0) {
+      html += '<div style="margin-top:6px;font-size:11px;color:var(--text-muted);">Degrading: ' + r.degrading_dimensions.join(', ') + '</div>';
+    }
+    html += '</div>';
+    el.innerHTML = html;
+  } catch(e) {
+    wrap.style.display = 'none';
   }
 }
 function startSystemHealthRefresh() {
@@ -12259,6 +12368,44 @@ function toggleMsg(idx) {
   }
 }
 
+
+// ── Upgrade Banner (on overview page) ──────────────────────────────────────
+function dismissUpgradeBanner() {
+  document.getElementById('upgrade-banner').style.display = 'none';
+  try { localStorage.setItem('cm_upgrade_banner_dismissed', Date.now().toString()); } catch(e){}
+}
+async function checkUpgradeBanner() {
+  try {
+    var data = await fetch('/api/version-impact').then(r => r.json());
+    if (!data.transitions || data.transitions.length === 0) return;
+    var latest = data.transitions[data.transitions.length - 1];
+    var upgradedTs = new Date(latest.upgraded_at).getTime();
+    // Only show banner for upgrades in the last 7 days
+    if (Date.now() - upgradedTs > 7 * 86400000) return;
+    // Check if dismissed
+    try {
+      var dismissed = parseInt(localStorage.getItem('cm_upgrade_banner_dismissed') || '0');
+      if (dismissed > upgradedTs) return;
+    } catch(e){}
+    var costDiff = latest.diff.avg_cost;
+    var errorDiff = latest.diff.error_rate;
+    var arrows = [];
+    if (costDiff && costDiff.pct_change !== null) {
+      var c = costDiff.pct_change;
+      arrows.push('cost ' + (c > 0 ? '+' : '') + c + '%');
+    }
+    if (errorDiff && errorDiff.pct_change !== null) {
+      var e = errorDiff.pct_change;
+      arrows.push('errors ' + (e > 0 ? '+' : '') + e + '%');
+    }
+    var msg = 'You upgraded from <b>' + escHtml(latest.from_version) + '</b> to <b>' + escHtml(latest.to_version) + '</b>';
+    if (arrows.length > 0) msg += ' &mdash; ' + arrows.join(', ');
+    var banner = document.getElementById('upgrade-banner');
+    document.getElementById('upgrade-banner-msg').innerHTML = msg;
+    banner.style.display = 'flex';
+  } catch(e){}
+}
+setTimeout(checkUpgradeBanner, 3000);
 
 // ── Upgrade Impact Panel ───────────────────────────────────────────────────
 async function loadVersionImpact() {
@@ -19185,6 +19332,18 @@ def api_history_stats():
     return jsonify(stats)
 
 
+@bp_history.route('/api/history/reliability')
+def api_history_reliability():
+    """Cross-session behavioral reliability trend."""
+    if not _history_db:
+        return jsonify({'error': 'History DB not available'}), 503
+    from history import AgentReliabilityScorer
+    scorer = AgentReliabilityScorer(_history_db)
+    window = request.args.get('window', 30, type=int)
+    result = scorer.score(window_days=window)
+    return jsonify(result)
+
+
 # ── Billing Mode Heuristics (API key vs OAuth/included) ──────────────────
 
 _openclaw_cfg_cache = None
@@ -23354,6 +23513,21 @@ def api_security_posture():
         return jsonify(result)
     except Exception as e:
         return jsonify({'error': str(e), 'score': 'U', 'checks': []}), 500
+
+
+@bp_health.route('/api/reliability')
+def api_reliability():
+    """Cross-session behavioral reliability trend (AgentReliabilityScorer)."""
+    if not _history_db or not AgentReliabilityScorer:
+        return jsonify({'error': 'History module not available', 'direction': 'insufficient_data'}), 200
+    try:
+        window = int(request.args.get('window', 30))
+        window = max(1, min(window, 90))
+        scorer = AgentReliabilityScorer(_history_db)
+        result = scorer.score(window_days=window)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e), 'direction': 'insufficient_data'}), 500
 
 
 @bp_health.route('/api/heatmap')
