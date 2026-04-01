@@ -2931,6 +2931,14 @@ function clawmetryLogout(){
   <button id="alert-resume-btn" onclick="resumeGateway()" style="display:none;background:#16a34a;color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:12px;cursor:pointer;font-weight:600;">Resume Gateway</button>
 </div>
 
+<!-- Upgrade Impact Banner -->
+<div id="upgrade-banner" style="display:none;padding:10px 16px;background:linear-gradient(90deg,#1e3a5f 0%,#1a1a2e 100%);border-bottom:2px solid #3b82f6;color:#93c5fd;font-size:13px;font-weight:500;align-items:center;gap:10px;">
+  <span style="font-size:16px;">&#128640;</span>
+  <span id="upgrade-banner-msg" style="flex:1;"></span>
+  <button onclick="switchTab('version-impact')" style="background:#3b82f6;color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:12px;cursor:pointer;font-weight:600;">View Details</button>
+  <button onclick="dismissUpgradeBanner()" style="background:transparent;color:#93c5fd;border:1px solid #3b82f680;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;">Dismiss</button>
+</div>
+
 <!-- Budget Settings Modal -->
 <div id="budget-modal" style="display:none;position:fixed;inset:0;z-index:1200;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;">
   <div style="background:var(--bg-primary);border:1px solid var(--border-primary);border-radius:16px;width:90%;max-width:560px;padding:24px;box-shadow:0 25px 50px rgba(0,0,0,0.25);">
@@ -8150,6 +8158,14 @@ function clawmetryLogout(){
   <button onclick="dismissPausedBanner()" style="background:#991b1b;color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:12px;cursor:pointer;font-weight:600;">Dismiss</button>
 </div>
 
+<!-- Upgrade Impact Banner -->
+<div id="upgrade-banner" style="display:none;padding:10px 16px;background:linear-gradient(90deg,#1e3a5f 0%,#1a1a2e 100%);border-bottom:2px solid #3b82f6;color:#93c5fd;font-size:13px;font-weight:500;align-items:center;gap:10px;">
+  <span style="font-size:16px;">&#128640;</span>
+  <span id="upgrade-banner-msg" style="flex:1;"></span>
+  <button onclick="switchTab('version-impact')" style="background:#3b82f6;color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:12px;cursor:pointer;font-weight:600;">View Details</button>
+  <button onclick="dismissUpgradeBanner()" style="background:transparent;color:#93c5fd;border:1px solid #3b82f680;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;">Dismiss</button>
+</div>
+
 <!-- Heartbeat Gap Banner -->
 <div id="heartbeat-banner" style="display:none;padding:10px 16px;border-bottom:2px solid #f59e0b;font-size:13px;font-weight:600;align-items:center;gap:10px;background:#451a03;color:#fbbf24;">
   <span style="font-size:18px;">&#x1F494;</span>
@@ -12259,6 +12275,44 @@ function toggleMsg(idx) {
   }
 }
 
+
+// ── Upgrade Banner (on overview page) ──────────────────────────────────────
+function dismissUpgradeBanner() {
+  document.getElementById('upgrade-banner').style.display = 'none';
+  try { localStorage.setItem('cm_upgrade_banner_dismissed', Date.now().toString()); } catch(e){}
+}
+async function checkUpgradeBanner() {
+  try {
+    var data = await fetch('/api/version-impact').then(r => r.json());
+    if (!data.transitions || data.transitions.length === 0) return;
+    var latest = data.transitions[data.transitions.length - 1];
+    var upgradedTs = new Date(latest.upgraded_at).getTime();
+    // Only show banner for upgrades in the last 7 days
+    if (Date.now() - upgradedTs > 7 * 86400000) return;
+    // Check if dismissed
+    try {
+      var dismissed = parseInt(localStorage.getItem('cm_upgrade_banner_dismissed') || '0');
+      if (dismissed > upgradedTs) return;
+    } catch(e){}
+    var costDiff = latest.diff.avg_cost;
+    var errorDiff = latest.diff.error_rate;
+    var arrows = [];
+    if (costDiff && costDiff.pct_change !== null) {
+      var c = costDiff.pct_change;
+      arrows.push('cost ' + (c > 0 ? '+' : '') + c + '%');
+    }
+    if (errorDiff && errorDiff.pct_change !== null) {
+      var e = errorDiff.pct_change;
+      arrows.push('errors ' + (e > 0 ? '+' : '') + e + '%');
+    }
+    var msg = 'You upgraded from <b>' + escHtml(latest.from_version) + '</b> to <b>' + escHtml(latest.to_version) + '</b>';
+    if (arrows.length > 0) msg += ' &mdash; ' + arrows.join(', ');
+    var banner = document.getElementById('upgrade-banner');
+    document.getElementById('upgrade-banner-msg').innerHTML = msg;
+    banner.style.display = 'flex';
+  } catch(e){}
+}
+setTimeout(checkUpgradeBanner, 3000);
 
 // ── Upgrade Impact Panel ───────────────────────────────────────────────────
 async function loadVersionImpact() {
