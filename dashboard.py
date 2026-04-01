@@ -4299,6 +4299,7 @@ async function loadAll() {
     loadHealth().catch(function(e){console.warn('health failed',e)});
     loadMCTasks().catch(function(e){console.warn('mctasks failed',e)});
     loadReliabilityCard().catch(function(e){console.warn('reliability card failed',e)});
+    if (typeof loadAnomalyPanel === 'function') loadAnomalyPanel().catch(function(e){console.warn('anomaly panel failed',e)});
     document.getElementById('refresh-time').textContent = 'Updated ' + new Date().toLocaleTimeString();
 
     if (overview.infra) {
@@ -9345,7 +9346,7 @@ async function checkAnomalies() {
       if (bySeverity[sev]) bySeverity[sev].push(a);
     });
     var topAnomaly = bySeverity.critical[0] || bySeverity.high[0] || bySeverity.medium[0];
-    var metricLabels = {cost_spike: 'cost spike', token_spike: 'token spike', error_rate_spike: 'error rate spike'};
+    var metricLabels = {cost_spike: 'cost spike', token_spike: 'token spike', error_rate_spike: 'error rate spike', session_frequency_spike: 'session frequency spike'};
     var label = metricLabels[topAnomaly.metric] || topAnomaly.metric;
     var msg = 'Anomaly detected: ' + label + ' (' + Number(topAnomaly.ratio || 0).toFixed(1) + 'x baseline)';
     if (anomalies.length > 1) msg += ' + ' + (anomalies.length - 1) + ' more';
@@ -9361,6 +9362,109 @@ async function checkAnomalies() {
 // Check anomalies every 5 minutes
 setInterval(checkAnomalies, 300000);
 setTimeout(checkAnomalies, 8000);
+
+// === Anomaly Detection Panel (GH #304) ===
+function _ensureAnomalyPanel() {
+  var existing = document.getElementById('anomaly-panel');
+  if (existing) return existing;
+  // Create panel dynamically after system health panel
+  var shPanel = document.getElementById('system-health-panel');
+  if (!shPanel || !shPanel.parentNode) return null;
+  var panel = document.createElement('div');
+  panel.id = 'anomaly-panel';
+  panel.style.cssText = 'background:var(--bg-secondary);border:1px solid var(--border-primary);border-radius:12px;padding:16px;margin-top:14px;box-shadow:var(--card-shadow);';
+  panel.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"><div style="font-size:14px;font-weight:700;color:var(--text-primary);">&#128269; Anomaly Detection</div><span id="anomaly-panel-badge" style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;display:none;"></span></div><div id="anomaly-baselines" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;font-size:11px;"></div><div id="anomaly-list" style="max-height:300px;overflow-y:auto;"></div>';
+  shPanel.parentNode.insertBefore(panel, shPanel.nextSibling);
+  return panel;
+}
+
+async function loadAnomalyPanel() {
+  try {
+    var data = await fetch('/api/anomalies').then(function(r){return r.json();});
+    var panel = _ensureAnomalyPanel();
+    if (!panel) return;
+    var anomalies = data.anomalies || [];
+    var baselines = data.baselines || {};
+    var active = anomalies.filter(function(a){ return !a.acknowledged; });
+
+    // Badge
+    var badge = document.getElementById('anomaly-panel-badge');
+    if (badge) {
+      if (active.length > 0) {
+        var hasCrit = active.some(function(a){ return a.severity === 'critical'; });
+        badge.textContent = active.length + ' active';
+        badge.style.background = hasCrit ? '#7f1d1d' : '#451a03';
+        badge.style.color = hasCrit ? '#fca5a5' : '#fbbf24';
+        badge.style.display = 'inline-block';
+      } else {
+        badge.textContent = 'all clear';
+        badge.style.background = '#064e3b';
+        badge.style.color = '#6ee7b7';
+        badge.style.display = 'inline-block';
+      }
+    }
+
+    // Baselines
+    var blEl = document.getElementById('anomaly-baselines');
+    if (blEl) {
+      var blHtml = '';
+      if (baselines.baseline_cost_7d > 0) blHtml += '<span style="background:var(--bg-hover);padding:3px 8px;border-radius:6px;color:var(--text-secondary);">Avg cost: $' + Number(baselines.baseline_cost_7d).toFixed(4) + '/session</span>';
+      if (baselines.baseline_tokens_7d > 0) blHtml += '<span style="background:var(--bg-hover);padding:3px 8px;border-radius:6px;color:var(--text-secondary);">Avg tokens: ' + Math.round(baselines.baseline_tokens_7d).toLocaleString() + '/session</span>';
+      if (baselines.baseline_sessions_per_day_7d > 0) blHtml += '<span style="background:var(--bg-hover);padding:3px 8px;border-radius:6px;color:var(--text-secondary);">Sessions/day: ' + Number(baselines.baseline_sessions_per_day_7d).toFixed(1) + '</span>';
+      blEl.innerHTML = blHtml || '<span style="color:var(--text-muted);">Collecting baseline data...</span>';
+    }
+
+    // Anomaly list
+    var listEl = document.getElementById('anomaly-list');
+    if (!listEl) return;
+    if (anomalies.length === 0) {
+      listEl.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-muted);font-size:12px;">No anomalies in last 48h. Baselines from 7-day rolling window.</div>';
+      return;
+    }
+
+    var metricIcons = {cost_spike:'&#128176;', token_spike:'&#128202;', error_rate_spike:'&#10060;', session_frequency_spike:'&#128200;'};
+    var metricNames = {cost_spike:'Cost Spike', token_spike:'Token Spike', error_rate_spike:'Error Rate Spike', session_frequency_spike:'Session Frequency Spike'};
+    var sevColors = {critical:'#ef4444', high:'#f59e0b', medium:'#6366f1'};
+    var sevBgs = {critical:'#7f1d1d', high:'#451a03', medium:'#1e1b4b'};
+
+    var html = '';
+    anomalies.slice(0, 20).forEach(function(a) {
+      var icon = metricIcons[a.metric] || '&#9888;';
+      var name = metricNames[a.metric] || a.metric;
+      var sevCol = sevColors[a.severity] || '#888';
+      var sevBg = sevBgs[a.severity] || 'var(--bg-hover)';
+      var acked = a.acknowledged;
+      var dt = new Date(a.detected_at * 1000);
+      var timeStr = dt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) + ' ' + dt.toLocaleDateString([], {month:'short', day:'numeric'});
+      var valStr = a.metric === 'cost_spike' ? '$' + Number(a.value).toFixed(4) : a.metric === 'error_rate_spike' ? (Number(a.value * 100).toFixed(1) + '%') : a.metric === 'session_frequency_spike' ? (Number(a.value) + ' sessions') : Number(a.value).toLocaleString();
+      var baseStr = a.metric === 'cost_spike' ? '$' + Number(a.baseline).toFixed(4) : a.metric === 'error_rate_spike' ? (Number(a.baseline * 100).toFixed(1) + '%') : a.metric === 'session_frequency_spike' ? (Number(a.baseline).toFixed(1) + '/day') : Number(a.baseline).toLocaleString();
+
+      html += '<div style="background:' + (acked ? 'var(--bg-hover)' : sevBg) + ';border:1px solid ' + (acked ? 'var(--border-primary)' : sevCol + '44') + ';border-left:3px solid ' + sevCol + ';border-radius:8px;padding:10px 12px;margin-bottom:6px;' + (acked ? 'opacity:0.5;' : '') + '">';
+      html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">';
+      html += '<span style="font-size:12px;font-weight:600;color:' + sevCol + ';">' + icon + ' ' + name + ' <span style="font-size:10px;color:var(--text-muted);">(' + Number(a.ratio).toFixed(1) + 'x baseline)</span></span>';
+      if (!acked) html += '<button onclick="ackAnomaly(' + a.id + ')" style="background:transparent;border:1px solid var(--border-secondary);color:var(--text-muted);border-radius:4px;padding:2px 6px;font-size:10px;cursor:pointer;">Ack</button>';
+      html += '</div>';
+      html += '<div style="font-size:11px;color:var(--text-secondary);">';
+      html += 'Value: <b>' + valStr + '</b> vs baseline <b>' + baseStr + '</b>';
+      if (a.session_key && a.session_key.indexOf('__') !== 0) html += ' &middot; Session: <span style="font-family:monospace;font-size:10px;">' + a.session_key.substring(0, 16) + '</span>';
+      html += ' &middot; <span style="color:var(--text-muted);">' + timeStr + '</span>';
+      html += '</div></div>';
+    });
+    listEl.innerHTML = html;
+  } catch(e) { /* non-critical */ }
+}
+
+async function ackAnomaly(id) {
+  try {
+    await fetch('/api/anomalies/' + id + '/ack', {method:'POST'});
+    loadAnomalyPanel();
+    checkAnomalies();
+  } catch(e) {}
+}
+
+// Load anomaly panel on overview and refresh every 2 minutes
+setTimeout(loadAnomalyPanel, 4000);
+setInterval(loadAnomalyPanel, 120000);
 
 // === Heartbeat Gap Alerting ===
 async function checkHeartbeatStatus() {
@@ -9673,6 +9777,7 @@ async function loadAll() {
     loadHealth().catch(function(e){console.warn('health failed',e)});
     loadMCTasks().catch(function(e){console.warn('mctasks failed',e)});
     loadReliabilityCard().catch(function(e){console.warn('reliability card failed',e)});
+    if (typeof loadAnomalyPanel === 'function') loadAnomalyPanel().catch(function(e){console.warn('anomaly panel failed',e)});
     document.getElementById('refresh-time').textContent = 'Updated ' + new Date().toLocaleTimeString();
 
     if (overview.infra) {
@@ -20481,6 +20586,23 @@ def _detect_and_store_anomalies():
             'detected_at': now_ts,
         })
 
+    # Session frequency spike: compare 24h session count vs 7-day daily average
+    if len(baseline_sessions) > 0:
+        days_in_window = max((now_ts - baseline_window_start) / 86400, 1.0)
+        avg_sessions_per_day = len(baseline_sessions) / days_in_window
+        sessions_last_24h = len(recent_sessions_24h)
+        if avg_sessions_per_day >= 2 and sessions_last_24h > avg_sessions_per_day * 2.5:
+            freq_ratio = round(sessions_last_24h / avg_sessions_per_day, 3)
+            new_anomalies.append({
+                'session_key': '__session_frequency__',
+                'metric': 'session_frequency_spike',
+                'value': sessions_last_24h,
+                'baseline': round(avg_sessions_per_day, 2),
+                'ratio': freq_ratio,
+                'severity': 'high' if freq_ratio > 4 else 'medium',
+                'detected_at': now_ts,
+            })
+
     # ── Persist new anomalies (deduplicate by session_key + metric within 24h) ──
     try:
         db = _get_anomaly_db()
@@ -20511,11 +20633,17 @@ def _detect_and_store_anomalies():
     except Exception:
         stored = []
 
+    # Compute session frequency baseline for return value
+    _days_in_window = max((now_ts - baseline_window_start) / 86400, 1.0)
+    _avg_sessions_per_day = len(baseline_sessions) / _days_in_window if len(baseline_sessions) > 0 else 0.0
+
     return stored, {
         'baseline_cost_7d': round(avg_cost_7d, 6),
         'baseline_tokens_7d': round(avg_tokens_7d, 2),
         'baseline_error_rate_7d': round(err_baseline_rate, 4),
         'recent_error_rate_24h': round(recent_err_rate, 4),
+        'baseline_sessions_per_day_7d': round(_avg_sessions_per_day, 2),
+        'sessions_last_24h': len(recent_sessions_24h),
         'session_count_7d': len(baseline_sessions),
     }
 
