@@ -279,7 +279,17 @@ class AgentReliabilityScorer:
         self.db = db
 
     def score(self, window_days=30, min_sessions=5):
-        """Compute cross-session reliability trend."""
+        """Compute cross-session reliability trend.
+
+        Returns a dict with:
+          direction: 'improving' | 'degrading' | 'stable' | 'insufficient_data'
+          slope_per_session: OLS slope of delivery_score over ordered sessions
+          significant: bool (abs(slope) > threshold)
+          session_count: number of unique sessions scored
+          window_days: the window used
+          degrading_dimensions: list of dimension names that are degrading
+          points: list of per-session score dicts (for UI sparkline)
+        """
         now = time.time()
         from_ts = now - (window_days * 86400)
 
@@ -310,6 +320,7 @@ class AgentReliabilityScorer:
             status = (s.get('status', '') or '').lower()
             total_tokens = max(tokens_in + tokens_out, 1)
 
+            # Delivery score: 1.0 for completed/active, 0.0 for error/stalled
             if status in ('error', 'stalled', 'failed', 'timeout'):
                 delivery = 0.0
             elif status in ('completed', 'done', 'active', ''):
@@ -341,8 +352,9 @@ class AgentReliabilityScorer:
         efficiency_slope = _ols_slope([p['token_efficiency'] for p in points])
         cost_slope = _ols_slope([p['cost_per_token'] for p in points])
 
-        threshold = 0.02
+        # Primary signal: delivery_score trend
         overall_slope = delivery_slope
+        threshold = 0.02
         if overall_slope < -threshold:
             direction = 'degrading'
         elif overall_slope > threshold:
@@ -355,7 +367,7 @@ class AgentReliabilityScorer:
             degrading.append('delivery_score')
         if efficiency_slope < -0.05:
             degrading.append('token_efficiency')
-        if cost_slope > 0.00001:
+        if cost_slope > 0.00001:  # cost going up is bad
             degrading.append('cost_per_token')
 
         return {
@@ -374,7 +386,7 @@ class AgentReliabilityScorer:
                     'delivery': round(p['delivery_score'], 2),
                     'efficiency': round(p['token_efficiency'], 4),
                 }
-                for p in points[-60:]
+                for p in points[-60:]  # last 60 for sparkline
             ],
         }
 

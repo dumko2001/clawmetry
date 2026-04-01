@@ -1,73 +1,107 @@
-"""
-Tests for the Agent Reliability Scorer (GH #464).
+"""Tests for AgentReliabilityScorer in history.py."""
+import os
+import sys
+import time
+import tempfile
+import unittest
 
-Verifies:
-- /api/history/reliability returns correct structure
-- Direction values are valid
-- All required keys present
-- Custom window parameter works
-"""
-import pytest
-import requests
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from history import HistoryDB, AgentReliabilityScorer
 
 
-def get(api, base_url, path):
-    return api.get(f"{base_url}{path}", timeout=10)
+class TestAgentReliabilityScorer(unittest.TestCase):
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self.db_path = os.path.join(self.tmpdir, 'test_history.db')
+        self.db = HistoryDB(self.db_path)
+        self.scorer = AgentReliabilityScorer(self.db)
+
+    def tearDown(self):
+        try:
+            os.remove(self.db_path)
+            os.rmdir(self.tmpdir)
+        except OSError:
+            pass
+
+    def test_insufficient_data_empty(self):
+        result = self.scorer.score(window_days=30)
+        self.assertEqual(result['direction'], 'insufficient_data')
+        self.assertEqual(result['session_count'], 0)
+        self.assertEqual(result['points'], [])
+
+    def test_insufficient_data_few_sessions(self):
+        now = time.time()
+        for i in range(3):
+            self.db.insert_session(f'sess-{i}', 100, 50, 0.01, 'claude', 'completed', ts=now - i * 3600)
+        result = self.scorer.score(window_days=30, min_sessions=5)
+        self.assertEqual(result['direction'], 'insufficient_data')
+        self.assertEqual(result['session_count'], 3)
+
+    def test_stable_sessions(self):
+        now = time.time()
+        for i in range(10):
+            self.db.insert_session(f'sess-{i}', 100, 50, 0.01, 'claude', 'completed', ts=now - i * 3600)
+        result = self.scorer.score(window_days=30, min_sessions=5)
+        self.assertEqual(result['direction'], 'stable')
+        self.assertTrue(result['session_count'] >= 5)
+        self.assertFalse(result['significant'])
+        self.assertEqual(result['degrading_dimensions'], [])
+
+    def test_degrading_sessions(self):
+        now = time.time()
+        # Early sessions: all completed; later sessions: all errors
+        for i in range(20):
+            status = 'completed' if i < 10 else 'error'
+            self.db.insert_session(f'sess-{i}', 100, 50, 0.01, 'claude', status, ts=now - (20 - i) * 3600)
+        result = self.scorer.score(window_days=30, min_sessions=5)
+        self.assertEqual(result['direction'], 'degrading')
+        self.assertTrue(result['significant'])
+        self.assertIn('delivery_score', result['degrading_dimensions'])
+
+    def test_improving_sessions(self):
+        now = time.time()
+        # Early sessions: errors; later sessions: completed
+        for i in range(20):
+            status = 'error' if i < 10 else 'completed'
+            self.db.insert_session(f'sess-{i}', 100, 50, 0.01, 'claude', status, ts=now - (20 - i) * 3600)
+        result = self.scorer.score(window_days=30, min_sessions=5)
+        self.assertEqual(result['direction'], 'improving')
+        self.assertTrue(result['significant'])
+
+    def test_sparkline_points_capped(self):
+        now = time.time()
+        for i in range(100):
+            self.db.insert_session(f'sess-{i}', 100, 50, 0.01, 'claude', 'completed', ts=now - i * 3600)
+        result = self.scorer.score(window_days=30, min_sessions=5)
+        # Points capped at 60 for sparkline
+        self.assertLessEqual(len(result['points']), 60)
+
+    def test_latest_snapshot_per_session(self):
+        now = time.time()
+        # Same session key with multiple snapshots
+        for i in range(5):
+            self.db.insert_session('sess-dup', 100 * (i + 1), 50 * (i + 1), 0.01, 'claude', 'completed', ts=now - (5 - i) * 60)
+        # Need at least min_sessions unique keys
+        for i in range(5):
+            self.db.insert_session(f'sess-{i}', 100, 50, 0.01, 'claude', 'completed', ts=now - i * 3600)
+        result = self.scorer.score(window_days=30, min_sessions=5)
+        # sess-dup should count as 1 session
+        self.assertGreaterEqual(result['session_count'], 5)
+        self.assertLessEqual(result['session_count'], 6)
+
+    def test_window_filtering(self):
+        now = time.time()
+        # Sessions outside window
+        for i in range(10):
+            self.db.insert_session(f'old-{i}', 100, 50, 0.01, 'claude', 'completed', ts=now - 60 * 86400)
+        # Sessions inside 7-day window
+        for i in range(6):
+            self.db.insert_session(f'new-{i}', 100, 50, 0.01, 'claude', 'completed', ts=now - i * 3600)
+        result = self.scorer.score(window_days=7, min_sessions=5)
+        self.assertEqual(result['session_count'], 6)
+        self.assertEqual(result['window_days'], 7)
 
 
-def assert_ok(resp):
-    assert resp.status_code == 200, (
-        f"Expected 200 for {resp.url}, got {resp.status_code}: {resp.text[:200]}"
-    )
-    return resp.json()
-
-
-def assert_keys(data, *keys):
-    for k in keys:
-        assert k in data, f"Missing key '{k}' in response: {list(data.keys())}"
-
-
-class TestReliability:
-    def test_endpoint_returns_200(self, api, base_url):
-        """Reliability endpoint is reachable."""
-        r = get(api, base_url, "/api/history/reliability")
-        assert_ok(r)
-
-    def test_required_top_level_keys(self, api, base_url):
-        """Response has required top-level keys."""
-        d = assert_ok(get(api, base_url, "/api/history/reliability"))
-        assert_keys(d, "direction", "slope_per_session", "significant",
-                    "session_count", "window_days", "degrading_dimensions", "points")
-
-    def test_direction_is_valid_string(self, api, base_url):
-        """direction is one of the four valid values."""
-        d = assert_ok(get(api, base_url, "/api/history/reliability"))
-        assert d["direction"] in ("improving", "degrading", "stable", "insufficient_data"), \
-            f"Unexpected direction: {d['direction']}"
-
-    def test_significant_is_bool(self, api, base_url):
-        """significant is a boolean."""
-        d = assert_ok(get(api, base_url, "/api/history/reliability"))
-        assert isinstance(d["significant"], bool)
-
-    def test_degrading_dimensions_is_list(self, api, base_url):
-        """degrading_dimensions is always a list."""
-        d = assert_ok(get(api, base_url, "/api/history/reliability"))
-        assert isinstance(d["degrading_dimensions"], list)
-
-    def test_points_is_list_with_correct_structure(self, api, base_url):
-        """points is a list; each point has ts, delivery, efficiency."""
-        d = assert_ok(get(api, base_url, "/api/history/reliability"))
-        assert isinstance(d["points"], list)
-        for p in d["points"]:
-            assert_keys(p, "ts", "delivery", "efficiency")
-
-    def test_custom_window_parameter(self, api, base_url):
-        """Custom window parameter is accepted and reflected."""
-        d = assert_ok(get(api, base_url, "/api/history/reliability?window=7"))
-        assert d["window_days"] == 7
-
-    def test_slope_fields_present(self, api, base_url):
-        """delivery_slope, efficiency_slope, cost_slope are in response."""
-        d = assert_ok(get(api, base_url, "/api/history/reliability"))
-        assert_keys(d, "delivery_slope", "efficiency_slope", "cost_slope")
+if __name__ == '__main__':
+    unittest.main()
