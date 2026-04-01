@@ -19710,7 +19710,7 @@ def api_sessions_clusters():
 
     sessions_dir = _get_sessions_dir()
     if not sessions_dir or not os.path.isdir(sessions_dir):
-        return jsonify({'clusters': [], 'total_sessions': 0})
+        return jsonify({'clusters': [], 'total_sessions': 0, 'days': days, 'generated_at': int(now_ts * 1000)})
 
     usd_per_tok = _estimate_usd_per_token()
     session_profiles = []
