@@ -1352,7 +1352,7 @@ def _cmd_update() -> None:
     print("Checking for updates...")
     try:
         result = subprocess.run(
-            [sys.executable, "-m", "pip", "install", "--upgrade", "clawmetry"],
+            [sys.executable, "-m", "pip", "install", "--upgrade", "--break-system-packages", "clawmetry"],
             capture_output=True, text=True, timeout=120,
         )
         if result.returncode == 0:
