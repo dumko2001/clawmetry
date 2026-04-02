@@ -1119,7 +1119,7 @@ def run_proxy(config: ProxyConfig = None, foreground: bool = True) -> None:
     try:
         from waitress import serve
         serve(app, host=config.host, port=config.port,
-              threads=8, channel_timeout=300,
+              threads=64, channel_timeout=300,
               _quiet=not config.log_requests)
     except ImportError:
         app.run(host=config.host, port=config.port, threaded=True)
